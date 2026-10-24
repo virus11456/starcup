@@ -6,7 +6,9 @@
 
 使用者再次指定以 `chntujia/CodfiyAsteriatedGrailServer` 和 `RancherJie/noname_xingbei` 為架構／機制基礎，**不要重寫**，並明確要求完成後重新部署到原 Vercel 專案。具體分工與固定來源見 [architecture.md](architecture.md)。無名杯為實際運行引擎，Codify 為狀態機／共享資源對照，未部署 C++ 服務。
 
-本次把角色與擴充對戰設為首頁主要入口，加入選局人數卡、唯讀戰況與回應提示、選牌輪廓及手機 iframe 高度修正。保留原技能／AI／牌庫、核心連線 API 和原部署專案。30 項核心測試、19 項引擎／顯示測試與 typecheck 通過；本機 Next build 因宿主無法提供 `uv_resident_set_memory` 系統資訊中止，正式 build 結果以 Vercel 為準。
+本次把角色與擴充對戰設為首頁主要入口，加入選局人數卡、唯讀戰況與回應提示、選牌輪廓及手機 iframe 高度修正。保留原技能／AI／牌庫、核心連線 API 和原部署專案。30 項核心測試、19 項引擎／顯示測試與 typecheck 通過；本機 Next build 因宿主無法提供 `uv_resident_set_memory` 系統資訊中止，Vercel 正式建置成功。功能提交 `1d44250b724d3ca26628e1b184c237c37ade505a` 的部署 `dpl_31mFMu9Y2VUVGcGUXEGuceAsuGYw` 已 READY 並套用原網域；詳細回歸範圍見 release-status.md 最新段落。
+
+手機控制尺寸使用 `--grail-touch-scale` 補償原引擎 body scale，不能直接移除原縮放。`body > #window { overflow: clip }` 的 specificity 必須高於較晚載入的上游 `#window { overflow: hidden }`，否則選牌取得焦點會讓整張牌桌水平捲出畫面。
 
 ## 授權與來源
 
