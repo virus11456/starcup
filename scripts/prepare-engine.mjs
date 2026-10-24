@@ -99,6 +99,13 @@ await patch(
   "if (!_status.video && vinum && game.getVideoName && window.indexedDB && _status.videoInited)",
   "if (!_status.video && vinum && game.getVideoName && window.indexedDB && lib.db && _status.videoInited)",
 );
+// The upstream can transiently carry a negative value at game over. Clamp
+// only the rendered score; preserve the original loss amount and rule state.
+for (const team of ["hong", "lan"]) await patch(
+  "noname/ui/index.js",
+  '${game.' + team + 'ShiQi}',
+  '${Math.max(0, game.' + team + 'ShiQi)}',
+);
 const modePath = path.join(output, "mode/xingBei.js");
 let mode = await readFile(modePath, "utf8");
 const start = mode.indexOf("submitMatchData:async function(matchData){");
@@ -109,6 +116,23 @@ mode =
   mode.slice(0, start) +
   "submitMatchData:async function(){ /* Local game: no upstream submission. */ },\n\t\t\t" +
   mode.slice(end);
+// Keep the upstream draft and random selection; remove every edition/form
+// of a claimed role before the next AI picks. Event contents are compiled by
+// noname, so helper calls must use the installed game methods, not a closure.
+mode = 'import { characterFamily, availableCharacters } from "../grail-characters.js";\n' + mode;
+function patchMode(before, after) {
+  if (!mode.includes(before)) throw new Error(`Pinned roster patch no longer matches: ${before}`);
+  mode = mode.replaceAll(before, after);
+}
+patchMode('game:{', 'game:{\n        grailCharacterFamily: characterFamily,\n        grailAvailableCharacters: availableCharacters,');
+patchMode("game.me.chooseButton(true,dialog,basenum).set('onfree',true);", `game.me.chooseButton(true,dialog,basenum).set('onfree',true).set('filterButton', function(button) {
+    return ui.selected.buttons.every(selected => selected === button || game.grailCharacterFamily(selected.link) !== game.grailCharacterFamily(button.link));
+  });`);
+patchMode('game.me.init(result.links[0]);', 'game.me.init(result.links[0]);\n                    event.list = game.grailAvailableCharacters(event.list, result.links);');
+patchMode('_status.characterList = result.links.slice();', '_status.characterList = result.links.slice();\n                    event.list = game.grailAvailableCharacters(event.list, result.links);');
+for (const initialize of ['game.players[i].init(name);', 'game.players[i].init(list.randomGet());', 'player.init(name);']) {
+  patchMode(initialize, initialize + '\n                    event.list = game.grailAvailableCharacters(event.list, game.players.map(player => player.name1));');
+}
 await writeFile(modePath, mode);
 // Remove community character registrations, not just their menu buttons.
 const specialPath = path.join(output, "character/teDian.js");

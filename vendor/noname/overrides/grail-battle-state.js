@@ -43,7 +43,7 @@ export function teamSummary(game) {
     return {
       id: index === 0 ? "red" : "blue",
       name: index === 0 ? "紅隊" : "藍隊",
-      morale: number(game[prefix + "ShiQi"]),
+      morale: Math.max(0, number(game[prefix + "ShiQi"])),
       grails: number(game[prefix + "XingBei"]),
       goal: number(game.xingBeiMax),
       gems: trophies.filter((stone) => stone === "baoShi").length,

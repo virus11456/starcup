@@ -36,4 +36,7 @@ test("public team totals preserve zero morale and current grail goal without acc
     { id: "blue", name: "藍隊", morale: 12, grails: 4, goal: 5, gems: 0, crystals: 0 },
   ]);
   assert.equal(teamSummary({})[0].morale, 0);
+  const settled = Object.freeze({ hongShiQi: -1, lanShiQi: 9 });
+  assert.equal(teamSummary(settled)[0].morale, 0);
+  assert.equal(settled.hongShiQi, -1, "display does not change rule settlement");
 });

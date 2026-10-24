@@ -57,6 +57,7 @@ export async function localizeEngine(root) {
   let files = 0, strings = 0;
   async function walk(folder) {
     for (const entry of await fs.readdir(folder, { withFileTypes: true })) {
+      if (entry.name.startsWith(".")) continue;
       const filename = path.join(folder, entry.name);
       if (entry.isDirectory()) await walk(filename);
       else if (entry.name.endsWith(".js")) {

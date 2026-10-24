@@ -188,7 +188,7 @@ export default function FullGame() {
                   選角並開始對戰 →
                 </button>
                 <p className="full-muted">
-                  你操作 1 名角色，其餘 {Number(players) - 1} 名由電腦控制。進入後可選擇角色與座位。
+                  你操作 1 名角色，其餘 {Number(players) - 1} 名由電腦控制。進入後可選擇角色與座位；同一場角色不重複，新舊版本視為同一角色。
                 </p>
               </div>
               <div className="full-panel full-table-guide">
