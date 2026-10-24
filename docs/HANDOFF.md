@@ -2,11 +2,18 @@
 
 更新：2026-10-25（UTC 2026-10-24）。這是最新狀態，取代先前未同步 GitHub 的舊交接。
 
-## 最新方向：沿用兩個上游，再做美化
+## 最新：紅藍隊徽章與戰況計分板美化
+
+- 角色隊伍文字改成珊瑚紅／霧藍色小型徽章；獨立戰況板呈現大字士氣、星杯數字與金色進度條、寶石／水晶及我方標記。
+- 桌面右側顯示，手機／平板雙隊並排置於頂部；提示可獨立收合。保留原引擎縮放、選角唯一限制與所有規則。
+- 最終功能提交 `071965b9e3ce15e49f8a3712f036458da13da7a2`，Vercel `dpl_AcdkJKNL3L2hSdZ2hwPFeCR5Zrvr` 已 READY 且原網域生效。後續文件提交不改程式。
+- 32 項引擎測試、prepare:engine、語法與 diff 檢查通過。正式站手動出牌、分數更新及桌面／390px 手機／768px 平板尺寸回歸完成；截圖及限制見 [美化驗收](qa-scoreboard-2026-10-25.md)。不是實體 iOS 裝置測試。
+
+## 開發方向：沿用兩個上游，再做美化
 
 使用者再次指定以 `chntujia/CodfiyAsteriatedGrailServer` 和 `RancherJie/noname_xingbei` 為架構／機制基礎，**不要重寫**，並明確要求完成後重新部署到原 Vercel 專案。具體分工與固定來源見 [architecture.md](architecture.md)。無名杯為實際運行引擎，Codify 為狀態機／共享資源對照，未部署 C++ 服務。
 
-本輪修復 iPhone 首次觸控提示反覆 reload、完成建置時繁體中文轉換，並在原選角流程排除同角色的三／四版及 EX。實玩發現負士氣顯示、魔弓 EX 重複與手機設定選單遮擋後逐一修正。最新功能提交 `21eafc0f10e0bc52f8571e7e1fce88a38a7cf968`，部署 `dpl_7uTFdiA6UTdyE88jb4vA6B36NQWn` 已 READY 並套用原網域。共完成 11 場完整擴充對局、735 個角色回合（含發現缺陷及重測），並補驗最後的手機選單位置修正。詳細場次、操作方式與限制見 [完整擴充實玩報告](qa-mobile-zh-hant-2026-10-25.md)。30 項核心、32 項引擎測試及 typecheck 通過；Vercel 正式建置成功。
+前次修復 iPhone 首次觸控提示反覆 reload、完成建置時繁體中文轉換，並在原選角流程排除同角色的三／四版及 EX。實玩發現負士氣顯示、魔弓 EX 重複與手機設定選單遮擋後逐一修正。該輪功能提交 `21eafc0f10e0bc52f8571e7e1fce88a38a7cf968`，部署 `dpl_7uTFdiA6UTdyE88jb4vA6B36NQWn` 已 READY 並套用原網域。共完成 11 場完整擴充對局、735 個角色回合（含發現缺陷及重測），並補驗最後的手機選單位置修正。詳細場次、操作方式與限制見 [完整擴充實玩報告](qa-mobile-zh-hant-2026-10-25.md)。30 項核心、32 項引擎測試及 typecheck 通過；Vercel 正式建置成功。
 
 手機控制尺寸使用 `--grail-touch-scale` 補償原引擎 body scale，不能直接移除原縮放。`body > #window { overflow: clip }` 的 specificity 必須高於較晚載入的上游 `#window { overflow: hidden }`，否則選牌取得焦點會讓整張牌桌水平捲出畫面。
 
