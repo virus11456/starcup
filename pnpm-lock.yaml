@@ -36,6 +36,9 @@ importers:
       '@types/three':
         specifier: 0.183.1
         version: 0.183.1
+      opencc-js:
+        specifier: 1.4.2
+        version: 1.4.2
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -349,6 +352,9 @@ packages:
       sass:
         optional: true
 
+  opencc-js@1.4.2:
+    resolution: {integrity: sha512-EdcspgdROiCCZDM+jZR6Pa670xW+EW2QhctPBQ8gRjg6lrx4IHEl+2s+kt5izk/TkxVRgdWuFgaGkaEdIUfdaw==}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -634,6 +640,8 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
+
+  opencc-js@1.4.2: {}
 
   picocolors@1.1.1: {}
 

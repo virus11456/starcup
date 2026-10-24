@@ -12,8 +12,18 @@
   const legacy = query.get("edition") === "legacy";
   const packs = legacy ? [...official, "sanBan", "siBan"] : official;
   const mode = query.get("view") === "catalog" ? "illustration" : "xingBei";
+  // The upstream first-touch prompt saves a flag and reloads. This launcher
+  // rebuilds its config on every visit, so omitting that flag caused an
+  // endless confirm/reload loop on iOS and Android. Set both config layers
+  // before the engine creates any input listeners; fine-pointer laptops keep
+  // mouse input even when their display also supports touch.
+  const touchscreen = typeof window.matchMedia === "function"
+    ? window.matchMedia("(pointer: coarse)").matches
+    : /iphone|ipad|ipod|android/i.test(window.navigator?.userAgent || "");
+  const input = { totouched: true, touchscreen, phonelayout: touchscreen, fold_mode: false };
   // A separate localStorage namespace avoids modifying existing core matches.
   window.nodb = true;
+  Object.assign(window.config, input);
   window.config.video = 0;
   window.config.mode = mode;
   window.config.characters = packs;
@@ -38,6 +48,7 @@
   window.config.confirm_exit = true;
   const count = Number(query.get("players"));
   const options = {
+    ...input,
     mode,
     video: 0,
     characters: packs,

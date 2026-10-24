@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCatalog } from "./engine-catalog.mjs";
+import { localizeEngine } from "./localize-engine.mjs";
 import ts from "typescript";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -179,6 +180,7 @@ for (const name of ["three.module.js", "three.core.js"])
     path.join(root, "node_modules/three/build", name),
     path.join(output, "vendor", name),
   );
+const localization = await localizeEngine(output);
 const catalog = await createCatalog(output, pin);
 await writeFile(path.join(output, "catalog.json"), JSON.stringify(catalog));
 await writeFile(
@@ -196,8 +198,10 @@ await writeFile(
     sha256: pin.archiveSha256,
     characters: catalog.characters.length,
     deck: catalog.deck.length,
+    localization,
   }),
 );
 console.log(
   `Prepared ${catalog.characters.length} current-edition characters, ${catalog.legacyCharacters.length} legacy variants and ${catalog.deck.length} physical cards.`,
 );
+console.log(`Localized ${localization.strings} language tokens in ${localization.files} engine files (${localization.locale}).`);

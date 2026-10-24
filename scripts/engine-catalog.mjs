@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import path from "node:path";
+import { traditionalText } from "./localize-engine.mjs";
 const reference = JSON.parse(await fs.readFile(new URL("../data/wiki-reference.json", import.meta.url), "utf8"));
 
 const packNames = {
@@ -13,7 +14,7 @@ const packNames = {
   siBan: "四版",
 };
 const plain = (text) =>
-  String(text || "")
+  traditionalText(String(text || ""))
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]*>/g, "")
     .trim();

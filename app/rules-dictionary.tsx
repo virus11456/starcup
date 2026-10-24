@@ -10,7 +10,7 @@ export default function RulesDictionary() {
   return (
     <section className="dictionary">
       <div className="dictionary-intro">
-        <div className="eyebrow">THE STAR ARCHIVE</div>
+        <div className="eyebrow">星之典</div>
         <h2>有疑問，就問星之典。</h2>
         <p>以{WIKI.name}為主要依據，搜尋規則問答並對照本版實作範圍。</p>
       </div>
@@ -112,7 +112,7 @@ export default function RulesDictionary() {
         )}
       </div>
       <p className="field-note">
-        字典是可搜尋的來源摘要，不是 AI
+        字典是可搜尋的來源摘要，不是人工智慧
         裁判；未收錄的裁定仍需查閱對應版本的角色卡與官方說明。
       </p>
     </section>

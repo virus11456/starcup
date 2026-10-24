@@ -79,7 +79,7 @@ export default function FullGame() {
         <Link href="/" onClick={(event) => {
           if (running && !confirm("離開會結束目前的本機對局，確定返回大廳？")) event.preventDefault();
         }}>星杯傳說</Link>
-        <span>角色與擴充對戰 · 本機對 AI</span>
+        <span>角色與擴充對戰 · 本機對電腦</span>
         <nav>
           {running && (
             <button onClick={leave}>
@@ -101,7 +101,7 @@ export default function FullGame() {
         <>
           <section className="full-intro">
             <div>
-              <p className="full-kicker">THE STAR GRAIL · YOUR NEXT MOVE</p>
+              <p className="full-kicker">星杯傳說 · 下一步由你決定</p>
               <span className="full-mode-badge">角色技能模式 · 免下載</span>
               <h1>
                 選擇你的角色，
@@ -192,7 +192,7 @@ export default function FullGame() {
                 </p>
               </div>
               <div className="full-panel full-table-guide">
-                <p className="full-kicker">READ THE TABLE</p>
+                <p className="full-kicker">讀懂牌局</p>
                 <h2>每一步，都有回應。</h2>
                 <ol className="full-flow">
                   <li><span>01</span><div><h3>掌握行動</h3><p>依角色與當前時機，選擇攻擊、法術、特殊行動或技能。</p></div></li>
@@ -201,7 +201,7 @@ export default function FullGame() {
                 </ol>
                 <p className="full-notice">
                   本模式目前是本機對
-                  AI，尚未接通跨裝置多人連線。角色技能的交互裁定仍持續核對中。
+                  電腦，尚未接通跨裝置多人連線。角色技能的交互裁定仍持續核對中。
                 </p>
               </div>
             </section>

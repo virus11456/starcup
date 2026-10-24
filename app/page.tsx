@@ -508,7 +508,7 @@ export default function Home() {
           </div>
           <div>
             <strong>星杯傳說</strong>
-            <span>ASTERIATED GRAIL</span>
+            <span>並肩作戰，共寫傳說</span>
           </div>
         </button>
         <div className="side-rule" />
