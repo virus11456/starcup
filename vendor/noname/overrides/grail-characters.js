@@ -2,7 +2,9 @@
 export function characterFamily(id) {
   const base = String(id || "").replace(/^(san|si)_/, "");
   // These are the two interchangeable forms declared by the upstream pack.
-  return base === "hongYiZhuJiao" ? "zhuLvZhe" : base;
+  if (base === "hongYiZhuJiao") return "zhuLvZhe";
+  if (base === "moGongEX") return "moGong";
+  return base;
 }
 
 export function availableCharacters(candidates, selected) {

@@ -10,6 +10,8 @@ test("a claimed role excludes the same role, historical editions and alternate f
   assert.deepEqual(availableCharacters(["hongYiZhuJiao", "zhuLvZhe", "shengNv"], ["hongYiZhuJiao"]), ["shengNv"]);
   assert.equal(uniqueCharacters(["shengNv", "san_shengNv"]), false);
   assert.equal(uniqueCharacters(["shengNv", "tianShi"]), true);
+  assert.equal(uniqueCharacters(["moGong", "moGongEX"]), false);
+  assert.deepEqual(availableCharacters(["moGong", "moGongEX", "fengYinShi"], ["moGongEX"]), ["fengYinShi"]);
 });
 
 const root = new URL("../public/engine/", import.meta.url);
@@ -20,7 +22,7 @@ const source = (await fs.readFile(new URL("mode/xingBei.js", root), "utf8"))
 const catalog = JSON.parse(await fs.readFile(new URL("catalog.json", root)));
 // Run the real shipped draft step, including its AI randomRemove path.
 for (const count of [4, 6, 8]) test(`${count}-player shipped draft never duplicates a role after a legacy/free pick`, () => {
-  for (const chosen of ["san_fengZhiJianSheng", "si_moFaShaoNv", "hongYiZhuJiao"]) {
+  for (const chosen of ["san_fengZhiJianSheng", "si_moFaShaoNv", "hongYiZhuJiao", "moGongEX"]) {
     const game = { addRecentCharacter() {}, grailCharacterFamily: characterFamily, grailAvailableCharacters: availableCharacters };
     let content;
     game.createEvent = () => ({ setContent(fn) { content = fn; } });

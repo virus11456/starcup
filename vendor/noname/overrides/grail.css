@@ -230,4 +230,24 @@ body > #window {
     width: calc(52px * var(--grail-touch-scale, 1));
     height: calc(74px * var(--grail-touch-scale, 1));
   }
+  #window #system > div > div {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: calc(44px * var(--grail-touch-scale, 1));
+    min-height: calc(44px * var(--grail-touch-scale, 1));
+    padding: 0 calc(6px * var(--grail-touch-scale, 1));
+    margin: calc(2px * var(--grail-touch-scale, 1));
+    font-size: calc(12px * var(--grail-touch-scale, 1));
+  }
+  #window #arena:not(.chess) {
+    top: calc(54px * var(--grail-touch-scale, 1));
+    height: calc(100% - 66px * var(--grail-touch-scale, 1));
+  }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) {
+    top: 4px;
+    right: 52px;
+    width: 128px;
+  }
 }
