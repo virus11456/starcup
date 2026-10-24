@@ -6,7 +6,7 @@
 
 使用者再次指定以 `chntujia/CodfiyAsteriatedGrailServer` 和 `RancherJie/noname_xingbei` 為架構／機制基礎，**不要重寫**，並明確要求完成後重新部署到原 Vercel 專案。具體分工與固定來源見 [architecture.md](architecture.md)。無名杯為實際運行引擎，Codify 為狀態機／共享資源對照，未部署 C++ 服務。
 
-本次把角色與擴充對戰設為首頁主要入口，加入選局人數卡、唯讀戰況與回應提示、選牌輪廓及手機 iframe 高度修正。保留原技能／AI／牌庫、核心連線 API 和原部署專案。30 項核心測試、19 項引擎／顯示測試與 typecheck 通過；本機 Next build 因宿主無法提供 `uv_resident_set_memory` 系統資訊中止，Vercel 正式建置成功。功能提交 `1d44250b724d3ca26628e1b184c237c37ade505a` 的部署 `dpl_31mFMu9Y2VUVGcGUXEGuceAsuGYw` 已 READY 並套用原網域；詳細回歸範圍見 release-status.md 最新段落。
+本輪修復 iPhone 首次觸控提示反覆 reload、完成建置時繁體中文轉換，並在原選角流程排除同角色的三／四版及 EX。實玩發現負士氣顯示、魔弓 EX 重複與手機設定選單遮擋後逐一修正。最新功能提交 `21eafc0f10e0bc52f8571e7e1fce88a38a7cf968`，部署 `dpl_7uTFdiA6UTdyE88jb4vA6B36NQWn` 已 READY 並套用原網域。共完成 11 場完整擴充對局、735 個角色回合（含發現缺陷及重測），並補驗最後的手機選單位置修正。詳細場次、操作方式與限制見 [完整擴充實玩報告](qa-mobile-zh-hant-2026-10-25.md)。30 項核心、32 項引擎測試及 typecheck 通過；Vercel 正式建置成功。
 
 手機控制尺寸使用 `--grail-touch-scale` 補償原引擎 body scale，不能直接移除原縮放。`body > #window { overflow: clip }` 的 specificity 必須高於較晚載入的上游 `#window { overflow: hidden }`，否則選牌取得焦點會讓整張牌桌水平捲出畫面。
 
@@ -16,7 +16,7 @@
 
 ## 專案
 
-- 雲端工作路徑 `/workspace/scratch/5a6b080f7494/star-grail-online`，分支 main，origin `https://github.com/virus11456/starcup.git`。
+- 本輪雲端工作路徑 `/workspace/scratch/4aea9189c7ec/starcup`，分支 main，origin `https://github.com/virus11456/starcup.git`。
 - GitHub 已有完整原始碼及 19 個專案圖片。功能提交 `6cd2e83334f5afd133758820c65484afe08a91fe`；之後文件提交以遠端最新 main 為準。
 - MCP 提交與工作環境提交 SHA 不同，但可 fetch 後檢查 tree 內容一致。一般 git push 缺認證，使用 GitHub create_tree/create_commit/update_ref；expected_sha 必填、force=false，保留新提交。
 - 閱讀 AGENTS.md 與相關 node_modules/next/dist/docs 後修改 Next.js 程式。
@@ -24,13 +24,13 @@
 
 ## 最新功能與驗證
 
-見 [release status](release-status.md) 及 [本次 QA](qa-update-2026-10-25.md)。
+見 [release status](release-status.md) 及 [本輪完整擴充 QA](qa-mobile-zh-hant-2026-10-25.md)；qa-update-2026-10-25.md 保留上一輪驗收。
 
 - 首頁修復、繁體品牌、完整 150 張實體圖鑑、百科來源對照與 26 則規則摘要。
 - 四類卡牌動畫在核心及完整擴充實際觸發完成；Three.js 尚未硬體驗證，雲端瀏覽器只能平面備援。
 - `grail-viewport.js` 補償上游 body transform scale，讓完整引擎 HUD、動畫與 Three.js 背景使用視窗座標。後續保留相同座標系，不直接關掉上游縮放，否則引擎點擊換算會錯。
 - 10 局正式核心多人全部通過，1,016 個操作；78 項獨立會話整合通過。完整擴充一局第 62 個角色回合出現勝利及結算表，四類動畫開始和完成均為 184。
-- 手機首頁與圖鑑不再水平溢出，教學五步和規則搜尋完成。完整引擎手機部分控制仍偏小，需要專項改善。
+- 手機首頁與圖鑑不再水平溢出，教學五步和規則搜尋完成。完整引擎手機頂部工具列與出牌控制已補至至少 44px；上游完整設定選單仍較小，實體裝置體驗尚待驗證。
 - 68 角色技能對照狀態全部 pending，不能宣稱全技能驗收；完整擴充仍單人對 AI。
 
 ## Vercel 與資料庫
