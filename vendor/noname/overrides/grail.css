@@ -251,7 +251,7 @@ body > #window {
 #grail-scoreboard .grail-score-cup-label { color: #d9c392; font-size: 10px; }
 #grail-scoreboard .grail-score-cups b { margin-left: auto; color: #f0dcb2; font-size: 20px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; }
 #grail-scoreboard .grail-score-goal { color: #a0a8a4; font-size: 10px; }
-#grail-scoreboard .grail-score-track { height: 3px; overflow: hidden; background: #e6d9ad14; border-radius: 3px; margin: 0 0 13px; }
+#grail-scoreboard .grail-score-track { display: block; width: 100%; height: 3px; overflow: hidden; background: #e6d9ad14; border-radius: 3px; margin: 0 0 13px; }
 #grail-scoreboard .grail-score-track > span { display: block; width: 0; height: 100%; background: #dbc28b; border-radius: inherit; transition: width .25s ease; }
 #grail-scoreboard .grail-score-resources { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid #cbd5d414; }
 #grail-scoreboard .grail-score-resource { display: inline-flex; align-items: center; gap: 4px; color: #b8c5c6; font-size: 10px; }
@@ -274,7 +274,7 @@ body > #window {
   #grail-scoreboard .grail-score-resources { border: 0; padding-top: 0; gap: 12px; }
   .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(208px * var(--grail-touch-scale, 1)); height: calc(100% - 220px * var(--grail-touch-scale, 1)); }
   .grail-scoreboard-ready #grail-help { top: 214px; max-height: min(38vh, calc(100vh - 230px)) !important; }
-  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) { top: 4px; right: 52px; width: 128px; }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) { top: 4px; bottom: auto !important; right: 52px; width: 128px; max-height: 44px !important; }
 }
 @media (max-width: 600px) {
   #window .player[data-grail-team] > .identity { top: calc(3px * var(--grail-touch-scale, 1)); right: calc(3px * var(--grail-touch-scale, 1)); min-width: 0; padding: calc(3px * var(--grail-touch-scale, 1)) calc(4px * var(--grail-touch-scale, 1)); border-radius: calc(4px * var(--grail-touch-scale, 1)); }
