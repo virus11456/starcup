@@ -48,6 +48,8 @@ for (const device of [
     assert.equal(config.touchscreen, device.coarse);
     assert.equal(config.phonelayout, device.coarse);
     assert.equal(context.window.config.touchscreen, device.coarse);
+    assert.equal(config.auto_popped_config, false);
+    assert.equal(context.window.config.auto_popped_config, false);
     assert.equal(config.versus_mode_mode_config_xingBei, "three");
   }
 });

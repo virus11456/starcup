@@ -44,6 +44,9 @@
   window.config.character_dialog_tool = "all";
   window.config.auto_skill = false;
   window.config.auto_confirm = false;
+  // The legacy hover menu can cover the settings button after viewport
+  // scaling and turn a click into a mode restart. Keep the explicit menu.
+  window.config.auto_popped_config = false;
   window.config.duration = 350;
   window.config.confirm_exit = true;
   const count = Number(query.get("players"));
@@ -51,6 +54,7 @@
     ...input,
     mode,
     video: 0,
+    auto_popped_config: false,
     characters: packs,
     show_splash: "off",
     extensions: [],
