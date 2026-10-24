@@ -32,6 +32,8 @@ body > .background {
 }
 #window {
   background: transparent !important;
+}
+body > #window {
   /* The upstream mobile arena extends past its container; hidden overflow can
      still scroll on focus and displace every click target. Keep it in bounds. */
   overflow: clip;
