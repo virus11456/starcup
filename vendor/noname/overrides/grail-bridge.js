@@ -4,10 +4,12 @@ import { startTable } from "./grail-table.js";
 import { startCardMotion } from "./grail-motion.js";
 import { anchorToViewport } from "./grail-viewport.js";
 import { describeStage, teamSummary } from "./grail-battle-state.js";
+import { createScoreboard } from "./grail-scoreboard.js";
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
+const updateScoreboard = createScoreboard(hud);
 const stopHud = anchorToViewport(hud, (scale) => {
   document.documentElement.style.setProperty("--grail-touch-scale", String(scale > 0 ? 1 / scale : 1));
 });
@@ -15,7 +17,7 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 // On phones, keep the guide available without covering a selectable player.
-if (matchMedia("(max-width: 600px)").matches) {
+if (matchMedia("(max-width: 1049px)").matches) {
   help.hidden = true;
   toggle.setAttribute("aria-expanded", "false");
   toggle.textContent = "本回合提示 ▸";
@@ -32,10 +34,19 @@ const text = (value) =>
 let last = "";
 function update() {
   if (ui.arena) document.getElementById("grail-loading")?.remove();
+  for (const player of game.players || []) {
+    if (typeof player.side !== "boolean") continue;
+    const team = player.side ? "red" : "blue";
+    if (player.dataset.grailTeam !== team) {
+      player.dataset.grailTeam = team;
+      player.node?.identity?.setAttribute("aria-label", player.side ? "紅隊" : "藍隊");
+    }
+  }
   const me = game.me;
   if (!me?.name) return;
   const stage = describeStage(_status.event, { started: game.phaseNumber > 0, over: _status.over });
   const teams = teamSummary(game);
+  updateScoreboard(teams, { side: me.side, turn: game.phaseNumber, over: Boolean(_status.over) });
   const prompt = [
     ...(ui.arena?.querySelectorAll(".dialog .prompt, .dialog .caption") || []),
   ]
@@ -88,31 +99,6 @@ function update() {
   badge.dataset.stage = stage.id;
   badge.textContent = stage.label;
   help.append(badge);
-  if (game.phaseNumber > 0) {
-    const scoreboard = document.createElement("section");
-    scoreboard.className = "grail-team-board";
-    scoreboard.setAttribute("aria-label", "雙方戰況");
-    for (const team of teams) {
-      const panel = document.createElement("div");
-      panel.className = "grail-team " + team.id;
-      const name = document.createElement("h3");
-      const mine = typeof me.side === "boolean" && me.side === (team.id === "red");
-      name.textContent = team.name + (mine ? " · 我方" : "");
-      const morale = document.createElement("p");
-      morale.className = "grail-morale";
-      const value = document.createElement("b");
-      value.textContent = String(team.morale);
-      morale.append(value, " 士氣");
-      const grails = document.createElement("p");
-      grails.textContent = `星杯 ${team.grails} / ${team.goal}`;
-      const stones = document.createElement("p");
-      stones.className = "grail-stones";
-      stones.textContent = `寶石 ${team.gems} · 水晶 ${team.crystals}`;
-      panel.append(name, morale, grails, stones);
-      scoreboard.append(panel);
-    }
-    help.append(scoreboard);
-  }
   const title = document.createElement("strong");
   title.textContent = text(get.translation(me.name));
   help.append(title);
