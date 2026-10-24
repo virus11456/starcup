@@ -5,7 +5,7 @@
 - 網站：https://star-grail-online.vercel.app/；完整擴充入口 `/full`。
 - 完整原始碼及 19 張專案圖片已同步到 https://github.com/virus11456/starcup 的 main。引擎素材在建置時依固定版本重新產生；秘密、依賴及建置產物不提交。
 - 功能版本 GitHub main：`6cd2e83334f5afd133758820c65484afe08a91fe`；本報告的提交只更新文件。
-- Vercel 正式部署：`dpl_HM7yaFwNrV9mskhNhwggMK8jWi8t`，原功能版本透過 MCP files 部署。既有專案現已連到 GitHub `virus11456/starcup`，Production 追蹤 `main`。本次文件提交用於驗證自動部署。
+- Vercel 正式部署：`dpl_HM7yaFwNrV9mskhNhwggMK8jWi8t`，原功能版本透過 MCP files 部署。既有專案現已連到 GitHub `virus11456/starcup`，Production 追蹤 `main`。已驗證 GitHub main 提交 a7fb82d8711aaa50390cca19ca50e0de097dcc60 自動觸發部署 dpl_2fAVNk8GRCwv5f53A16vJZe2GHJd；來源為 git，狀態 READY，原正式網域已指向該部署。
 - Supabase 已提供核心版房間儲存與多人 API；後端設定已放在 Vercel Production，RLS 阻止瀏覽器直接讀取房間狀態。
 
 ## 已更新
@@ -18,7 +18,7 @@
 
 ## 尚未完成
 
-- Git 連接與 Production main 已在 Vercel 設定頁確認；提交觸發結果須以對應 SHA 的 Vercel deployment 為準。
+
 - 完整擴充跨裝置多人、68 位角色全部交互技能逐項核對。
 - 硬體 WebGL 視覺驗證、完整引擎手機觸控版面改善及實體裝置驗證。
 - 高清印刷牌面：目前使用上游角色素材與牌型插畫。

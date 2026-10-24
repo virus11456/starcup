@@ -31,7 +31,7 @@
 - team `team_SQDuwfJ6mh6QlhQdBWLfeWiV`，slug `virus11456s-projects`。
 - project `prj_hoznhjWKAccjKH3fmWPw5ci4Q97y`，star-grail-online。
 - 功能部署 `dpl_HM7yaFwNrV9mskhNhwggMK8jWi8t`；MCP files 直接正式部署。確認 readyState 與 alias 後才回報上線。
-- 使用者透過 browserAuth 完成 GitHub 與 Vercel 二階段登入後，已在既有專案 Settings → Git 連接 `virus11456/starcup`，Environments 顯示 Production 追蹤 `main`，網域保持原站。此文件提交用於觀察自動 Git 部署；不可把手動部署的 gitMetadata 誤當驗證證據。
+- 使用者透過 browserAuth 完成 GitHub 與 Vercel 二階段登入後，已在既有專案 Settings → Git 連接 `virus11456/starcup`，Environments 顯示 Production 追蹤 `main`，網域保持原站。GitHub a7fb82d8711aaa50390cca19ca50e0de097dcc60 已自動觸發 dpl_2fAVNk8GRCwv5f53A16vJZe2GHJd；get_deployment 顯示 source=git、target=production、READY，原 alias 指向該部署，build log 也顯示直接 clone virus11456/starcup main。Git 自動連動已完成。
 - 雲端瀏覽器 Vercel 已登入；認證只經安全 browserAuth，未讀取或保存帳密／OTP。後續若登入失效仍使用安全流程，不能在聊天索取密碼／token。
 - 不建立新專案取代原站。Supabase `avyrgzukvmumthkhgqsv` 已完成核心後端，三個 Production 設定已配置，勿輸出秘密。
 - Vercel web_fetch_vercel_url/get_access_to_vercel_url 曾被自動審核拒絕，不重試；測試使用公開 alias。
