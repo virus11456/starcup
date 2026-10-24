@@ -11,3 +11,5 @@
 可由本專案的 scripts/prepare-engine.mjs、scripts/engine-catalog.mjs、vendor/noname/overrides 重建完整修改版；npm run prepare:engine 會取得上述固定版本。網站中的原版引擎不是本專案重新撰寫的角色技能。
 
 完整規則模式目前為本機對 AI；原核心版多人 API 不相容此引擎。請勿將此模式視為已完成跨裝置連線。導入全部技能定義不等於逐項正式 FAQ 驗收通過；圖鑑保留已知差異。
+
+2026-10-25 修改：沿用同一固定引擎，調整主要入口、選局及牌桌外觀，加入公開隊伍資源與事件時機的唯讀顯示。架構對照 chntujia/CodfiyAsteriatedGrailServer（MIT，f2f210aeff062fd5ff27fb099629edcde82eb366）的 TeamArea／GrailState 分工；未複製或部署其 C++ 伺服器。細節見 docs/architecture.md。

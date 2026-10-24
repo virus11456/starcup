@@ -14,7 +14,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "test:engine": "node --test tests/engine.test.mjs tests/official-glutton.test.mjs"
+    "test:engine": "node --test tests/engine.test.mjs tests/official-glutton.test.mjs tests/battle-display.test.mjs"
   },
   "dependencies": {
     "next": "16.3.4",

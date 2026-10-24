@@ -3,6 +3,7 @@ import { lib, game, ui, get, _status } from "./noname.js";
 import { startTable } from "./grail-table.js";
 import { startCardMotion } from "./grail-motion.js";
 import { anchorToViewport } from "./grail-viewport.js";
+import { describeStage, teamSummary } from "./grail-battle-state.js";
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -31,6 +32,8 @@ function update() {
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   const me = game.me;
   if (!me?.name) return;
+  const stage = describeStage(_status.event, { started: game.phaseNumber > 0, over: _status.over });
+  const teams = teamSummary(game);
   const prompt = [
     ...(ui.arena?.querySelectorAll(".dialog .prompt, .dialog .caption") || []),
   ]
@@ -73,11 +76,41 @@ function update() {
     "|" +
     cards.join() +
     "|" +
-    targets.join();
+    targets.join() + "|" + JSON.stringify({ stage, teams, actor: _status.currentPhase?.name, side: me.side });
   if (last === current) return;
   last = current;
   const skillsExpanded = help.querySelector("details")?.open || false;
   help.replaceChildren();
+  const badge = document.createElement("p");
+  badge.className = "grail-stage";
+  badge.dataset.stage = stage.id;
+  badge.textContent = stage.label;
+  help.append(badge);
+  if (game.phaseNumber > 0) {
+    const scoreboard = document.createElement("section");
+    scoreboard.className = "grail-team-board";
+    scoreboard.setAttribute("aria-label", "雙方戰況");
+    for (const team of teams) {
+      const panel = document.createElement("div");
+      panel.className = "grail-team " + team.id;
+      const name = document.createElement("h3");
+      const mine = typeof me.side === "boolean" && me.side === (team.id === "red");
+      name.textContent = team.name + (mine ? " · 我方" : "");
+      const morale = document.createElement("p");
+      morale.className = "grail-morale";
+      const value = document.createElement("b");
+      value.textContent = String(team.morale);
+      morale.append(value, " 士氣");
+      const grails = document.createElement("p");
+      grails.textContent = `星杯 ${team.grails} / ${team.goal}`;
+      const stones = document.createElement("p");
+      stones.className = "grail-stones";
+      stones.textContent = `寶石 ${team.gems} · 水晶 ${team.crystals}`;
+      panel.append(name, morale, grails, stones);
+      scoreboard.append(panel);
+    }
+    help.append(scoreboard);
+  }
   const title = document.createElement("strong");
   title.textContent = text(get.translation(me.name));
   help.append(title);
@@ -90,9 +123,13 @@ function update() {
   help.append(progress);
   const p = document.createElement("p");
   p.textContent =
-    prompt ||
+    (_status.over ? "對局已結束，請查看結算畫面；可使用上方「結束並返回」準備下一局。" : prompt) ||
     "可選的手牌、目標與技能會亮起；回應窗口出現時，請先處理畫面中的選擇。";
   help.append(p);
+  const legend = document.createElement("p");
+  legend.className = "grail-selection-legend";
+  legend.textContent = "金框可選 · 青框已選 · 依畫面按鈕確認";
+  help.append(legend);
   for (const [label, values] of [
     ["可用手牌", cards],
     ["可選目標", targets],

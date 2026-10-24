@@ -41,6 +41,8 @@ export default function FullGame() {
   const [running, setRunning] = useState(false),
     [launch, setLaunch] = useState("");
   useEffect(() => {
+    const initialView = new URLSearchParams(window.location.search).get("view");
+    if (initialView === "characters" || initialView === "cards") setView(initialView);
     const c = new AbortController();
     fetch("/full-engine/catalog.json", { signal: c.signal })
       .then((r) => {
@@ -68,23 +70,23 @@ export default function FullGame() {
     setLaunch(`/engine/index.html?players=${players}&edition=${edition}`);
     setRunning(true);
   }
+  function leave() {
+    if (confirm("離開會結束目前的本機對局，確定離開？")) setRunning(false);
+  }
   return (
     <main className={"full-shell" + (running ? " full-running" : "")}>
       <header className="full-header">
-        <Link href="/">星杯傳說</Link>
-        <span>正式擴充 · 規則引擎整合版</span>
+        <Link href="/" onClick={(event) => {
+          if (running && !confirm("離開會結束目前的本機對局，確定返回大廳？")) event.preventDefault();
+        }}>星杯傳說</Link>
+        <span>角色與擴充對戰 · 本機對 AI</span>
         <nav>
           {running && (
-            <button
-              onClick={() => {
-                if (confirm("離開會結束目前的本機對局，確定離開？"))
-                  setRunning(false);
-              }}
-            >
+            <button onClick={leave}>
               結束並返回
             </button>
           )}
-          <Link href="/">返回大廳</Link>
+          {!running && <Link href="/">返回大廳</Link>}
         </nav>
       </header>
       {running ? (
@@ -99,18 +101,19 @@ export default function FullGame() {
         <>
           <section className="full-intro">
             <div>
-              <p className="full-kicker">AST GRAIL · OFFICIAL EXPANSIONS</p>
+              <p className="full-kicker">THE STAR GRAIL · YOUR NEXT MOVE</p>
+              <span className="full-mode-badge">角色技能模式 · 免下載</span>
               <h1>
                 選擇你的角色，
                 <br />
                 <em>讓技能決定戰局。</em>
               </h1>
               <p>
-                角色技能、能量、治療、追加行動與回應時機，接入同一個事件結算引擎。只開放正式來源角色，同人包不加入牌局。
+                攻擊、應戰、治療，掌握每一個回應時機。從十週年與正式擴充角色中選擇夥伴，讓你的下一步改變戰局。
               </p>
               <div className="full-metrics">
                 <span>
-                  <b>{catalog?.characters.length ?? "—"}</b> 已接入角色
+                  <b>{catalog?.characters.length ?? "—"}</b> 正式角色
                 </span>
                 <span>
                   <b>{catalog?.deck.length ?? "—"}</b> 基礎牌
@@ -122,14 +125,15 @@ export default function FullGame() {
             </div>
             <div className="full-portrait-fan">
               {catalog?.characters.slice(0, 3).map((c, i) => (
-                <img
+                <figure
                   key={c.id}
-                  src={c.portrait}
-                  alt={c.name}
                   style={{
                     transform: `rotate(${(i - 1) * 13}deg) translateY(${i === 1 ? 0 : 18}px)`,
                   }}
-                />
+                >
+                  <img src={c.portrait} alt={c.name} />
+                  <figcaption><small>{c.packName}</small>{c.name}</figcaption>
+                </figure>
               ))}
             </div>
           </section>
@@ -156,22 +160,18 @@ export default function FullGame() {
           </div>
           {view === "setup" && (
             <section className="full-setup">
-              <div className="full-panel">
+              <div className="full-panel full-setup-controls">
                 <p className="full-kicker">準備牌局</p>
                 <h2>與電腦對戰</h2>
+                <fieldset className="full-player-options">
+                  <legend>01 · 選擇牌局規模</legend>
+                  {["4", "6", "8"].map((count) => <label key={count}>
+                    <input type="radio" name="players" value={count} checked={players === count} onChange={() => setPlayers(count)} />
+                    <span><b>{Number(count) / 2} <i>對</i> {Number(count) / 2}</b><small>{count} 人牌局</small></span>
+                  </label>)}
+                </fieldset>
                 <label>
-                  對戰人數
-                  <select
-                    value={players}
-                    onChange={(e) => setPlayers(e.target.value)}
-                  >
-                    <option value="4">4 人 · 2 對 2</option>
-                    <option value="6">6 人 · 3 對 3</option>
-                    <option value="8">8 人 · 4 對 4</option>
-                  </select>
-                </label>
-                <label>
-                  角色版本
+                  02 · 選擇角色版本
                   <select
                     value={edition}
                     onChange={(e) => setEdition(e.target.value)}
@@ -188,22 +188,20 @@ export default function FullGame() {
                   選角並開始對戰 →
                 </button>
                 <p className="full-muted">
-                  本機牌局由你操作一名角色，其餘由電腦控制。
+                  你操作 1 名角色，其餘 {Number(players) - 1} 名由電腦控制。進入後可選擇角色與座位。
                 </p>
               </div>
-              <div className="full-panel">
-                <h2>這裡可以做什麼</h2>
-                <ul>
-                  <li>從已接入的正式角色中選角，使用主動與回應技能。</li>
-                  <li>依提示出牌、應戰、治療、提煉能量與合成星杯。</li>
-                  <li>查看卡牌屬性、派系、技能標記與角色專屬資源。</li>
-                  <li>在回應時機選擇技能；右側面板列出技能和條件。</li>
-                  <li>查看全部牌型及角色規則，切換舊版比較。</li>
-                </ul>
+              <div className="full-panel full-table-guide">
+                <p className="full-kicker">READ THE TABLE</p>
+                <h2>每一步，都有回應。</h2>
+                <ol className="full-flow">
+                  <li><span>01</span><div><h3>掌握行動</h3><p>依角色與當前時機，選擇攻擊、法術、特殊行動或技能。</p></div></li>
+                  <li><span>02</span><div><h3>等待回應</h3><p>可用的手牌、目標與技能會亮起。應戰與技能回應依牌局提示進行。</p></div></li>
+                  <li><span>03</span><div><h3>讀懂戰況</h3><p>留意雙方士氣、戰績與星杯，運用治療、能量與追加行動。</p></div></li>
+                </ol>
                 <p className="full-notice">
                   本模式目前是本機對
-                  AI，尚未接通跨裝置多人連線。正式爆食少女依牌面與 FAQ
-                  另行實作； 全部角色的交互技能仍需逐項驗收。
+                  AI，尚未接通跨裝置多人連線。角色技能的交互裁定仍持續核對中。
                 </p>
               </div>
             </section>
@@ -266,6 +264,8 @@ export default function FullGame() {
             </a>
             ，以 GPL-3.0 提供。<a href="/engine/NOTICE.md">來源與修改說明</a> ·{" "}
             <a href="/engine/LICENSE">授權全文</a>
+            <br />
+            架構與機制對照：<a href="https://github.com/chntujia/CodfiyAsteriatedGrailServer">Codify Asteriated Grail Server</a>（MIT）。
             <br />
             本作為非官方網站。角色圖片與遊戲素材權利歸原權利人；目前角色圖片不是高清印刷原檔。
           </footer>

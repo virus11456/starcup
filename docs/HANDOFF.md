@@ -2,6 +2,12 @@
 
 更新：2026-10-25（UTC 2026-10-24）。這是最新狀態，取代先前未同步 GitHub 的舊交接。
 
+## 最新方向：沿用兩個上游，再做美化
+
+使用者再次指定以 `chntujia/CodfiyAsteriatedGrailServer` 和 `RancherJie/noname_xingbei` 為架構／機制基礎，**不要重寫**，並明確要求完成後重新部署到原 Vercel 專案。具體分工與固定來源見 [architecture.md](architecture.md)。無名杯為實際運行引擎，Codify 為狀態機／共享資源對照，未部署 C++ 服務。
+
+本次把角色與擴充對戰設為首頁主要入口，加入選局人數卡、唯讀戰況與回應提示、選牌輪廓及手機 iframe 高度修正。保留原技能／AI／牌庫、核心連線 API 和原部署專案。30 項核心測試、19 項引擎／顯示測試與 typecheck 通過；本機 Next build 因宿主無法提供 `uv_resident_set_memory` 系統資訊中止，正式 build 結果以 Vercel 為準。
+
 ## 授權與來源
 
 使用者已授權雲端開發、合併 main、GitHub 同步與 Vercel 部署。僅官方本體／擴充，不加同人。名稱使用「星杯傳說」，不要「✦ 星杯傳說 Online」。規則、玩法、卡牌效果主要依據 https://xingbeichuanshuobaike.webnode.tw/ 。圖片保留來源和授權，不冒稱高清原檔。

@@ -129,6 +129,47 @@ body > .background {
 #window .player.selectable {
   box-shadow: 0 0 18px #dcb96099;
 }
+
+/* Skin only: preserve the upstream hit boxes, transforms and event handlers. */
+#grail-help {
+  background: linear-gradient(150deg, #203735f7, #101c28f7);
+  border-color: #bca87877;
+  box-shadow: 0 15px 45px #0006, inset 0 1px #e6d9af15;
+}
+#grail-help-toggle { background: #283c3d; letter-spacing: .08em; font-weight: 600; }
+#grail-help-toggle:focus-visible { outline: 2px solid #cde1bb; outline-offset: -4px; }
+#grail-help-content .grail-stage {
+  display: inline-block; margin: 0 0 12px; padding: 3px 9px;
+  border: 1px solid #d6bc7860; border-radius: 20px;
+  color: #ecd8a3; background: #d6bc7810; font-size: 11px;
+}
+#grail-help-content .grail-stage[data-stage="response"] { border-color: #84c6c1; color: #bde9df; background: #84c6c115; }
+#grail-help-content .grail-team-board { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+#grail-help-content .grail-team { position: static; padding: 10px 8px; border: 1px solid #c9857745; border-top: 2px solid #d48c7b; border-radius: 7px; background: #c985770a; }
+#grail-help-content .grail-team.blue { border-color: #89bace45; border-top-color: #89bace; background: #89bace0a; }
+#grail-help-content .grail-team h3 { position: static; margin: 0; color: #e7b3a5; font: 600 11px system-ui; }
+#grail-help-content .grail-team.blue h3 { color: #aed7e9; }
+#grail-help-content .grail-team p { margin: 5px 0 0; font-size: 11px; white-space: nowrap; }
+#grail-help-content .grail-morale b { position: static; font: 30px Georgia, serif; color: #f6ebd2; }
+#grail-help-content .grail-stones { color: #b7c3c1; font-size: 10px !important; }
+#grail-help-content .grail-selection-legend { color: #b8cbb4; font-size: 10px; padding-bottom: 12px; border-bottom: 1px solid #c3ba8e25; }
+#grail-help-content details summary { cursor: pointer; padding: 8px 0; color: #e1c992; }
+#window .player.selectable, #window .card.selectable { outline: 2px solid #e6c27e; outline-offset: 2px; }
+#window .player.selected, #window .card.selected { outline: 3px solid #91dfce; outline-offset: 3px; box-shadow: 0 0 18px #80d2c066; }
+#window .control { background: linear-gradient(#2c4144, #172a33); box-shadow: 0 4px 12px #0005; }
+#window .control > div { min-height: 38px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 7px 12px; }
+#window .control > div:hover { background: #d4b97722; color: #fff1c9; }
+#window .dialog { background: #102129ee; border: 1px solid #b8a67466; box-shadow: 0 20px 60px #0006; }
+@media (min-width: 1050px) { #grail-help { width: 240px; max-height: calc(100vh - 110px); top: 60px; } }
+@media (max-width: 1049px) { #grail-help-content .grail-team-board { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  #grail-help { width: 180px; }
+  #grail-help-toggle { min-height: 44px; font-size: 12px; }
+  #window .control > div { min-height: 44px; padding: 8px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #grail-help, #window .control { transition: none; }
+}
 #window .card {
   border-radius: 9px;
   box-shadow: 0 5px 15px #0008;
@@ -136,7 +177,7 @@ body > .background {
 #window .control {
   border: 1px solid #b49b66;
   border-radius: 7px;
-  background: #1a2b39;
+  background: linear-gradient(#2c4144, #172a33);
   color: #f3e2b8;
 }
 #window .dialog {
@@ -161,7 +202,7 @@ body > .background {
   #grail-help {
     right: 5px;
     bottom: 135px;
-    width: 150px;
+    width: 180px;
     max-height: 32vh;
   }
   #grail-help-toggle {
