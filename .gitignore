@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.vercel/
+.env*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+outputs/
+
+.server-key-hash
+.engine-cache/
+.engine-cache-tmp*
+public/engine/
+*.tar.gz

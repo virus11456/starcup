@@ -1,0 +1,61 @@
+/* GPL-3.0: local integration configuration, 2026-10-24. */
+(() => {
+  const query = new URLSearchParams(location.search);
+  const prefix = "star_grail_full_v1_";
+  const official = [
+    "shiZhouNian",
+    "yiDuanYeHuo",
+    "shenZiChuangLin",
+    "zhongMoDaoZhu",
+    "teDian",
+  ];
+  const legacy = query.get("edition") === "legacy";
+  const packs = legacy ? [...official, "sanBan", "siBan"] : official;
+  const mode = query.get("view") === "catalog" ? "illustration" : "xingBei";
+  // A separate localStorage namespace avoids modifying existing core matches.
+  window.nodb = true;
+  window.config.video = 0;
+  window.config.mode = mode;
+  window.config.characters = packs;
+  window.config.all.sgscharacters = packs;
+  window.config.all.sgsmodes = [mode];
+  window.config.all.stockmode = ["xingBei", "illustration"];
+  window.config.all.nogamemode = ["illustration"];
+  window.config.connect_characters = [];
+  window.config.show_connect = false;
+  window.config.extensions = [];
+  window.config.show_splash = "off";
+  window.config.background_music = "music_off";
+  window.config.background_audio = false;
+  window.config.background_speak = false;
+  window.config.image_background = "default";
+  window.config.card_font = "default";
+  window.config.cheat = false;
+  window.config.character_dialog_tool = "all";
+  window.config.auto_skill = false;
+  window.config.auto_confirm = false;
+  window.config.duration = 350;
+  window.config.confirm_exit = true;
+  const count = Number(query.get("players"));
+  const options = {
+    mode,
+    video: 0,
+    characters: packs,
+    show_splash: "off",
+    extensions: [],
+    show_connect: false,
+    versus_mode_mode_config_xingBei:
+      count === 8 ? "four" : count === 6 ? "three" : "two",
+    team_sequence_mode_config_xingBei: "crossed",
+    free_choose_mode_config_xingBei: true,
+    choose_number_mode_config_xingBei: 5,
+    shiQiMax_mode_config_xingBei: count === 8 ? 18 : 15,
+    phaseswap_mode_config_xingBei: false,
+    viewHandcard_mode_config_xingBei: false,
+    xingBei_banned: [],
+  };
+  localStorage.setItem(prefix + "config", JSON.stringify(options));
+  localStorage.setItem(prefix + "directstart", "true");
+  // Credit and license are displayed on the launcher and linked in the game.
+  localStorage.setItem("gplv3_noname_alerted", "true");
+})();

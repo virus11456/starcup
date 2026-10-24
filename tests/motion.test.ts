@@ -1,0 +1,30 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { createRoom, applyCommand, publicView } from "../lib/game.ts";
+import { MotionCursor } from "../lib/motion-cursor.ts";
+test("motion payload never reveals another player's draws or private discards", () => {
+  const r = createRoom("MOTIONQA", "owner", "測試", "", 4, false);
+  applyCommand(r, r.host, { type: "bots" });
+  applyCommand(r, r.host, { type: "start" });
+  const other = r.players[1];
+  other.hand.push(...r.deck.splice(0, 4));
+  r.overflow = { player: other.id, resume: "next" };
+  applyCommand(r, other.id, { type: "discard", cards: other.hand.slice(0, 2).map(c => c.id) });
+  const own = publicView(r, "owner").motions;
+  assert.ok(own.filter(e => e.player !== r.host).every(e => e.cards.length === 0));
+  assert.equal(own.find(e => e.player === r.host)?.cards.length, 4);
+  assert.equal(own.at(-1)?.count, 2);
+  const theirs = publicView(r, other.auth).motions;
+  assert.equal(theirs.at(-1)?.cards.length, 2);
+});
+test("motion cursor ignores reconnect history, duplicate polling and out-of-order replies", () => {
+  const cursor = new MotionCursor();
+  const e = (id: number, at = 1000) => ({ id, at });
+  assert.deepEqual(cursor.take("a", [e(1)], 1000), []);
+  assert.deepEqual(cursor.take("a", [e(1), e(2), e(3)], 1100).map(e => e.id), [2, 3]);
+  assert.deepEqual(cursor.take("a", [e(2)], 1200), []);
+  assert.deepEqual(cursor.take("a", [e(3)], 1300), []);
+  assert.deepEqual(cursor.take("a", [e(4)], 20000), []);
+  assert.deepEqual(cursor.take("b", [e(1)], 1000), []);
+  assert.deepEqual(cursor.take("b", [e(2)], 1000).map(e => e.id), [2]);
+});

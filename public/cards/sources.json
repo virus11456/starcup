@@ -1,0 +1,72 @@
+{
+  "sourcePage": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-新手攻略/",
+  "credit": "星杯傳說百科；卡牌圖片權利歸原權利人。每類僅使用一張參考牌面，角色獨有技能未納入核心測試版。",
+  "images": [
+    {
+      "kind": "fire",
+      "file": "fire.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000305-d625ed625f/%E7%B6%B2%E7%AB%99%E7%94%A8_%E7%81%AB.png?ph=e0b6c1ebe2",
+      "bytes": 294990
+    },
+    {
+      "kind": "earth",
+      "file": "earth.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000303-adb0cadb0e/%E7%B6%B2%E7%AB%99%E7%94%A8_%E5%9C%B0.png?ph=e0b6c1ebe2",
+      "bytes": 318361
+    },
+    {
+      "kind": "wind",
+      "file": "wind.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000302-a4540a4542/%E7%B6%B2%E7%AB%99%E7%94%A8_%E9%A2%A8.png?ph=e0b6c1ebe2",
+      "bytes": 327804
+    },
+    {
+      "kind": "water",
+      "file": "water.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000301-9ce389ce3b/%E7%B6%B2%E7%AB%99%E7%94%A8_%E6%B0%B4.png?ph=e0b6c1ebe2",
+      "bytes": 327818
+    },
+    {
+      "kind": "thunder",
+      "file": "thunder.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000315-79a3e79a3f/%E7%B6%B2%E7%AB%99%E7%94%A8_%E9%9B%B7.png?ph=e0b6c1ebe2",
+      "bytes": 318085
+    },
+    {
+      "kind": "dark",
+      "file": "dark.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000313-474ad474bb/%E7%B6%B2%E7%AB%99%E7%94%A8_%E6%9A%97%E6%BB%85.png?ph=e0b6c1ebe2",
+      "bytes": 302784
+    },
+    {
+      "kind": "light",
+      "file": "light.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000314-6bbbe6bbc0/%E7%B6%B2%E7%AB%99%E7%94%A8_%E8%81%96%E5%85%89.png?ph=e0b6c1ebe2",
+      "bytes": 269944
+    },
+    {
+      "kind": "shield",
+      "file": "shield.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000311-2acc02acc2/%E7%B6%B2%E7%AB%99%E7%94%A8_%E7%9B%9B%E7%9B%BE.png?ph=e0b6c1ebe2",
+      "bytes": 270229
+    },
+    {
+      "kind": "poison",
+      "file": "poison.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000304-af1e0af1e2/%E7%B6%B2%E7%AB%99%E7%94%A8_%E4%B8%AD%E6%AF%92.png?ph=e0b6c1ebe2",
+      "bytes": 337909
+    },
+    {
+      "kind": "weak",
+      "file": "weak.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000312-2e3922e394/%E7%B6%B2%E7%AB%99%E7%94%A8_%E8%99%9B%E5%BC%B1.png?ph=e0b6c1ebe2",
+      "bytes": 334658
+    },
+    {
+      "kind": "missile",
+      "file": "missile.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000321-babddbabe0/%E7%B6%B2%E7%AB%99%E7%94%A8_%E9%AD%94%E5%BD%88.png?ph=e0b6c1ebe2",
+      "bytes": 359509
+    }
+  ]
+}

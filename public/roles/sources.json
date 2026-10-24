@@ -1,0 +1,55 @@
+{
+  "credit": "星杯傳說百科；圖片權利歸原權利人。角色圖與技能參考，未開放的技能不參與結算。",
+  "roles": [
+    {
+      "id": "berserker",
+      "name": "狂戰士",
+      "file": "berserker.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000212-48fe048fe3/%E7%B6%B2%E7%AB%99%E7%94%A8_02-%E7%8B%82%E6%88%B0%E5%A3%AB-10.png?ph=e0b6c1ebe2",
+      "sourcePage": "https://xingbeichuanshuobaike.webnode.tw/%E8%A7%92%E8%89%B2%E8%A9%B3%E6%83%85-%E7%8B%82%E6%88%B0%E5%A3%AB/"
+    },
+    {
+      "id": "swordmaster",
+      "name": "風之劍聖",
+      "file": "swordmaster.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000211-0a1ac0a1ae/%E7%B6%B2%E7%AB%99%E7%94%A8_01-%E9%A2%A8%E4%B9%8B%E5%8A%8D%E8%81%96-10.png?ph=e0b6c1ebe2",
+      "sourcePage": "https://xingbeichuanshuobaike.webnode.tw/%E8%A7%92%E8%89%B2%E8%A9%B3%E6%83%85-%E9%A2%A8%E4%B9%8B%E5%8A%8D%E8%81%96/"
+    },
+    {
+      "id": "saint",
+      "name": "聖女",
+      "file": "saint.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000221-a7430a7433/%E7%B6%B2%E7%AB%99%E7%94%A8_06-%E8%81%96%E5%A5%B3-10.png?ph=e0b6c1ebe2",
+      "sourcePage": "https://xingbeichuanshuobaike.webnode.tw/%E8%A7%92%E8%89%B2%E8%A9%B3%E6%83%85-%E8%81%96%E5%A5%B3/"
+    },
+    {
+      "id": "archer",
+      "name": "神射手",
+      "file": "archer.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000213-4dc1b4dc1e/%E7%B6%B2%E7%AB%99%E7%94%A8_03-%E7%A5%9E%E5%B0%84%E6%89%8B-10.png?ph=e0b6c1ebe2",
+      "sourcePage": "https://xingbeichuanshuobaike.webnode.tw/%E8%A7%92%E8%89%B2%E8%A9%B3%E6%83%85-%E7%A5%9E%E5%B0%84%E6%89%8B/"
+    }
+  ],
+  "skillCards": [
+    {
+      "id": "berserker",
+      "file": "berserker-skills.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000356-518f8518fb/%E7%B6%B2%E7%AB%99%E7%94%A8-%E6%93%B4%E5%B1%95_02-%E7%8B%82%E6%88%B0%E5%A3%AB-%E6%93%B4%E5%B1%95-10.png?ph=e0b6c1ebe2"
+    },
+    {
+      "id": "swordmaster",
+      "file": "swordmaster-skills.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000357-53ea853eaa/%E7%B6%B2%E7%AB%99%E7%94%A8-%E6%93%B4%E5%B1%95_01-%E9%A2%A8%E4%B9%8B%E5%8A%8D%E8%81%96-%E6%93%B4%E5%B1%95-10.png?ph=e0b6c1ebe2"
+    },
+    {
+      "id": "saint",
+      "file": "saint-skills.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000366-9051e90521/%E7%B6%B2%E7%AB%99%E7%94%A8-%E6%93%B4%E5%B1%95_06-%E8%81%96%E5%A5%B3-%E6%93%B4%E5%B1%95-10.png?ph=e0b6c1ebe2"
+    },
+    {
+      "id": "archer",
+      "file": "archer-skills.png",
+      "url": "https://e0b6c1ebe2.clvaw-cdnwnd.com/013432075517696712ff60bae01e7a8b/200000363-158ee158f0/%E7%B6%B2%E7%AB%99%E7%94%A8-%E6%93%B4%E5%B1%95_03-%E7%A5%9E%E5%B0%84%E6%89%8B-%E6%93%B4%E5%B1%95-10.png?ph=e0b6c1ebe2"
+    }
+  ]
+}

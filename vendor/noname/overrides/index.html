@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+    <title>星杯傳說 · 正式擴充對戰</title>
+    <link rel="stylesheet" href="grail.css" />
+    <script src="game/update.js"></script>
+    <script src="game/config.js"></script>
+    <script src="game/package.js"></script>
+    <script src="grail-config.js"></script>
+  </head>
+  <body>
+    <div id="grail-loading" role="status">正在準備角色、牌庫與技能結算…</div>
+    <aside id="grail-help">
+      <button id="grail-help-toggle" aria-expanded="true">本回合提示 ▾</button>
+      <div id="grail-help-content">
+        <p>請先選擇角色；對局會依規則顯示可用的牌與技能。</p>
+      </div>
+    </aside>
+    <script src="game/game.js"></script>
+    <script type="module" src="grail-bridge.js"></script>
+  </body>
+</html>

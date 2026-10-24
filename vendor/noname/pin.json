@@ -1,0 +1,9 @@
+{
+  "repository": "RancherJie/noname_xingbei",
+  "commit": "bd227231b6edeba5b32f906673b9f3cb0091b90c",
+  "archiveSha256": "4ef10b804f6de7664212557d1c87d89e68c685bfdb8c3841654c1aa61210a127",
+  "packs": ["shiZhouNian", "yiDuanYeHuo", "shenZiChuangLin", "zhongMoDaoZhu", "teDian"],
+  "legacyPacks": ["sanBan", "siBan"],
+  "excludedSpecialCharacters": ["jieRiMoDao", "trick_shengGong", "trick_maoXianJia", "yueTuanShouXi", "nong_baoShiShaoNv"],
+  "sourceUrl": "https://github.com/RancherJie/noname_xingbei/tree/bd227231b6edeba5b32f906673b9f3cb0091b90c"
+}
