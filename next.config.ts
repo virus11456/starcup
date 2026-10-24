@@ -11,6 +11,17 @@ const config: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
         ],
       },
+      // The opt-in layout preview can embed public pages on this same origin.
+      // Normal URLs retain DENY; cross-origin framing remains disallowed.
+      ...["/", "/cards", "/learn", "/rules", "/full"].map(source => ({
+        source,
+        has: [{ type: "query" as const, key: "layout-test", value: "1" }],
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      })),
       {
         source: "/engine/:path*",
         headers: [
