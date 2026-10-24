@@ -245,6 +245,11 @@ body > #window {
     top: calc(54px * var(--grail-touch-scale, 1));
     height: calc(100% - 66px * var(--grail-touch-scale, 1));
   }
+  /* The upstream menu's 52 logical-pixel offset becomes smaller than the
+     enlarged toolbar after body scaling. Leave the toolbar accessible. */
+  #window .menu-container > .menu.main {
+    top: calc(68px * var(--grail-touch-scale, 1));
+  }
   #grail-help:has(#grail-help-toggle[aria-expanded="false"]) {
     top: 4px;
     right: 52px;
