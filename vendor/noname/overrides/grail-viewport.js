@@ -1,5 +1,5 @@
 /* Keep viewport overlays independent of the upstream body's responsive scale. */
-export function anchorToViewport(element) {
+export function anchorToViewport(element, onScale) {
   Object.assign(element.style, {
     position: "fixed", left: "0", top: "0", right: "auto", bottom: "auto",
     transformOrigin: "0 0", pointerEvents: "none",
@@ -14,6 +14,7 @@ export function anchorToViewport(element) {
     element.style.transform = `scale(${inverse})`;
     element.style.left = `${-rect.left * inverse}px`;
     element.style.top = `${-rect.top * inverse}px`;
+    onScale?.(scale);
   };
   resize();
   const observer = new MutationObserver(resize);

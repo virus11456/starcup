@@ -8,7 +8,9 @@ const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
-const stopHud = anchorToViewport(hud);
+const stopHud = anchorToViewport(hud, (scale) => {
+  document.documentElement.style.setProperty("--grail-touch-scale", String(scale > 0 ? 1 / scale : 1));
+});
 const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");

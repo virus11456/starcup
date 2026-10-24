@@ -32,6 +32,13 @@ body > .background {
 }
 #window {
   background: transparent !important;
+  /* The upstream mobile arena extends past its container; hidden overflow can
+     still scroll on focus and displace every click target. Keep it in bounds. */
+  overflow: clip;
+}
+#window #arena:not(.chess) {
+  top: 54px;
+  height: calc(100% - 66px);
 }
 #grail-loading {
   position: fixed;
@@ -207,5 +214,18 @@ body > .background {
   }
   #grail-help-toggle {
     padding: 8px;
+  }
+  /* Body scaling is owned by noname. Compensate dimensions, never transforms
+     or pointer coordinates, to keep controls at least 44 viewport pixels. */
+  #window #control { height: calc(44px * var(--grail-touch-scale, 1)); }
+  #window .control > div {
+    min-height: calc(44px * var(--grail-touch-scale, 1));
+    padding: calc(8px * var(--grail-touch-scale, 1)) calc(12px * var(--grail-touch-scale, 1));
+    font-size: calc(14px * var(--grail-touch-scale, 1));
+  }
+  #window .dialog:has(.button.character) { width: 92%; left: 4%; }
+  #window .dialog .button.character {
+    width: calc(52px * var(--grail-touch-scale, 1));
+    height: calc(74px * var(--grail-touch-scale, 1));
   }
 }
