@@ -1,0 +1,556 @@
+{
+  "name": "星杯傳說※鮭魚百科",
+  "url": "https://xingbeichuanshuobaike.webnode.tw/",
+  "checkedAt": "2026-10-24",
+  "policy": "依使用者指定，以百科的規則說明、FAQ、時間軸與對應角色版本為主要參考；來源連結不代表所有技能已驗收。只收錄既有官方範圍，不因百科新增頁面而自動加入角色。",
+  "guides": {
+    "manual": {
+      "title": "規則說明書",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-規則說明書/"
+    },
+    "faq": {
+      "title": "常見問題",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-常見問題/"
+    },
+    "beginner": {
+      "title": "新手攻略",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-新手攻略/"
+    },
+    "deck": {
+      "title": "牌庫構造",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-牌庫構造/"
+    },
+    "terms": {
+      "title": "專有名詞",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-專有名詞/"
+    },
+    "timeline": {
+      "title": "回合行動時間軸",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/遊戲指南-回合行動時間軸/"
+    }
+  },
+  "cards": {
+    "huoYanZhan": {
+      "name": "火焰斬",
+      "count": 21,
+      "coreKind": "fire",
+      "description": "命中造成 2 點攻擊傷害。可主動攻擊，也可用於應戰火系攻擊；應戰目標不能是本次攻擊來源或隊友。",
+      "sourceIds": [
+        "beginner",
+        "deck"
+      ]
+    },
+    "shuiLianZhan": {
+      "name": "水漣斬",
+      "count": 21,
+      "coreKind": "water",
+      "description": "命中造成 2 點攻擊傷害。可主動攻擊，也可用於應戰水系攻擊；應戰目標不能是本次攻擊來源或隊友。",
+      "sourceIds": [
+        "beginner",
+        "deck"
+      ]
+    },
+    "fengShenZhan": {
+      "name": "風神斬",
+      "count": 21,
+      "coreKind": "wind",
+      "description": "命中造成 2 點攻擊傷害。可主動攻擊，也可用於應戰風系攻擊；應戰目標不能是本次攻擊來源或隊友。",
+      "sourceIds": [
+        "beginner",
+        "deck"
+      ]
+    },
+    "diLieZhan": {
+      "name": "地裂斬",
+      "count": 21,
+      "coreKind": "earth",
+      "description": "命中造成 2 點攻擊傷害。可主動攻擊，也可用於應戰地系攻擊；應戰目標不能是本次攻擊來源或隊友。",
+      "sourceIds": [
+        "beginner",
+        "deck"
+      ]
+    },
+    "leiGuangZhan": {
+      "name": "雷光斬",
+      "count": 21,
+      "coreKind": "thunder",
+      "description": "命中造成 2 點攻擊傷害。可主動攻擊，也可用於應戰雷系攻擊；應戰目標不能是本次攻擊來源或隊友。",
+      "sourceIds": [
+        "beginner",
+        "deck"
+      ]
+    },
+    "anMie": {
+      "name": "暗滅",
+      "count": 6,
+      "coreKind": "dark",
+      "description": "基礎攻擊傷害為 2。可應戰其他五系攻擊，但不能應戰暗滅；暗滅本身不能被應戰，可由聖光或聖盾抵擋。",
+      "sourceIds": [
+        "beginner",
+        "deck"
+      ]
+    },
+    "shengGuang": {
+      "name": "聖光",
+      "count": 11,
+      "coreKind": "light",
+      "description": "遭受攻擊或魔彈時打出，使這次攻勢未命中。不能當作一般主動法術使用。",
+      "sourceIds": [
+        "manual",
+        "deck"
+      ]
+    },
+    "shengDun": {
+      "name": "聖盾",
+      "count": 10,
+      "coreKind": "shield",
+      "description": "以法術行動放在角色面前。遭受攻擊或魔彈時，仍可先應戰或打聖光；否則必須移除聖盾抵擋，不能留盾直接承傷。",
+      "sourceIds": [
+        "manual",
+        "deck"
+      ]
+    },
+    "zhongDu": {
+      "name": "中毒",
+      "count": 6,
+      "coreKind": "poison",
+      "description": "可指定任意角色，包含自己與隊友。行動階段開始前觸發，造成 1 點法術傷害後移除；可同時存在多張。",
+      "sourceIds": [
+        "manual",
+        "faq",
+        "deck"
+      ]
+    },
+    "xuRuo": {
+      "name": "虛弱",
+      "count": 6,
+      "coreKind": "weak",
+      "description": "角色面前最多一張。行動階段開始前選擇跳過行動階段，或強制摸 3 張繼續行動，隨後移除。此摸牌不算傷害，治療不能抵禦。",
+      "sourceIds": [
+        "manual",
+        "beginner",
+        "deck"
+      ]
+    },
+    "moDan": {
+      "name": "魔彈",
+      "count": 6,
+      "coreKind": "missile",
+      "description": "先指定右手邊最近的對手，基礎法術傷害為 2。可打魔彈轉傳，每次傷害加 1；一輪內每人參與一次，新一輪仍保留累加傷害。聖光或聖盾可終止。",
+      "sourceIds": [
+        "manual",
+        "deck"
+      ]
+    }
+  },
+  "roles": {
+    "fengZhiJianSheng": {
+      "name": "風之劍聖",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-風之劍聖/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "kuangZhanShi": {
+      "name": "狂戰士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-狂戰士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shenJianShou": {
+      "name": "神射手",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-神射手/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "fengYinShi": {
+      "name": "封印師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-封印師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "anShaZhe": {
+      "name": "暗殺者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-暗殺者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shengNv": {
+      "name": "聖女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-聖女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "tianShi": {
+      "name": "守護天使",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-守護天使/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "moFaShaoNv": {
+      "name": "魔法少女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-魔法少女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "moJianShi": {
+      "name": "魔劍士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-魔劍士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shengQiangQiShi": {
+      "name": "聖槍騎士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-聖槍騎士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yuanSuShi": {
+      "name": "元素師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-元素師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "maoXianJia": {
+      "name": "冒險家",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-冒險家/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "wenYiFaShi": {
+      "name": "瘟疫法師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-瘟疫法師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "zhongCaiZhe": {
+      "name": "仲裁者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-仲裁者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shenGuan": {
+      "name": "神官",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-神官/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "qiDaoShi": {
+      "name": "祈禱師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-祈禱師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "xianZhe": {
+      "name": "賢者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-賢者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "lingFuShi": {
+      "name": "靈符師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-靈符師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jianDi": {
+      "name": "劍帝",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-劍帝/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "geDouJia": {
+      "name": "格鬥家",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-格鬥家/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yongZhe": {
+      "name": "勇者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-勇者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "lingHunShuShi": {
+      "name": "靈魂術士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-靈魂術士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "xueZhiWuNv": {
+      "name": "血之巫女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-血之巫女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "dieWuZhe": {
+      "name": "蝶舞者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-蝶舞者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "nvWuShen": {
+      "name": "女武神",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-女武神/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "moGong": {
+      "name": "魔弓",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-魔弓/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "hongLianQiShi": {
+      "name": "紅蓮騎士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-紅蓮騎士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yingLingRenXing": {
+      "name": "英靈人形",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-英靈人形/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "moQiang": {
+      "name": "魔槍",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-魔槍/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "cangYanMoNv": {
+      "name": "蒼炎魔女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-蒼炎魔女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yinYouShiRen": {
+      "name": "吟遊詩人",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-吟遊詩人/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jingLingSheShou": {
+      "name": "精靈射手",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-精靈射手/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yinYangShi": {
+      "name": "陰陽師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-陰陽師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "xueSeJianLing": {
+      "name": "血色劍靈",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-血色劍靈/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yueZhiNvShen": {
+      "name": "月之女神",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-月之女神/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shouLingWuShi": {
+      "name": "獸靈武士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-獸靈武士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shengGong": {
+      "name": "聖弓",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-聖弓/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "zhanDouFaShi": {
+      "name": "戰鬥法師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-戰鬥法師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "xingZhuiNvWu": {
+      "name": "星墜女巫",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-星墜女巫/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shengTingJianChaShi": {
+      "name": "聖庭檢察士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-聖庭檢察士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "lieWuRen": {
+      "name": "獵巫人",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-獵巫人/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shengDianQiShi": {
+      "name": "聖殿騎士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-聖殿騎士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jinGuiZhiNv": {
+      "name": "矜貴之女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-矜貴之女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "nvPuZhang": {
+      "name": "女僕長",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-女僕長/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jieJieShi": {
+      "name": "結界師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-結界師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shenMiXueZhe": {
+      "name": "神秘學者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-矜貴之女2/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "ranWuZhe": {
+      "name": "染污者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-染污者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "shiShenZhe": {
+      "name": "噬神者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-噬神者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "zhuLvZhe": {
+      "name": "鑄律者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-鑄律者/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "hongYiZhuJiao": {
+      "name": "紅衣主教",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-紅衣主教/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jiLuZhe": {
+      "name": "記錄者",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-朵拉貢幻/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "chuanJiaoShi": {
+      "name": "傳教士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-傳教士/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yiJiaoTu": {
+      "name": "異教徒",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-異教徒/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jianZhiMoNv": {
+      "name": "劍之魔女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-劍之魔女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "tanLanShaoNv": {
+      "name": "貪婪少女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-貪婪少女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "lingXiZhiChao": {
+      "name": "靈熙之潮",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-靈熙之潮/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "youJiShi": {
+      "name": "游擊士",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-索拉/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "zhouFuShi": {
+      "name": "咒符師",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-咒符師/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "yuanChuZhiGong": {
+      "name": "原初之弓",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-原初之弓/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "daoDanLuoLi": {
+      "name": "搗蛋蘿莉",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-搗蛋蘿莉/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "luoLiFanZhang": {
+      "name": "蘿莉番長",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-蘿莉番長/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jianXiZhiPian": {
+      "name": "見習製片",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-見習製片/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "daiDuoShaoNv": {
+      "name": "怠惰少女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/複製來源：-貪婪少女－妮亞－3★/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jiDuShaoNv": {
+      "name": "忌妒少女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/忌妒少女－妮亞－3★/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "jianZhiZi": {
+      "name": "劍之子",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/劍之子－威斯特姆－３★/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "moGongEX": {
+      "name": "EX魔弓",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/ｅｘ魔弓－泰羅莎－３★/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "sheng_zhongCaiZhe": {
+      "name": "仲裁者·恩布拉",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/仲裁者－恩布拉/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    },
+    "baoShiShaoNv": {
+      "name": "爆食少女",
+      "url": "https://xingbeichuanshuobaike.webnode.tw/角色詳情-爆食少女/",
+      "reviewStatus": "pending",
+      "note": "已對應百科角色頁；技能文字與交互仍待逐項核對。"
+    }
+  }
+}

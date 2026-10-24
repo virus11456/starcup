@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import path from "node:path";
+const reference = JSON.parse(await fs.readFile(new URL("../data/wiki-reference.json", import.meta.url), "utf8"));
 
 const packNames = {
   shiZhouNian: "十週年",
@@ -88,16 +89,18 @@ export async function createCatalog(root, pin) {
           : null;
       const item = {
         id,
-        name: plain(data.translate[id] || id),
+        name: reference.roles[id]?.name || plain(data.translate[id] || id),
+        aliases: [plain(data.translate[id] || id)],
         pack,
         packName: packNames[pack],
         portrait: "/engine/" + portrait,
         skills,
         issue,
-        source:
-          id === "baoShiShaoNv"
-            ? "https://xingbeichuanshuobaike.webnode.tw/角色詳情-爆食少女/"
-            : pin.sourceUrl + "/character/" + pack + ".js",
+        source: reference.roles[id]?.url || pin.sourceUrl + "/character/" + pack + ".js",
+        sourceName: reference.roles[id] ? reference.name : "參考引擎舊版角色",
+        reviewStatus: reference.roles[id]?.reviewStatus || "legacy",
+        reviewNote: reference.roles[id]?.note || "舊版對照，請勿與現行牌面混用。",
+        engineSource: pin.sourceUrl + "/character/" + pack + ".js",
       };
       (pin.legacyPacks.includes(pack) ? legacyCharacters : characters).push(
         item,
@@ -106,14 +109,15 @@ export async function createCatalog(root, pin) {
   }
   const cards = Object.entries(packs.card.card).map(([id, card]) => ({
     id,
-    name: plain(packs.card.translate[id] || id),
+    name: reference.cards[id]?.name || plain(packs.card.translate[id] || id),
     type: card.type,
-    description: plain(
+    description: reference.cards[id]?.description || plain(
       typeof card.cardPrompt === "function"
         ? card.cardPrompt({})
         : packs.card.translate[id + "_info"],
     ),
     portrait: `/engine/image/card/${id}.png`,
+    sources: (reference.cards[id]?.sourceIds || []).map(key => reference.guides[key]),
   }));
   const deck = packs.card.list.map((entry, index) => ({
     id: `full-${index + 1}`,
@@ -122,13 +126,21 @@ export async function createCatalog(root, pin) {
     kind: entry[2],
     marks: (entry[3] || "").split("|").filter(Boolean),
   }));
+  for (const [id, card] of Object.entries(reference.cards)) {
+    if (deck.filter(c => c.kind === id).length !== card.count) throw new Error(`百科牌庫配比不符：${id}`);
+  }
   return {
-    source: pin.sourceUrl,
+    source: reference.url,
+    sourceName: reference.name,
+    engineSource: pin.sourceUrl,
     commit: pin.commit,
     packs: packNames,
     characters,
     legacyCharacters,
     cards,
     deck,
+    skillMarks: Object.fromEntries([...new Set(deck.flatMap(c => c.marks))].map(id => [id, {
+      id, name: plain(lib.translate[id] || id), description: plain(lib.translate[id + "_info"]),
+    }])),
   };
 }

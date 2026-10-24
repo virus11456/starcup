@@ -546,7 +546,7 @@ export default function Home() {
             }}
           >
             <BookOpen size={18} />
-            規則字典<span>21</span>
+            規則字典
           </button>
           <button className="nav-item" onClick={() => setModal("rules")}>
             <Sparkles size={18} />
@@ -930,6 +930,7 @@ export default function Home() {
                                   {p.effects.map((e) => (
                                     <b
                                       key={e.id}
+                                      data-effect-card-id={e.id}
                                       style={{ color: CARDS[e.kind].color }}
                                       title={CARDS[e.kind].name}
                                     >
@@ -1514,7 +1515,7 @@ export default function Home() {
             </p>
             <h3>02 · 遭到攻擊時</h3>
             <p>
-              可用同系攻擊牌或暗滅應戰，轉向未參與的敵方；也可用聖光抵擋。暗滅不能被應戰。有聖盾時，未應戰或使用聖光便會消耗聖盾抵擋。
+              可用同系攻擊牌或暗滅應戰，轉向本次攻擊來源以外的敵方；也可用聖光抵擋。暗滅不能被應戰。有聖盾時，未應戰或使用聖光便會消耗聖盾抵擋。
             </p>
             <h3>03 · 傷害與星石</h3>
             <p>
@@ -1537,8 +1538,8 @@ export default function Home() {
                   與擴充裁定。
                 </p>
                 <p>
-                  測試牌組為 150 張：五系攻擊各 18 張，暗滅及五種法術各 10
-                  張；配比與法術屬性尚未逐張還原原版。角色選擇目前只影響圖片與教學提醒。合成優先消耗最早取得的星石。座位採紅藍交錯。
+                  新牌局採百科配比 150 張：五系攻擊各 21 張、暗滅 6、聖光 11、聖盾 10，中毒、虛弱與魔彈各 6 張。
+                  核心版尚未結算法術屬性及技能標記；角色選擇目前只影響圖片與教學提醒。合成優先消耗最早取得的星石。座位採紅藍交錯。
                 </p>
               </div>
             </div>

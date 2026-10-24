@@ -199,6 +199,25 @@ test("counter changes target and awards crystal, dark cannot be countered", () =
   assert.deepEqual(r.teams.blue.stones, ["crystal"]);
   assert.equal(total(r), 150);
 });
+test("encyclopedia counter rules exclude only the current attacker, not the whole chain", () => {
+  const r = game();
+  const fires = r.players.map((_, i) => card(r, i, "fire"));
+  applyCommand(r, r.players[0].id, { type: "play", cardId: fires[0].id, target: r.players[1].id });
+  applyCommand(r, r.players[1].id, { type: "counter", cardId: fires[1].id, target: r.players[2].id });
+  applyCommand(r, r.players[2].id, { type: "counter", cardId: fires[2].id, target: r.players[3].id });
+  const before = JSON.stringify(r);
+  assert.throws(() => applyCommand(r, r.players[3].id, { type: "counter", cardId: fires[3].id, target: r.players[2].id }), /攻擊來源/);
+  assert.equal(JSON.stringify(r), before);
+  applyCommand(r, r.players[3].id, { type: "counter", cardId: fires[3].id, target: r.players[0].id });
+  assert.equal(r.pending?.to, r.players[0].id);
+  assert.equal(total(r), 150);
+});
+test("new core games use the encyclopedia's 150-card composition", () => {
+  const deck = makeDeck();
+  assert.equal(new Set(deck.map(c => c.id)).size, 150);
+  const counts = deck.reduce((out, c) => { out[c.kind] = (out[c.kind] || 0) + 1; return out; }, {} as Record<string, number>);
+  assert.deepEqual(counts, { fire: 21, water: 21, wind: 21, earth: 21, thunder: 21, dark: 6, light: 11, poison: 6, weak: 6, shield: 10, missile: 6 });
+});
 test("holy light prevents damage and yields no stone", () => {
   const r = game();
   const fire = card(r, 0, "fire");

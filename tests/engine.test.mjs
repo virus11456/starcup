@@ -12,6 +12,20 @@ const catalog = JSON.parse(
 );
 const root = new URL("../public/engine/", import.meta.url).pathname;
 const { packs, lib } = await loadPacks(root, pin);
+test("catalog maps every current role to the requested encyclopedia without claiming skill verification", () => {
+  for (const role of catalog.characters) {
+    assert.ok(role.source.startsWith("https://xingbeichuanshuobaike.webnode.tw/"), role.id);
+    assert.equal(role.reviewStatus, "pending");
+    assert.ok(role.engineSource.includes(pin.commit));
+  }
+  assert.ok(catalog.characters.find(c => c.id === "shenMiXueZhe").source.includes("矜貴之女2"));
+  assert.ok(catalog.characters.find(c => c.id === "jiLuZhe").source.includes("朵拉貢幻"));
+  for (const card of catalog.deck) {
+    assert.ok(catalog.cards.some(c => c.id === card.kind));
+    for (const mark of card.marks) assert.ok(catalog.skillMarks[mark]?.name, mark);
+  }
+  assert.ok(catalog.cards.every(c => c.sources.length > 0));
+});
 test("victory replay saving skips unopened databases even when IndexedDB is available", async () => {
   const source = await fs.readFile(root + "noname/game/index.js", "utf8");
   const ast = ts.createSourceFile("game.js", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);

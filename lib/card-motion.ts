@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 export type Point = { x: number; y: number };
 export type Flight = {
-  type: "draw" | "play" | "discard";
+  type: "draw" | "play" | "place" | "discard";
   from: Point;
   to: Point;
   image?: string;
@@ -61,7 +61,11 @@ export function createCardMotion(host: HTMLElement) {
     textures.set(key, t);
     return t;
   }
-  function complete() { host.dataset.completed = String(++completed); }
+  function complete(type: Flight["type"]) {
+    host.dataset.completed = String(++completed);
+    const key = `completed${type[0].toUpperCase()}${type.slice(1)}`;
+    host.dataset[key] = String(Number(host.dataset[key] || 0) + 1);
+  }
   function flat(f: Flight) {
     const el = document.createElement("div");
     el.className = "grail-flight-card";
@@ -69,18 +73,26 @@ export function createCardMotion(host: HTMLElement) {
     if (f.image) { const img = document.createElement("img"); img.src = f.image; img.alt = ""; img.style.cssText = "width:100%;height:100%;object-fit:contain"; el.append(img); }
     else el.textContent = "✦";
     host.append(el);
-    const at = (p: Point, s: number, angle = 0) => `translate(${p.x - 44}px,${p.y - 61}px) rotate(${angle}deg) scale(${s})`;
+    const at = (p: Point, s: number, angle = 0, flip = 0) => `translate(${p.x - 44}px,${p.y - 61}px) perspective(650px) rotateY(${flip}deg) rotate(${angle}deg) scale(${s})`;
     const middle = { x: (f.from.x + f.to.x) / 2, y: Math.max(75, Math.min(f.from.y, f.to.y) - 65) };
     const keys = reduced.matches ? [{ transform: at(f.to, .9), opacity: .6 }, { transform: at(f.to, 1), opacity: 0 }] : [
-      { transform: at(f.from, .65, -12), opacity: 0, offset: 0 },
+      { transform: at(f.from, .65, -12, f.type === "draw" ? 90 : 0), opacity: 0, offset: 0 },
       { transform: at(f.from, .9, -7), opacity: 1, offset: .1 },
       { transform: at(middle, 1.25, f.type === "discard" ? 18 : -5), opacity: 1, offset: .48 },
-      { transform: at(f.to, f.type === "play" ? 1.05 : .65, f.type === "discard" ? 32 : 0), opacity: 1, offset: .85 },
+      { transform: at(f.to, f.type === "play" ? 1.05 : f.type === "place" ? .85 : .65, f.type === "discard" ? 32 : 0), opacity: 1, offset: .85 },
       { transform: at(f.to, .6), opacity: 0, offset: 1 },
     ];
-    const animation = el.animate(keys, { duration: reduced.matches ? 140 : 850, delay: f.delay || 0, easing: "cubic-bezier(.2,.65,.3,1)", fill: "both" });
+    const animation = el.animate(keys, { duration: reduced.matches ? 140 : f.type === "place" ? 1050 : 850, delay: f.delay || 0, easing: "cubic-bezier(.2,.65,.3,1)", fill: "both" });
     animations.add(animation);
-    animation.finished.then(complete, () => {}).finally(() => { animations.delete(animation); el.remove(); });
+    animation.finished.then(() => complete(f.type), () => {}).finally(() => { animations.delete(animation); el.remove(); });
+    if (!reduced.matches && (f.type === "play" || f.type === "place")) {
+      const ring = document.createElement("div");
+      ring.style.cssText = `position:absolute;left:${f.to.x - 30}px;top:${f.to.y - 30}px;width:60px;height:60px;border:2px solid ${f.color || "#e9cc8f"};border-radius:50%;box-shadow:0 0 18px ${f.color || "#e9cc8f"};opacity:0`;
+      host.append(ring);
+      const pulse = ring.animate([{ transform: "scale(.7)", opacity: .8 }, { transform: `scale(${f.type === "place" ? 1.5 : 2.2})`, opacity: 0 }], { duration: 360, delay: (f.delay || 0) + (f.type === "place" ? 750 : 550), fill: "both" });
+      animations.add(pulse);
+      pulse.finished.catch(() => {}).finally(() => { animations.delete(pulse); ring.remove(); });
+    }
   }
   function release(a: Active) {
     scene.remove(a.mesh, a.ring);
@@ -90,7 +102,7 @@ export function createCardMotion(host: HTMLElement) {
   function animate(now: number) {
     frame = 0;
     for (let i = active.length - 1; i >= 0; i--) {
-      const a = active[i], p = Math.min(1, Math.max(0, (now - a.start) / 950));
+      const a = active[i], p = Math.min(1, Math.max(0, (now - a.start) / (a.f.type === "place" ? 1100 : 950)));
       if (now < a.start) { a.mesh.visible = a.ring.visible = false; continue; }
       a.mesh.visible = true;
       const t = p * p * (3 - 2 * p);
@@ -102,11 +114,11 @@ export function createCardMotion(host: HTMLElement) {
       const opacity = p < .08 ? p / .08 : p > .88 ? (1 - p) / .12 : 1;
       a.material.forEach(m => { m.opacity = opacity; });
       const hit = Math.max(0, (p - .65) / .35);
-      a.ring.visible = a.f.type === "play" && hit > 0;
+      a.ring.visible = (a.f.type === "play" || a.f.type === "place") && hit > 0;
       a.ring.position.set(a.f.to.x, -a.f.to.y, 0);
-      a.ring.scale.setScalar(1 + hit * 2.5);
+      a.ring.scale.setScalar(1 + hit * (a.f.type === "place" ? 1.3 : 2.5));
       (a.ring.material as THREE.MeshBasicMaterial).opacity = (1 - hit) * .65;
-      if (p === 1) { release(a); active.splice(i, 1); complete(); }
+      if (p === 1) { release(a); active.splice(i, 1); complete(a.f.type); }
     }
     renderer?.render(scene, camera);
     if (active.length) frame = requestAnimationFrame(animate);
@@ -132,6 +144,8 @@ export function createCardMotion(host: HTMLElement) {
       if (disposed || document.hidden || active.length + animations.size >= 24) return;
       host.dataset.lastMotion = f.type;
       host.dataset.started = String(Number(host.dataset.started || 0) + 1);
+      const key = `started${f.type[0].toUpperCase()}${f.type.slice(1)}`;
+      host.dataset[key] = String(Number(host.dataset[key] || 0) + 1);
       if (!renderer || reduced.matches) { flat(f); return; }
       const edge = () => new THREE.MeshBasicMaterial({ color: 0xd8b779, transparent: true });
       const materials = [edge(), edge(), edge(), edge(), new THREE.MeshBasicMaterial({ map: texture(f.image, f.label), transparent: true }), new THREE.MeshBasicMaterial({ map: texture(), transparent: true })];

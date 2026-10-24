@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Compendium from "../compendium";
+import { matchesCatalog } from "@/lib/catalog-search";
 import "./full.css";
 type Skill = {
   id: string;
@@ -18,6 +20,8 @@ type Character = {
   skills: Skill[];
   issue: string | null;
   source: string;
+  aliases?: string[];
+  reviewNote?: string;
 };
 type Catalog = {
   characters: Character[];
@@ -58,9 +62,7 @@ export default function FullGame() {
   const filtered = all.filter(
     (c) =>
       (pack === "all" || c.pack === pack) &&
-      `${c.name} ${c.skills.map((s) => s.name + " " + s.description).join(" ")}`
-        .toLowerCase()
-        .includes(query.toLowerCase()),
+      matchesCatalog(`${c.name} ${c.aliases?.join(" ") || ""} ${c.skills.map((s) => s.name + " " + s.description).join(" ")}`, query),
   );
   function start() {
     setLaunch(`/engine/index.html?players=${players}&edition=${edition}`);
@@ -69,7 +71,7 @@ export default function FullGame() {
   return (
     <main className={"full-shell" + (running ? " full-running" : "")}>
       <header className="full-header">
-        <Link href="/">✦ 星杯傳說</Link>
+        <Link href="/">星杯傳說</Link>
         <span>正式擴充 · 規則引擎整合版</span>
         <nav>
           {running && (
@@ -254,18 +256,7 @@ export default function FullGame() {
           )}
           {view === "cards" && (
             <section>
-              <p className="full-muted">
-                每張實體牌保存屬性、派系和技能標記；圖片為牌型插畫，印刷標記由引擎疊加顯示。
-              </p>
-              <div className="full-card-grid">
-                {catalog?.cards.map((c) => (
-                  <article key={c.id}>
-                    <img src={c.portrait} alt={c.name} loading="lazy" />
-                    <h3>{c.name}</h3>
-                    <p>{c.description}</p>
-                  </article>
-                ))}
-              </div>
+              <Compendium initialView="physical" />
             </section>
           )}
           <footer className="full-footer">
@@ -295,6 +286,7 @@ export default function FullGame() {
             <section>
               <small>{selected.packName}</small>
               <h2>{selected.name}</h2>
+              <p className="full-notice">{selected.reviewNote || "角色技能交互仍待逐項核對。"}</p>
               {selected.skills
                 .filter((s) => s.description)
                 .map((s) => (
@@ -305,7 +297,7 @@ export default function FullGame() {
                   </article>
                 ))}
               <a href={selected.source} target="_blank" rel="noreferrer">
-                查看此版來源
+                查閱此角色百科與裁定
               </a>
             </section>
           </div>

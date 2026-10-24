@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ArrowUpRight, BookOpen, Search, Sparkles } from "lucide-react";
 import { RULES, searchRules } from "@/lib/rules";
+import { WIKI, ruleSources } from "@/lib/wiki-reference";
 export default function RulesDictionary() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("全部");
@@ -11,7 +12,7 @@ export default function RulesDictionary() {
       <div className="dictionary-intro">
         <div className="eyebrow">THE STAR ARCHIVE</div>
         <h2>有疑問，就問星之典。</h2>
-        <p>搜尋已整理的規則問答，對照原作說明與核心測試版的實作範圍。</p>
+        <p>以{WIKI.name}為主要依據，搜尋規則問答並對照本版實作範圍。</p>
       </div>
       <div className="dictionary-search">
         <Search size={20} />
@@ -78,16 +79,17 @@ export default function RulesDictionary() {
                     {r.scope}
                   </p>
                 </div>
-                {r.category !== "版本" && (
+                {ruleSources(r.id).map(source => (
                   <a
-                    href="https://xingbeichuanshuobaike.webnode.tw/遊戲指南-新手攻略/"
+                    key={source.url}
+                    href={source.url}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    參考：星杯傳說百科 · 新手攻略
+                    參考：星杯傳說百科 · {source.title}
                     <ArrowUpRight size={13} />
                   </a>
-                )}
+                ))}
               </div>
             </details>
           ))

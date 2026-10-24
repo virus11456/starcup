@@ -29,15 +29,16 @@ export function startCardMotion() {
         if (["discard", "chooseToDiscard"].includes(event.name)) break;
         if (["useCard", "respond"].includes(event.name)) { if (type !== "draw") type = "play"; target = event.targets?.[0]; break; }
       }
+      if (type === "play" && cards.some(card => ["shengDun", "zhongDu", "xuRuo"].includes(card.name))) type = "place";
       const fallback = { x: innerWidth / 2, y: innerHeight / 2 };
       const from = type === "draw" ? center(piles.querySelector('[data-pile="deck"]'), fallback) : center(cards[0]?.isConnected ? cards[0] : this, fallback);
-      const to = type === "draw" ? center(this === game.me ? ui.handcards1?.parentElement : this, center(this, fallback)) : type === "play" ? center(target, fallback) : center(piles.querySelector('[data-pile="discard"]'), fallback);
+      const to = type === "draw" ? center(this === game.me ? ui.handcards1?.parentElement : this, center(this, fallback)) : type === "place" ? center(target?.node?.judges, center(target, fallback)) : type === "play" ? center(target, fallback) : center(piles.querySelector('[data-pile="discard"]'), fallback);
       nesting++;
       let result;
       try { result = originals[method].apply(this, args); } finally { nesting--; }
       if (outer && count > 0) for (let i = 0; i < Math.min(count, 12); i++) {
         const card = cards[i];
-        const reveal = card?.name && !card.classList?.contains("infohidden") && (this === game.me || type === "play");
+        const reveal = card?.name && !card.classList?.contains("infohidden") && (this === game.me || type === "play" || type === "place");
         try { motion.play({ type, from, to, image: reveal ? `image/card/${card.name}.png` : undefined, label: reveal ? get.translation(card.name) : undefined, delay: i * 105 }); } catch { /* A visual failure must not interrupt a legal move. */ }
       }
       return result;

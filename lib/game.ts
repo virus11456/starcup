@@ -184,14 +184,17 @@ export function shuffle<T>(a: T[]): T[] {
   return a;
 }
 export function makeDeck() {
+  // 星杯傳說百科「牌庫構造」：150 張，11 種牌型。
+  const counts: Record<CardKind, number> = {
+    fire: 21, water: 21, wind: 21, earth: 21, thunder: 21,
+    dark: 6, light: 11, poison: 6, weak: 6, shield: 10, missile: 6,
+  };
   let n = 0;
   return shuffle(
     (Object.keys(CARDS) as CardKind[]).flatMap((kind) =>
       Array.from(
         {
-          length: ["fire", "water", "wind", "earth", "thunder"].includes(kind)
-            ? 18
-            : 10,
+          length: counts[kind],
         },
         () => ({ id: `c${++n}`, kind }),
       ),
@@ -537,8 +540,8 @@ export function applyCommand(r: Room, pid: string, c: Command) {
           (card.kind === q.kind || card.kind === "dark"),
         "這張牌無法應戰",
       );
-      const target = targets(r, p, q.visited).find((t) => t.id === c.target);
-      ensure(target, "請選擇尚未參與這次攻擊的敵方玩家");
+      const target = targets(r, p, [q.from]).find((t) => t.id === c.target);
+      ensure(target, "應戰只能指定本次攻擊來源以外的敵方玩家");
       r.discard.push(discardCard(r, p, card.id));
       motion(r, p, "play", [card], target.id);
       r.pending = {
@@ -682,7 +685,7 @@ export function chooseBot(r: Room): Command {
     if (p.effects.some((c) => c.kind === "shield")) return { type: "shield" };
     const light = p.hand.find((c) => c.kind === "light");
     if (light) return { type: "block", cardId: light.id };
-    const target = targets(r, p, q.visited)[0];
+    const target = targets(r, p, [q.from])[0];
     const counter = p.hand.find((c) =>
       q.type === "missile"
         ? c.kind === "missile"

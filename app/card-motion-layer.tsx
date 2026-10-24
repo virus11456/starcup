@@ -26,7 +26,9 @@ export default function CardMotionLayer({ room }: { room: RoomView | null }) {
         const card = event.cards[i];
         const source = card ? previousCards.current.get(card.id) : undefined;
         const ownHand = card ? document.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`) : null;
-        engine.current?.play({ type: event.type, from: event.type === "draw" ? deck : source || seat(event.player), to: event.type === "draw" ? event.player === room.me ? center(ownHand, hand) : seat(event.player) : event.type === "discard" ? discard : seat(event.target || event.player), image: card ? `/cards/${card.kind}.png` : undefined, label: card ? CARDS[card.kind].name : undefined, color: card ? CARDS[card.kind].color : undefined, delay: i * 110 });
+        const placing = event.type === "play" && card && ["shield", "poison", "weak"].includes(card.kind);
+        const effect = placing ? document.querySelector(`[data-effect-card-id="${CSS.escape(card.id)}"]`) : null;
+        engine.current?.play({ type: placing ? "place" : event.type, from: event.type === "draw" ? deck : source || seat(event.player), to: event.type === "draw" ? event.player === room.me ? center(ownHand, hand) : seat(event.player) : event.type === "discard" ? discard : center(effect, seat(event.target || event.player)), image: card ? `/cards/${card.kind}.png` : undefined, label: card ? CARDS[card.kind].name : undefined, color: card ? CARDS[card.kind].color : undefined, delay: i * 110 });
       }
     }
     previousCards.current = new Map(Array.from(document.querySelectorAll<HTMLElement>("[data-card-id]")).map(el => [el.dataset.cardId!, center(el, hand)]));
