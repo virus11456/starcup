@@ -11,9 +11,16 @@ const stopHud = anchorToViewport(hud);
 const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
+// On phones, keep the guide available without covering a selectable player.
+if (matchMedia("(max-width: 600px)").matches) {
+  help.hidden = true;
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.textContent = "本回合提示 ▸";
+}
 toggle.addEventListener("click", () => {
   help.hidden = !help.hidden;
   toggle.setAttribute("aria-expanded", String(!help.hidden));
+  toggle.textContent = help.hidden ? "本回合提示 ▸" : "本回合提示 ▾";
 });
 const text = (value) =>
   String(value || "")
