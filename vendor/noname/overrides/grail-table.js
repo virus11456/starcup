@@ -1,4 +1,5 @@
 import * as THREE from "./vendor/three.module.js";
+import { anchorToViewport } from "./grail-viewport.js";
 export function startTable(state) {
   const canvas = document.createElement("canvas");
   canvas.id = "grail-three";
@@ -15,6 +16,11 @@ export function startTable(state) {
     throw error;
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  const backdrop = document.createElement("div");
+  backdrop.id = "grail-backdrop";
+  document.body.prepend(backdrop);
+  backdrop.append(canvas);
+  const stopViewport = anchorToViewport(backdrop);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
   camera.position.set(0, 8, 11);
@@ -140,6 +146,8 @@ export function startTable(state) {
       }
     });
     renderer.dispose();
+    stopViewport();
+    backdrop.remove();
     canvas.remove();
   };
 }

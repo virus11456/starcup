@@ -2,6 +2,12 @@
 import { lib, game, ui, get, _status } from "./noname.js";
 import { startTable } from "./grail-table.js";
 import { startCardMotion } from "./grail-motion.js";
+import { anchorToViewport } from "./grail-viewport.js";
+const hud = document.createElement("div");
+hud.id = "grail-hud";
+document.body.append(hud);
+hud.append(document.getElementById("grail-help"));
+const stopHud = anchorToViewport(hud);
 const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
@@ -123,7 +129,7 @@ try {
   const p = document.createElement("span");
   p.className = "grail-render-note";
   p.textContent = "目前使用平面桌面";
-  document.body.append(p);
+  hud.append(p);
 }
 window.addEventListener(
   "pagehide",
@@ -132,6 +138,8 @@ window.addEventListener(
     clearInterval(ready);
     stop();
     stopMotion();
+    stopHud();
+    hud.remove();
   },
   { once: true },
 );

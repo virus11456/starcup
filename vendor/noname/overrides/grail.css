@@ -1,6 +1,9 @@
 :root {
   color-scheme: dark;
 }
+#grail-hud { z-index: 20; }
+#grail-hud #grail-help { pointer-events: auto; }
+#grail-backdrop { z-index: 0; }
 .card-motion-layer { position: fixed !important; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
 .card-motion-layer canvas { position: absolute; inset: 0; }
 .grail-motion-piles { position: fixed !important; right: 20px; bottom: 200px; display: flex !important; gap: 10px; z-index: 8; pointer-events: none; }

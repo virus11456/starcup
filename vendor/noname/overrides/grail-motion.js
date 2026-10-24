@@ -1,11 +1,13 @@
 /* GPL-3.0 integration: visual hooks only; original methods retain rule/video behavior. */
 import { lib, game, ui, get } from "./noname.js";
 import { createCardMotion, center } from "./card-motion.js";
+import { anchorToViewport } from "./grail-viewport.js";
 export function startCardMotion() {
   const host = document.createElement("div");
   host.className = "card-motion-layer";
   host.setAttribute("aria-hidden", "true");
   document.body.append(host);
+  const stopViewport = anchorToViewport(host);
   const motion = createCardMotion(host);
   document.body.classList.add("grail-motion-enabled");
   const piles = document.createElement("div");
@@ -13,7 +15,7 @@ export function startCardMotion() {
   for (const [kind, title] of [["deck", "✦ 牌庫"], ["discard", "◇ 棄牌"]]) {
     const p = document.createElement("div"); p.dataset.pile = kind; p.textContent = title; piles.append(p);
   }
-  document.body.append(piles);
+  (document.getElementById("grail-hud") || document.body).append(piles);
   const proto = lib.element.Player.prototype;
   const originals = { $draw: proto.$draw, $throw: proto.$throw };
   let nesting = 0;
@@ -44,5 +46,5 @@ export function startCardMotion() {
       return result;
     };
   }
-  return () => { Object.assign(proto, originals); motion.dispose(); host.remove(); piles.remove(); document.body.classList.remove("grail-motion-enabled"); };
+  return () => { Object.assign(proto, originals); stopViewport(); motion.dispose(); host.remove(); piles.remove(); document.body.classList.remove("grail-motion-enabled"); };
 }
