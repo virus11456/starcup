@@ -1,5 +1,9 @@
 /* GPL-3.0: retain native selection nodes, listeners and confirm/cancel actions.
    Native body scaling is compensated with dimensions, never pointer transforms. */
+/* Decorative piles are fixed outside the arena and would cover the last stone. */
+body:has(#arena > .grail-resource-dialog) .grail-motion-piles {
+  visibility: hidden;
+}
 #window #arena > .dialog.grail-resource-dialog {
   top: 35% !important;
   bottom: auto !important;

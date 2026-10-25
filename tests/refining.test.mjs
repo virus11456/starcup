@@ -74,6 +74,9 @@ test('native confirmation transfers precisely the selected stone types', () => {
   for (const links of [['baoShi'], ['shuiJing'], ['baoShi', 'shuiJing'], ['baoShi', 'baoShi']]) {
     const h = fixture(['baoShi', 'baoShi', 'shuiJing'], { baoShi: 0, shuiJing: 0 });
     h.context.lib.skill._tiLian_backup = h.skill.chooseButton.backup(links, h.player);
+    const prompt = h.skill.chooseButton.prompt(links, h.player);
+    assert.match(prompt, /按「確定」完成提煉/);
+    for (const kind of links) assert.ok(prompt.includes(h.context.get.translation(kind)));
     h.context.lib.skill._tiLian_backup.content();
     const gems = links.filter(kind => kind === 'baoShi').length;
     const crystals = links.length - gems;
