@@ -82,6 +82,17 @@ await patch(
 );
 // Browser deployments do not have the desktop client's filesystem API.
 await patch("game/entry.js", 'const readConfig = async () => {', 'const readConfig = async () => {\n                if (typeof game.readFileAsText !== "function") return;');
+// The native reconnect snapshot omitted the public turn/limit counters, so
+// returning clients displayed the old fallback score table until the next turn.
+await patch('noname/get/index.js', 'roomId: game.roomId,', `roomId: game.roomId,
+            grailTurn: game.phaseNumber,
+            grailCurrentPhase: _status.currentPhase?.playerid,
+            grailLimits: [game.shiQiMax, game.xingBeiMax, game.zhanJiMax],`);
+await patch('noname/library/index.js', 'game.arrangePlayers();\n\t\t\t\t\t//xingBei', `game.arrangePlayers();
+                    game.phaseNumber = state.grailTurn || 0;
+                    _status.currentPhase = lib.playerOL[state.grailCurrentPhase];
+                    if (state.grailLimits) [game.shiQiMax, game.xingBeiMax, game.zhanJiMax] = state.grailLimits;
+                    //xingBei`);
 // Direct launch bypasses the upstream settings menu that normally writes
 // defaults. Populate every missing mode setting before the mode starts.
 await patch(

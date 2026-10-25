@@ -112,6 +112,7 @@ export async function startRelay() {
         tell(!room.isHost && !data.hostAlive ? '房主暫時離線，等待恢復連線…' : '');
         if (ui.connectShareButton) ui.connectShareButton.style.display = 'none';
         if (!room.isHost && ui.connectStartButton) ui.connectStartButton.style.display = 'none';
+        if (ui.cardPileButton && matchMedia('(max-width: 600px)').matches) ui.cardPileButton.style.display = 'none';
         if (pending.length) delay = 80;
       } catch (error) {
         failures++;

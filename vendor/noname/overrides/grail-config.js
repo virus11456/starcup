@@ -40,6 +40,8 @@
   window.config.all.nogamemode = ["illustration"];
   window.config.connect_characters = [];
   window.config.show_connect = false;
+  window.config.show_handcardbutton = false;
+  window.config.show_volumn = false;
   window.config.extensions = [];
   window.config.show_splash = "off";
   window.config.background_music = "music_off";
@@ -66,6 +68,8 @@
     show_splash: "off",
     extensions: [],
     show_connect: false,
+    show_handcardbutton: false,
+    show_volumn: false,
     versus_mode_mode_config_xingBei:
       count === 8 ? "four" : count === 6 ? "three" : "two",
     team_sequence_mode_config_xingBei: "crossed",

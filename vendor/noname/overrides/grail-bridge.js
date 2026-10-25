@@ -181,6 +181,6 @@ const ready = setInterval(() => {
   clearInterval(ready);
   game.submitMatchData = async () => {};
   game.connect = () => {
-    alert("正式擴充模式的多人連線尚未接通；目前可與電腦對戰。");
+    alert("與朋友連線請返回大廳，選擇「多人角色對戰」，再建立或加入本站房間。");
   };
 }, 100);

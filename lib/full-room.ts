@@ -62,7 +62,7 @@ export function attachFullRoom(room: FullRoom, auth: string, connection: unknown
   member.connection = connection;
   member.seen = now;
 }
-const GUEST_COMMANDS = new Set(['init', 'inited', 'reinited', 'result', 'tempResult', 'auto', 'unauto']);
+const GUEST_COMMANDS = new Set(['init', 'inited', 'reinited', 'result', 'tempResult', 'auto', 'unauto', 'chat', 'emotion', 'throwEmotion']);
 function safeGuestValue(value: unknown, depth = 0): boolean {
   if (depth > 30) return false;
   if (typeof value === 'string') return !value.startsWith('_noname_func:') && !value.startsWith('_noname_event:');
@@ -78,6 +78,12 @@ export function validateRelayData(data: unknown, member: FullMember) {
   if (!Array.isArray(parsed) || typeof parsed[0] !== 'string') roomError('同步格式無效。');
   if (member.id !== '1') {
     if (!GUEST_COMMANDS.has(parsed[0]) || !safeGuestValue(parsed)) roomError('這項連線指令不允許執行。', 403);
+    if (parsed[0] === 'chat') { parsed[1] = member.id; parsed[2] = cleanName(parsed[2], 200); }
+    if (parsed[0] === 'emotion') {
+      parsed[1] = member.id;
+      if (!/^[a-zA-Z0-9_-]{1,30}$/.test(String(parsed[2])) || !/^\d{1,2}$/.test(String(parsed[3]))) roomError('表情無效。');
+    }
+    if (parsed[0] === 'throwEmotion' && !['flower', 'egg', 'wine', 'shoe', 'yuxisx', 'jiasuo'].includes(parsed[2])) roomError('表情無效。');
     if (parsed[0] === 'init') {
       if (!parsed[2] || typeof parsed[2] !== 'object' || Array.isArray(parsed[2])) roomError('初始化資料無效。');
       parsed[2].id = member.id;
