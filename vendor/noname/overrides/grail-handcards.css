@@ -1,0 +1,73 @@
+/* GPL-3.0: larger phone hand, using the existing card nodes and listeners.
+   Keep the engine's body scale; dimensions below are viewport pixels. */
+@media (max-width: 600px) {
+  #window #arena:not(.chess) > #me {
+    top: auto;
+    bottom: calc(12px * var(--grail-touch-scale, 1));
+    height: calc(96px * var(--grail-touch-scale, 1));
+  }
+  #window #arena:not(.chess) #handcards1 {
+    top: 0;
+    left: calc(64px * var(--grail-touch-scale, 1));
+    width: calc(100% - 72px * var(--grail-touch-scale, 1));
+    height: 100%;
+    padding: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* The old fan uses fixed 104px cards and inline translations. A scrolling
+     row keeps full-size cards readable regardless of hand size. */
+  #window #arena #handcards1 > .handcards {
+    display: flex;
+    align-items: flex-end;
+    gap: calc(6px * var(--grail-touch-scale, 1));
+    box-sizing: border-box;
+    width: max-content !important;
+    min-width: 100%;
+    height: 100%;
+    left: 0;
+    margin: 0;
+    padding: calc(12px * var(--grail-touch-scale, 1)) calc(6px * var(--grail-touch-scale, 1));
+  }
+  #window #arena #handcards1 .handcards > .card {
+    position: relative;
+    flex: 0 0 auto;
+    left: auto;
+    top: auto;
+    width: calc(72px * var(--grail-touch-scale, 1));
+    height: calc(72px * var(--grail-touch-scale, 1));
+    margin: 0;
+    transform: none !important;
+    border-radius: calc(6px * var(--grail-touch-scale, 1));
+  }
+  #window #arena #handcards1 .handcards > .card.selected {
+    transform: translateY(calc(-8px * var(--grail-touch-scale, 1))) !important;
+  }
+  #window #arena #handcards1 .card > .image {
+    top: 0;
+    height: 100%;
+    background-position: center;
+  }
+  #window #arena #handcards1 .card > .name {
+    font-size: calc(12px * var(--grail-touch-scale, 1));
+    line-height: 1.1;
+    transform: none !important;
+  }
+  #window #arena #handcards1 .card > .info {
+    font-size: calc(13px * var(--grail-touch-scale, 1));
+    line-height: 1.2;
+    transform: none !important;
+  }
+  #window #arena #handcards1 .card > .info > span { display: inline !important; }
+  #window #arena #handcards1 .card > .range {
+    font-size: calc(10px * var(--grail-touch-scale, 1));
+    line-height: 1.2;
+  }
+  #window #arena:not(.chess):not(.choose-character) > #control {
+    top: auto;
+    bottom: calc(116px * var(--grail-touch-scale, 1));
+  }
+}
