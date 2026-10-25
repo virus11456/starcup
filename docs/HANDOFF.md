@@ -11,6 +11,9 @@
 - `grail-phone-layout` 由實際輸入設定決定；所有原按鈕節點、事件處理、遊戲規則與 body 縮放保留。
 - 尺寸 QA 新增「手機樣式」選擇，明確傳遞 `phone-layout=1` 載入手機 CSS，同時保留滑鼠操作。後續不能把「縮小桌面」當作手機專用樣式已驗證。
 - prepare:engine、33 項引擎測試、typecheck、diff 檢查通過。新增桌面載入手機樣式但保留滑鼠的啟動回歸。實體 iOS Safari 仍需區別於桌面尺寸或樣式模擬，不得宣稱已實機驗收。
+- 功能提交 `5851c4aaa81ae0b75be4cb0ab3873126e998832b`，Production `dpl_A1viGgHDDC6LUWCC5a3QcyJDXQzK` READY。登入正式站後確認同時載入原生 `phone.css` 與新覆寫；390×844、390×667 工具列 44px 高，底部外框約 44.8px、內容 44px，文字完整。實際更換角色、開關設定、神官選角確認開局；8 人短屏另驗自由選角開關、第八座位與確認按鈕。詳細記錄見 [手機樣式驗證](qa-native-phone-controls-2026-10-25.md)。
+
+![手機樣式按鈕修正](qa-native-phone-controls-2026-10-25.jpg)
 
 ## 前次：網站密碼入口與手機選角修正
 
