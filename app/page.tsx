@@ -24,7 +24,13 @@ export default function Home() {
     if (invite) { router.replace('/online?room=' + encodeURIComponent(invite)); return; }
     void refresh();
   }, [refresh, router]);
-  return <><SiteHeader />{error && <p className="full-notice" role="alert">{error}</p>}<Lobby rooms={rooms} connected={connected}
-    create={() => router.push('/online')} join={code => router.push('/online' + (code ? '?room=' + encodeURIComponent(code) : ''))}
-    practice={() => router.push('/full')} refresh={refresh} /></>;
+  return <div className="portal-mode">
+    <SiteHeader />
+    <main className="portal-content">
+      {error && <p className="portal-notice" role="alert">{error}</p>}
+      <Lobby rooms={rooms} connected={connected}
+        create={() => router.push('/online')} join={code => router.push('/online' + (code ? '?room=' + encodeURIComponent(code) : ''))}
+        practice={() => router.push('/full')} refresh={refresh} />
+    </main>
+  </div>;
 }

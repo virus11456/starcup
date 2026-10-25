@@ -87,7 +87,7 @@ export default function FullGame() {
               結束並返回
             </button>
           )}
-          {!running && <Link href="/">返回大廳</Link>}
+          {!running && <><Link href="/online">多人對戰</Link><Link href="/">返回大廳</Link></>}
         </nav>
       </header>
       {running ? (
