@@ -1,0 +1,64 @@
+/* Same HUD/viewport coordinates as the scoreboard. Native card hit boxes,
+   selection and action rows remain owned by the engine. */
+#grail-help-body, #grail-help-body * { box-sizing: border-box; position: static; font-family: system-ui, sans-serif; text-shadow: none; }
+#grail-help-body [hidden], #grail-help-body[hidden] { display: none !important; }
+#grail-help:has(#grail-help-toggle[aria-expanded="true"]) {
+  top: 54px !important; right: 8px !important; bottom: 8px !important;
+  width: min(500px, calc(100% - 16px)) !important;
+  height: auto !important; max-height: calc(100% - 62px) !important;
+  display: flex; flex-direction: column; overflow: hidden;
+  z-index: 40; border-color: #d9c38e; background: #102129;
+  box-shadow: 0 12px 50px #000b; border-radius: 12px;
+}
+#grail-help-toggle { flex-shrink: 0; min-height: 44px; }
+#grail-help:has(#grail-help-toggle[aria-expanded="false"]) { bottom: auto !important; height: 44px; max-height: 44px !important; overflow: hidden; }
+#grail-help-body { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+#grail-help-body .grail-inspect-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 6px 10px; flex-shrink: 0; border-bottom: 1px solid #cbb58255; }
+#grail-help-body button { min-height: 44px; border: 1px solid #91a9a266; border-radius: 6px; background: #213b40; color: #e6ede9; font-size: 14px; padding: 6px 8px; cursor: pointer; }
+#grail-help-body .grail-inspect-tabs button[aria-pressed="true"] { background: #e5ce97; color: #162629; border-color: #f4e1b6; font-weight: 700; }
+#grail-help-body #grail-help-content { min-height: 0; overflow-y: auto; flex: 1; font-size: 16px; line-height: 1.8; padding: 12px 16px; }
+#grail-help-body #grail-help-content h4 { font-size: 17px; line-height: 1.6; color: #efd69f; }
+#grail-help-body #grail-help-content .grail-selection-legend { font-size: 14px; }
+#grail-inspection { display: flex; flex-direction: column; min-height: 0; flex: 1; padding: 10px 12px; gap: 8px; color: #edf2ec; }
+#grail-inspection .grail-inspect-tools { display: flex; align-items: end; gap: 8px; flex-shrink: 0; }
+#grail-inspection label { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; font-size: 12px; color: #bdcfc9; }
+#grail-inspection select { min-width: 0; width: 100%; min-height: 44px; padding: 6px; border: 1px solid #91a9a266; border-radius: 6px; background: #122e35; color: #f0ebdb; font-size: 16px; }
+#grail-inspection .grail-inspect-tools > button { flex-shrink: 0; margin-left: auto; }
+#grail-inspection .grail-inspect-note { flex-shrink: 0; margin: 0; font-size: 13px; line-height: 1.6; color: #bdcfc9; }
+#grail-inspection .grail-inspect-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
+#grail-inspection article { margin: 0 0 12px; padding: 14px; border: 1px solid #92afa34d; border-radius: 10px; background: #172e34; overflow-wrap: anywhere; }
+#grail-inspection article header { display: flex; align-items: center; gap: 12px; }
+#grail-inspection article header > div { min-width: 0; flex: 1; }
+#grail-inspection article header img { width: 72px; height: 72px; object-fit: contain; border-radius: 6px; background: #0d2027; flex-shrink: 0; }
+#grail-inspection h3 { font-size: 20px; line-height: 1.5; margin: 0; color: #f2dfb2; }
+#grail-inspection article header p { font-size: 13px; line-height: 1.6; color: #bacec9; margin: 4px 0 0; }
+#grail-inspection article section { padding-top: 12px; margin-top: 12px; border-top: 1px solid #9bb2a533; }
+#grail-inspection h4 { font-size: 17px; line-height: 1.6; margin: 0 0 6px; color: #e6d6b3; }
+#grail-inspection article section p, #grail-inspection .grail-inspect-empty { font-size: 16px; line-height: 1.85; margin: 0; white-space: pre-line; color: #edf2ec; }
+#grail-inspection .grail-inspect-status { display: inline-block; margin: 12px 0 0; padding: 4px 8px; border: 1px solid #b3d7cf66; border-radius: 5px; font-size: 13px; color: #cbe7de; }
+#grail-inspection .grail-inspect-count { flex-shrink: 0; padding: 6px 10px; border-radius: 8px; background: #0a2027; border: 1px solid #d1bd8d99; color: #f8e5b9; font: 700 22px/1.3 system-ui; }
+#grail-inspection article section small { display: inline-block; font-size: 13px; padding: 3px 8px; margin: 0 0 6px; border-radius: 4px; background: #0d242c; color: #bbd0c8; }
+#grail-inspection article .grail-inspect-matching { padding: 12px; border: 1px solid #d8b96b; border-radius: 8px; background: #d3ac4f12; }
+#grail-inspection .grail-inspect-matching small { background: #e0c482; color: #172728; font-weight: 700; }
+#grail-help-body :focus-visible { outline: 2px solid #f4dda3; outline-offset: -3px; }
+@media (max-width: 1049px) {
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) { top: 4px !important; right: 52px !important; width: 56px !important; }
+}
+/* Improve the visible badge without moving any native marker/target. */
+#window #arena .player :is(.marks, .marks2) > .card > .markcount {
+  min-width: calc(18px * var(--grail-touch-scale, 1)); width: auto; height: auto;
+  padding: 1px 3px; font: 700 calc(13px * var(--grail-touch-scale, 1))/1.3 system-ui;
+  border: 1px solid #f0deb0; border-radius: 5px; color: #fff6d5; background: #091b26;
+  text-shadow: none; pointer-events: none;
+}
+@media (max-width: 600px), (min-width: 601px) and (max-width: 1049px) and (max-height: 500px) {
+  #window #arena #handcards1 .card > .name { font-size: calc(13px * var(--grail-touch-scale, 1)); color: #fff4d4; text-shadow: 0 1px 3px #000, 0 0 4px #000; }
+  #window #arena #handcards1 .card > .range { font-size: calc(11px * var(--grail-touch-scale, 1)); color: #fff4d4; background: #0a1825d9; border-radius: 3px; padding: 2px; }
+}
+@media (max-height: 500px) {
+  #grail-help:has(#grail-help-toggle[aria-expanded="true"]) { top: 4px !important; bottom: 4px !important; max-height: calc(100% - 8px) !important; width: min(560px, calc(100% - 16px)) !important; }
+  #grail-help-body .grail-inspect-tabs { padding: 3px 10px; }
+  #grail-inspection { gap: 4px; padding: 6px 12px; }
+  #grail-inspection .grail-inspect-note { font-size: 12px; line-height: 1.4; }
+  #grail-inspection label { flex-direction: row; align-items: center; white-space: nowrap; }
+}

@@ -6,6 +6,7 @@ import { anchorToViewport } from "./grail-viewport.js";
 import { describeStage, teamSummary } from "./grail-battle-state.js";
 import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
+import { createBattleInspection } from "./grail-inspection.js";
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -18,18 +19,7 @@ const stopHud = anchorToViewport(hud, (scale) => {
 const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
-// On phones, keep the guide available without covering a selectable player.
-if (matchMedia("(max-width: 1049px)").matches) {
-  help.hidden = true;
-  toggle.setAttribute("aria-expanded", "false");
-  toggle.textContent = "提示 ▸";
-}
-toggle.setAttribute("aria-label", "本回合提示與圖示說明");
-toggle.addEventListener("click", () => {
-  help.hidden = !help.hidden;
-  toggle.setAttribute("aria-expanded", String(!help.hidden));
-  toggle.textContent = help.hidden ? "提示 ▸" : "本回合提示 ▾";
-});
+const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
 const text = (value) =>
   String(value || "")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -37,6 +27,7 @@ const text = (value) =>
 let last = "";
 function update() {
   history.attach(ui.sidebar);
+  inspection.update();
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   // The native hall's restart/exit reloads only the iframe. Embedded rooms
   // return through the parent page so its authenticated leave flow runs.
@@ -136,7 +127,7 @@ function update() {
   help.append(p);
   const legend = document.createElement("p");
   legend.className = "grail-selection-legend";
-  legend.textContent = "金框可選 · 青框已選 · 依畫面按鈕確認。戰況圖示：盾牌＝士氣、杯＝星杯（目前／目標）、粉色寶石與青色水晶＝隊伍戰績。上方「紀錄」可查閱玩家動作與結算。";
+  legend.textContent = "牌桌金框可選 · 青框已選 · 依畫面按鈕確認。「手牌」可讀完整效果與獨有技；「角色」與「指示物」可切換查看各玩家。戰況圖示：盾牌＝士氣、杯＝星杯、粉色寶石與青色水晶＝隊伍戰績。「紀錄」可查閱玩家動作。";
   help.append(legend);
   for (const [label, values] of [
     ["可用手牌", cards],
@@ -193,6 +184,7 @@ window.addEventListener(
     stopMotion();
     stopHud();
     history.stop();
+    inspection.stop();
     hud.remove();
   },
 );
