@@ -2,10 +2,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import InstallApp from './install-app';
-type LobbyRoom = { code: string; name: string; host: string; count: number; capacity: number };
-export default function Lobby({ rooms, connected, create, join, practice, refresh }: { rooms: LobbyRoom[]; connected: boolean; create: () => void; join: (code?: string) => void; practice: () => void; refresh: () => void }) {
+import type { LobbyRoom } from '@/lib/lobby';
+export default function Lobby({ rooms, connected, loading = false, create, join, practice, refresh }: { rooms: LobbyRoom[]; connected: boolean; loading?: boolean; create: () => void; join: (code?: string) => void; practice: () => void; refresh: () => void }) {
   const [query, setQuery] = useState("");
-  const filtered = rooms.filter(r => `${r.name} ${r.code}`.toLowerCase().includes(query.toLowerCase()));
+  const filtered = !loading && connected ? rooms.filter(r => `${r.name} ${r.code}`.toLowerCase().includes(query.toLowerCase())) : [];
+  const status = loading ? '正在讀取房間清單' : connected ? '多人服務已就緒' : '暫時無法取得房間';
+  const empty = loading
+    ? { title: '正在讀取房間…', detail: '請稍候；你也可以使用朋友的邀請碼加入。', action: '輸入邀請碼', click: () => join() }
+    : !connected
+      ? { title: '房間清單暫時無法顯示', detail: '請稍後重新整理；也可以先選擇單人對電腦。', action: '單人對電腦', click: practice }
+      : query
+        ? { title: '還沒有符合的房間', detail: '換個關鍵字，或直接輸入朋友的邀請碼。', action: '輸入邀請碼', click: () => join() }
+        : { title: '戰場靜候，傳說將啟。', detail: '目前沒有公開房間。邀請幾位朋友，開啟今晚的第一局。', action: '建立房間 ＋', click: create };
   return <div className="portal-home">
     <section className="portal-hero">
       <div className="hero-constellation" aria-hidden="true">✧</div>
@@ -22,7 +30,7 @@ export default function Lobby({ rooms, connected, create, join, practice, refres
       <Link className="mode-card online-card" href="/online"><span className="mode-icon">⚔</span><small>多人角色對戰</small><h3>多人角色對戰</h3><p>與朋友使用完整角色與技能對戰。<br />與單機共用相同戰鬥引擎與畫面。</p><span className="mode-chip">完整角色技能 · 跨裝置連線</span><b className="mode-arrow">↗</b></Link>
       <Link className="mode-card academy-card" href="/learn"><span className="mode-icon">❖</span><small>認識星杯</small><h3>星杯學院</h3><p>從第一張牌開始，<br />讀懂傷害、應戰與勝利條件。</p><span className="mode-chip">步驟教學 · 規則查詢</span><b className="mode-arrow">↗</b></Link>
     </div></section>
-    <section className="portal-room-section"><div className="portal-room-list"><div className="portal-section-heading"><div><span className="portal-kicker">冒險者大廳</span><h2>有人等你，一起出發。</h2></div><button className="portal-text-button" onClick={refresh}>重新整理 ↻</button></div><div className="portal-room-tools"><span className={connected ? "server-online" : "server-offline"}>● {connected ? "多人服務已就緒" : "正在連接服務"}</span><input aria-label="搜尋公開房間" placeholder="搜尋房間名稱或邀請碼" value={query} onChange={e => setQuery(e.target.value)} /></div>{filtered.length ? filtered.map(r => <button key={r.code} className="portal-room" onClick={() => join(r.code)}><span className="room-symbol">✦</span><span><strong>{r.name}</strong><small>{r.host} · {r.capacity / 2} 對 {r.capacity / 2} · 完整角色模式</small></span><span>{r.count} / {r.capacity} 人 →</span></button>) : <div className="portal-empty"><span>☾</span><div><h3>{query ? "還沒有符合的房間" : "戰場靜候，傳說將啟。"}</h3><p>{query ? "換個關鍵字，或直接輸入朋友的邀請碼。" : "目前沒有公開房間。邀請幾位朋友，開啟今晚的第一局。"}</p></div><button className="portal-secondary" onClick={create}>建立房間 ＋</button></div>}</div><aside className="portal-practice"><span className="portal-kicker">暖身練習</span><h3>先試一手？</h3><p>無需等待其他玩家，<br />用完整角色技能熟悉出牌與回應。</p><button onClick={practice}>開始快速練習 <span>→</span></button><small>單人對電腦 · 完整角色技能</small></aside></section>
+    <section className="portal-room-section"><div className="portal-room-list"><div className="portal-section-heading"><div><span className="portal-kicker">冒險者大廳</span><h2>有人等你，一起出發。</h2></div><button className="portal-text-button" onClick={refresh} disabled={loading}>{loading ? '讀取中…' : '重新整理 ↻'}</button></div><div className="portal-room-tools"><span role="status" className={connected && !loading ? "server-online" : "server-offline"}>● {status}</span><button className="portal-text-button" onClick={() => join()}>輸入邀請碼</button><input aria-label="搜尋公開房間" placeholder="搜尋房間名稱或邀請碼" value={query} disabled={loading || !connected} onChange={e => setQuery(e.target.value)} /></div>{filtered.length ? filtered.map(r => <button key={r.code} className="portal-room" onClick={() => join(r.code)}><span className="room-symbol">✦</span><span><strong>{r.name}</strong><small>{r.host} · {r.capacity / 2} 對 {r.capacity / 2} · 完整角色模式</small></span><span>{r.count} / {r.capacity} 人 →</span></button>) : <div className="portal-empty"><span aria-hidden="true">☾</span><div><h3>{empty.title}</h3><p>{empty.detail}</p></div><button className="portal-secondary" onClick={empty.click}>{empty.action}</button></div>}</div><aside className="portal-practice"><span className="portal-kicker">暖身練習</span><h3>先試一手？</h3><p>無需等待其他玩家，<br />用完整角色技能熟悉出牌與回應。</p><button onClick={practice}>開始快速練習 <span>→</span></button><small>單人對電腦 · 完整角色技能</small></aside></section>
     <section className="portal-archive"><div><span className="portal-kicker">每張牌，都有一段故事</span><h2>你的下一張王牌，<br />就在星之典。</h2><p>角色技能、卡牌效果與遊戲規則，隨時在站內查詢。</p></div><div className="archive-links"><Link href="/cards"><span>01</span><div><h3>卡牌與角色圖鑑</h3><p>搜尋牌面、角色、技能與正式擴充包</p></div><b>↗</b></Link><Link href="/rules"><span>02</span><div><h3>規則與常見問題</h3><p>查詢應戰、傷害、士氣與各模式差異</p></div><b>↗</b></Link></div></section>
     <InstallApp />
     <footer className="portal-footer"><span>星杯傳說</span><p>非官方同好作品 · 圖片與遊戲素材權利歸原權利人</p><Link href="/rules">版本與規則</Link></footer>

@@ -31,6 +31,8 @@
 .portal-section-heading { flex-wrap: wrap; }
 .portal-section-heading > div { min-width: 0; }
 .portal-text-button { flex-shrink: 0; }
+.portal-room-tools { flex-wrap: wrap; }
+.portal-room-tools input { min-width: 0; max-width: 100%; }
 .portal-empty > div { min-width: 0; }
 .portal-room > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .portal-room > span:first-child, .portal-room > span:last-child { flex-shrink: 0; }
