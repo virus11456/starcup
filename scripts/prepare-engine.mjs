@@ -120,6 +120,10 @@ await patch(
   "if (!_status.video && vinum && game.getVideoName && window.indexedDB && _status.videoInited)",
   "if (!_status.video && vinum && game.getVideoName && window.indexedDB && lib.db && _status.videoInited)",
 );
+// Embedded hosts must keep their result screen: the upstream hall reloads
+// after 15 seconds, which rotates the seat epoch and closes our native room.
+await patch('noname/game/index.js', 'setTimeout(game.reload, 15000);',
+  'if (!game.grailEmbeddedRoom) setTimeout(game.reload, 15000);');
 // The upstream can transiently carry a negative value at game over. Clamp
 // only the rendered score; preserve the original loss amount and rule state.
 for (const team of ["hong", "lan"]) await patch(
@@ -254,6 +258,7 @@ for (const [file, marker] of [
   ['noname/library/element/client.js', '!game.grailDraftPending?.(this.id)'],
   ['character/teDian.js', 'return installOfficialGlutton({'],
   ['noname/ui/create/index.js', 'updateResponseCancelLabel(ui.confirm, _status.event'],
+  ['noname/game/index.js', 'if (!game.grailEmbeddedRoom) setTimeout(game.reload, 15000);'],
 ]) {
   if (!(await readFile(path.join(output, file), 'utf8')).includes(marker)) {
     throw new Error(`Prepared engine is missing a required patch: ${file}`);

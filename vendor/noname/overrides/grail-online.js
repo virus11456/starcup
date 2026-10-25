@@ -19,6 +19,7 @@ function onlineConfig(capacity) {
     shiQiMax: capacity === 8 ? 18 : 15, zhanJiMax: 5, xingBeiMax: 5, hasPassword: false, onlyChooseCharacter: false });
 }
 export async function startRelay() {
+  game.grailEmbeddedRoom = true;
   // Native guests copy only a small allowlist of mode.game methods during
   // init/reinit. Install our shared UI helpers before the first handshake.
   Object.assign(game, freeDraftMethods, {
