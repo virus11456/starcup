@@ -5,7 +5,14 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "main": "vinext/server/fetch-handler",
+  "main": "cloudflare/worker.js",
+  "workers_dev": true,
+  "preview_urls": false,
+  "durable_objects": { "bindings": [
+    { "name": "GRAIL_ROOMS", "class_name": "GrailRoom" },
+    { "name": "GRAIL_DIRECTORY", "class_name": "GrailDirectory" }
+  ] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GrailRoom", "GrailDirectory"] }],
   "assets": {
     "directory": "dist/client",
     "html_handling": "none",

@@ -1,9 +1,10 @@
-/* GPL-3.0: HTTP transport only. Rules, private hands and online choices remain
+/* GPL-3.0: Relay transport only. Rules, private hands and online choices remain
  * in the pinned noname engine's native Client/NodeWS/message implementation. */
 import { lib, game, ui, _status } from './noname.js';
 import security from './noname/util/security.js';
 import { freeDraftMethods } from './grail-free-draft.js';
 import { characterFamily, availableCharacters } from './grail-characters.js';
+import { createRelaySocket } from './grail-relay-socket.js';
 
 const packs = ['shiZhouNian', 'yiDuanYeHuo', 'shenZiChuangLin', 'zhongMoDaoZhu', 'teDian'];
 function onlineConfig(capacity) {
@@ -34,12 +35,19 @@ export async function startRelay() {
     status.classList.toggle('fatal', fatal);
   };
   let stopped = false, ack = 0, started = false, pending = [], failures = 0;
+  let useSocket = false, wake = () => {};
+  let socket;
   const peers = new Map();
-  const queue = (to, data) => pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) });
+  const queue = (to, data) => { pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) }); wake(40); };
   async function request(type, extra = {}) {
+    const body = { type, code, token, connection, ...extra };
+    if (useSocket && type === 'sync') {
+      try { return await socket.request(body); }
+      catch (error) { if (error.status) throw error; }
+    }
     const response = await fetch('/api/full-room', { method: 'POST', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({ type, code, token, connection, ...extra }) });
+      body: JSON.stringify(body) });
     const data = await response.json();
     if (!response.ok) throw Object.assign(new Error(data.error || '連線暫時中斷'), { status: response.status });
     return data;
@@ -47,6 +55,8 @@ export async function startRelay() {
   try {
     tell('正在連接完整角色房間…');
     const attached = await request('attach');
+    useSocket = attached.transport === 'websocket';
+    if (useSocket) socket = createRelaySocket(code, token, connection, () => wake(40));
     const room = attached.room;
     if (room.status === 'closed') throw Object.assign(new Error('房主已離開牌局。請返回大廳建立新房間。'), { status: 410 });
     ack = attached.sequence;
@@ -62,12 +72,12 @@ export async function startRelay() {
     game.sandbox = security.createSandbox();
     // Preserve the native message parser and its sandbox, replacing only
     // WebSocket IO. No public upstream hall or third-party relay is contacted.
-    game.ws = { readyState: 1, close() { stopped = true; }, send(serialized) {
+    game.ws = { readyState: 1, close() { stopped = true; socket?.close(); }, send(serialized) {
       if (!room.isHost) { queue('1', serialized); return; }
       const command = JSON.parse(serialized);
       if (command[0] !== 'server') return;
       if (command[1] === 'send') queue(command[2], command[3]);
-      if (command[1] === 'config' && command[2]?.gameStarted) started = true;
+      if (command[1] === 'config' && command[2]?.gameStarted) { started = true; wake(40); }
       if (command[1] === 'close') {
         lib.message.client.onclose(command[2]); peers.delete(command[2]);
       }
@@ -81,13 +91,20 @@ export async function startRelay() {
       // The host sends the native "opened" handshake after discovering this
       // authenticated seat; the existing init/reinit flow does everything else.
     }
-    window.addEventListener('pagehide', () => { stopped = true; });
+    window.addEventListener('pagehide', () => { stopped = true; socket?.close(); });
+    let timer, running = false, wakeQueued = false;
+    wake = delay => {
+      if (stopped) return;
+      if (running) { wakeQueued = true; return; }
+      clearTimeout(timer); timer = setTimeout(poll, delay);
+    };
     async function poll() {
       if (stopped) return;
-      let delay = 600;
+      let delay = useSocket ? 10_000 : 600;
       try {
         // Do not acknowledge a handshake until createServer installed wsOL.
-        if (room.isHost && !lib.wsOL) { setTimeout(poll, 100); return; }
+        if (room.isHost && !lib.wsOL) { wake(100); return; }
+        running = true;
         const batch = [];
         let bytes = 0;
         for (const message of pending) {
@@ -132,10 +149,12 @@ export async function startRelay() {
         failures++;
         const fatal = [400, 401, 403, 409, 410, 413].includes(error.status);
         tell(fatal ? error.message + ' 請使用上方的返回按鈕。' : '網路同步中斷，正在重試…', fatal);
-        if (fatal) { stopped = true; return; }
+        if (fatal) { stopped = true; socket?.close(); return; }
         delay = Math.min(5000, 600 * 2 ** failures);
       }
-      setTimeout(poll, delay);
+      running = false;
+      if (wakeQueued) { delay = Math.min(delay, 80); wakeQueued = false; }
+      wake(delay);
     }
     poll();
   } catch (error) {
