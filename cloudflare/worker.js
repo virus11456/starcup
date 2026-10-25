@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from '../lib/site-access.ts';
 import { attachFullRoom, createFullRoom, fullSummary, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '../lib/full-room.ts';
 import { RoomStorage } from './room-storage.js';
+import { socketCheckpoint, syncSocketRoom } from './room-checkpoints.js';
 
 const DAY = 86_400_000;
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -74,7 +75,9 @@ export class GrailRoom extends DurableObject {
           attachFullRoom(room, auth, body.connection);
           data = { ...relayView(room, auth), transport: 'websocket' };
         } else if (body.type === 'sync') {
-          changed = syncFullRoom(room, auth, body);
+          changed = sender
+            ? syncSocketRoom(room, auth, body, this.ctx.getWebSockets().map(ws => ws.deserializeAttachment()))
+            : syncFullRoom(room, auth, body);
           data = relayView(room, auth);
         } else if (body.type === 'leave') {
           const member = memberFor(room, auth);
@@ -88,7 +91,7 @@ export class GrailRoom extends DurableObject {
         room.updated = Date.now();
         this.rooms.save(room);
       }
-      if (sender) sender.serializeAttachment({ auth, connection: body.connection });
+      if (sender) sender.serializeAttachment(socketCheckpoint(room, auth));
       // Notify only for gameplay/membership changes, not heartbeat/ack traffic.
       if (body.type !== 'sync' || body.messages?.length || body.started && room.status === 'playing' && !wasPlaying) {
         for (const ws of this.ctx.getWebSockets()) if (ws !== sender && ws.deserializeAttachment()?.auth) {

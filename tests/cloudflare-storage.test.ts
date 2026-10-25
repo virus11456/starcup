@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { RoomStorage } from '../cloudflare/room-storage.js';
+import { socketCheckpoint, syncSocketRoom } from '../cloudflare/room-checkpoints.js';
 import { attachFullRoom, createFullRoom, joinFullRoom, relayView, syncFullRoom } from '../lib/full-room.ts';
 
 function fixture() {
@@ -23,6 +24,58 @@ function fixture() {
   attachFullRoom(room, 'guest', 'connection-guest-12345');
   return { db, storage, rooms, room };
 }
+
+test('live socket acknowledgements survive hibernation without one SQLite transaction per recipient', () => {
+  const { db, storage, rooms, room } = fixture();
+  const now = Date.now();
+  const send = { connection: 'connection-host-123456', ack: 0, messages: [{ id: 'checkpoint-message-1234', to: 'guest-id', data: '["private-hand","secret-card"]' }] };
+  assert.equal(syncSocketRoom(room, 'host', send, [], now), true);
+  rooms.save(room);
+  const before = Number(db.prepare('SELECT total_changes() AS n').get()?.n);
+  let restored = new RoomStorage(storage).load();
+  assert.equal(syncSocketRoom(restored, 'guest', { connection: 'connection-guest-12345', ack: 1, messages: [] }, [], now + 1), false);
+  const checkpoint = socketCheckpoint(restored, 'guest');
+  for (let i = 2; i < 30; i++) {
+    restored = new RoomStorage(storage).load(); // no instance-memory cache
+    assert.equal(syncSocketRoom(restored, 'guest', { connection: 'connection-guest-12345', ack: 1, messages: [] }, [checkpoint], now + i), false);
+    assert.deepEqual(relayView(restored, 'guest').messages, []);
+  }
+  assert.equal(Number(db.prepare('SELECT total_changes() AS n').get()?.n), before);
+  restored = rooms.load();
+  assert.equal(syncSocketRoom(restored, 'host', { ...send, messages: [{ ...send.messages[0], id: 'checkpoint-message-5678' }] }, [checkpoint], now + 30), true);
+  rooms.save(restored);
+  assert.deepEqual(rooms.load().messages.map((m: { seq: number }) => m.seq), [2]);
+  assert.equal(relayView(rooms.load(), 'host').messages.length, 0);
+  db.close();
+});
+
+test('lost socket checkpoint replays safely and heartbeat persists acknowledgements', () => {
+  const { db, rooms, room } = fixture();
+  const now = Date.now();
+  syncFullRoom(room, 'host', { connection: 'connection-host-123456', ack: 0,
+    messages: [{ id: 'lost-checkpoint-12345', to: 'guest-id', data: '["update",{}]' }] }, now);
+  rooms.save(room);
+  const restored = rooms.load();
+  assert.equal(relayView(restored, 'guest').messages.length, 1);
+  assert.equal(syncSocketRoom(restored, 'guest', { connection: 'connection-guest-12345', ack: 1, messages: [] }, [], now + 9_000), true);
+  rooms.save(restored);
+  assert.equal(rooms.load().messages.length, 0);
+  assert.equal(rooms.load().members.find((m: { auth: string }) => m.auth === 'guest').seen, now + 9_000);
+  db.close();
+});
+
+test('stale and forged socket checkpoints cannot acknowledge a current recipient inbox', () => {
+  const { db, room } = fixture();
+  const now = Date.now();
+  syncFullRoom(room, 'host', { connection: 'connection-host-123456', ack: 0,
+    messages: [{ id: 'epoch-checkpoint-1234', to: 'guest-id', data: '["update",{}]' }] }, now);
+  const c = { auth: 'guest', connection: 'connection-guest-12345', ack: 1, seen: now };
+  syncSocketRoom(room, 'host', { connection: 'connection-host-123456', ack: 0, messages: [] },
+    [{ ...c, connection: 'old-connection-123456' }, { ...c, auth: 'unknown' }, { ...c, ack: 999 }], now + 1);
+  assert.equal(relayView(room, 'guest').messages.length, 1);
+  assert.throws(() => syncSocketRoom(room, 'guest', { connection: 'old-connection-123456', ack: 1, messages: [] }, [], now + 2), /另一個頁面/);
+  db.close();
+});
 
 test('SQLite room survives reload, deduplicates retries and retains only recipient inbox', () => {
   const { db, storage, rooms, room } = fixture();
