@@ -10,7 +10,7 @@
 .grail-motion-piles > div { position: relative !important; padding: 20px 10px; border: 1px solid #bc9f62; border-radius: 6px; background: #183039; color: #e3c88d; font: 11px system-ui; }
 .grail-motion-enabled #arena > .card.thrown { visibility: hidden !important; }
 @media(max-width:1049px) { .grail-motion-piles { right: 12px; bottom: 150px; } .grail-motion-piles > div { padding: 12px 7px; font-size: 9px; } #grail-help-toggle { min-height:44px; } }
-@media(max-width:600px) { #grail-help { top: 48px; bottom: auto !important; max-height: 38vh !important; } #grail-help-content { font-size: 11px; } .grail-motion-piles { bottom: 145px; right: 8px; } #window .control { min-height: 36px; } }
+@media(max-width:600px) { #grail-help { top: 48px; bottom: auto !important; max-height: 38vh !important; } #grail-help-content { font-size: 11px; } .grail-motion-piles { bottom: 210px; right: 8px; } #window .control { min-height: 36px; } }
 body {
   margin: 0;
   background: radial-gradient(
