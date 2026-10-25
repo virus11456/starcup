@@ -74,7 +74,7 @@ export default function OnlineGame() {
         <form className="full-panel" onSubmit={event => { event.preventDefault(); void enter('create'); }}><h2>建立新牌局</h2><p className="online-form-help">自己開房邀請朋友，不需要填寫房間碼。</p><label>房間名稱<input value={title} onChange={event => setTitle(event.target.value)} maxLength={24} required pattern=".*\S.*" title="請填寫房間名稱" /></label><label>牌局人數<select value={capacity} onChange={event => setCapacity(event.target.value)}><option value="4">4 人 · 2 對 2</option><option value="6">6 人 · 3 對 3</option><option value="8">8 人 · 4 對 4</option></select></label><button className="full-primary" disabled={busy}>{busy ? '正在連線…' : '建立房間 →'}</button></form>
         <form className="full-panel" onSubmit={event => { event.preventDefault(); void enter('join'); }}><h2>加入朋友房間</h2><p className="online-form-help">已有邀請碼？填入朋友分享的房間碼。</p><label>朋友的房間碼<input value={code} onChange={event => setCode(event.target.value.toUpperCase())} maxLength={8} required pattern="[A-Z2-9]{8}" title="請輸入 8 位英數字房間碼" placeholder="8 位英數字" autoCapitalize="characters" /></label><button className="full-primary" disabled={busy}>{busy ? '正在連線…' : '加入房間 →'}</button></form>
       </div>
-      <aside className="full-panel online-notice"><h2>開始前的小提醒</h2><p>朋友入座後，由房主按「開始遊戲」，空位由電腦補上。每人隨機取得 5 名候選角色，同場角色不重複。</p><p>房主的頁面負責主持牌局，請保持開啟；房主重新整理或離開會結束牌局。其他玩家可用同一分頁的房間碼重新加入。手機切到背景可能暫停同步。</p><p>舊核心房間不會自動恢復，請在這裡建立新的完整角色房間。</p></aside>
+      <aside className="full-panel online-notice"><h2>開始前的小提醒</h2><p>朋友入座後，由房主按「開始遊戲」。所有玩家都能從完整角色池自由選擇；先確認的玩家保留角色，其他玩家不能重複選取。空位由電腦選擇剩餘角色補上。</p><p>房主的頁面負責主持牌局，請保持開啟；房主重新整理或離開會結束牌局。其他玩家可用同一分頁的房間碼重新加入。手機切到背景可能暫停同步。</p><p>舊核心房間不會自動恢復，請在這裡建立新的完整角色房間。</p></aside>
     </>}
   </main>;
 }

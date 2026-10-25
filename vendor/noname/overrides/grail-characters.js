@@ -26,3 +26,13 @@ export function distinctCharacters(candidates) {
     return true;
   });
 }
+
+// One synchronous host decision owns each claim. The transport may deliver
+// simultaneous confirmations in either order; only the first can own a family.
+export function claimCharacter(draft, seat, choice) {
+  if (!draft.seats.includes(seat) || !draft.pool.includes(choice)) return false;
+  if (Object.hasOwn(draft.claims, seat)) return draft.claims[seat] === choice;
+  if (!availableCharacters([choice], Object.values(draft.claims)).length) return false;
+  draft.claims[seat] = choice;
+  return true;
+}

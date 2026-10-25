@@ -10,7 +10,7 @@ function onlineConfig(capacity) {
     if (key.startsWith('connect_') && setting.init !== undefined) config[key.slice(8)] = setting.init;
   }
   return Object.assign(config, { mode: 'xingBei', versus_mode: `${capacity / 2}v${capacity / 2}`, number: capacity,
-    player_number: capacity, choose_mode: '多選1', choose_number: 5, team_sequence: 'crossed',
+    player_number: capacity, choose_mode: 'freeChoose', choose_number: 5, team_sequence: 'crossed',
     characterPack: packs, cardPack: ['xingBei'], banned: [], bannedcards: [], zhinang_tricks: [],
     choose_timeout: 120, observe: false, viewHandcard: false, phaseswap: false, chooseSide: false,
     shiQiMax: capacity === 8 ? 18 : 15, zhanJiMax: 5, xingBeiMax: 5, hasPassword: false, onlyChooseCharacter: false });

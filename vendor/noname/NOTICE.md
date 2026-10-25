@@ -27,3 +27,5 @@
 手機手牌放大：新增 grail-handcards.css，600px 以下將原手牌節點以 72px 正方形橫向捲動排列，牌面文字與操作列間距同步調整。保留原卡牌點擊與規則，選牌以原 selected 狀態顯示抬升。
 
 2026-10-25 多人整合：新增 mode/connect.js 與 grail-online.js，沿用固定版本的原生 online message／Client／NodeWS／sandbox，僅以本站 HTTP 中繼取代公共聯機服務；單機與多人共用原角色技能及牌庫。候選角色先按家族去重。連線啟動完成呼叫原生 onfree；網頁版不嘗試讀桌面客戶端設定檔。
+
+2026-10-25 多人自由選角：新增 grail-free-draft.js，使用原生 chooseButton／wait／broadcast 事件；4／6／8 人皆顯示完整已啟用角色池。房主確認角色家族的唯一佔用，再解除原生等待；同時搶角者重新選擇。選角快照可重連，電腦只補剩餘角色，未修改戰鬥技能與結算。

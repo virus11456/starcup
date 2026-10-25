@@ -26,7 +26,7 @@ for (const count of [4, 6, 8]) test(`${count}-player shipped draft never duplica
     const game = { addRecentCharacter() {}, grailCharacterFamily: characterFamily, grailAvailableCharacters: availableCharacters };
     let content;
     game.createEvent = () => ({ setContent(fn) { content = fn; } });
-    const mode = vm.runInNewContext(source + "\ngetMode();", { game, characterFamily, availableCharacters, distinctCharacters });
+    const mode = vm.runInNewContext(source + "\ngetMode();", { game, characterFamily, availableCharacters, distinctCharacters, freeDraftMethods: {} });
     mode.game.chooseCharacterDuoXuanYi();
     const text = `const fn = ${content.toString()};`;
     const ast = ts.createSourceFile("draft.js", text, ts.ScriptTarget.Latest, true);

@@ -453,4 +453,8 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
 /* Same-origin online transport status; never overlaps selection controls. */
 #grail-online-status { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 10000; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 9px; background: #152b31f5; color: #ebd7a4; font: 14px/1.6 sans-serif; pointer-events: none; text-align: center; }
 #grail-online-status[hidden] { display: none; }
+.grail-free-draft .grail-draft-status { position: relative; margin: 6px 10px 14px; color: #e9d5a6; font: 14px/1.6 system-ui, sans-serif; }
+#window .grail-free-draft .button.grail-taken { filter: grayscale(1); opacity: .45; pointer-events: none; }
+#window .grail-free-draft .button.grail-taken::after { content: '已選取'; position: absolute; inset: auto 0 0; padding: 5px 2px; background: #111e28ed; color: #fff; text-align: center; font: 12px/1.4 system-ui, sans-serif; }
+@media (max-width: 600px) { .grail-free-draft .grail-draft-status { font-size: calc(12px * var(--grail-touch-scale, 1)); } }
 #grail-online-status.fatal { top: 35%; width: min(360px, 80%); border: 1px solid #ab7567; }

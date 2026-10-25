@@ -132,12 +132,12 @@ mode =
 // Keep the upstream draft and random selection; remove every edition/form
 // of a claimed role before the next AI picks. Event contents are compiled by
 // noname, so helper calls must use the installed game methods, not a closure.
-mode = 'import { characterFamily, availableCharacters, distinctCharacters } from "../grail-characters.js";\n' + mode;
+mode = 'import { characterFamily, availableCharacters, distinctCharacters } from "../grail-characters.js";\nimport { freeDraftMethods } from "../grail-free-draft.js";\n' + mode;
 function patchMode(before, after) {
   if (!mode.includes(before)) throw new Error(`Pinned roster patch no longer matches: ${before}`);
   mode = mode.replaceAll(before, after);
 }
-patchMode('game:{', 'game:{\n        grailCharacterFamily: characterFamily,\n        grailDistinctCharacters: distinctCharacters,\n        grailAvailableCharacters: availableCharacters,');
+patchMode('game:{', 'game:{\n        ...freeDraftMethods,\n        grailCharacterFamily: characterFamily,\n        grailDistinctCharacters: distinctCharacters,\n        grailAvailableCharacters: availableCharacters,');
 patchMode("game.me.chooseButton(true,dialog,basenum).set('onfree',true);", `game.me.chooseButton(true,dialog,basenum).set('onfree',true).set('filterButton', function(button) {
     return ui.selected.buttons.every(selected => selected === button || game.grailCharacterFamily(selected.link) !== game.grailCharacterFamily(button.link));
   });`);
@@ -148,7 +148,19 @@ for (const initialize of ['game.players[i].init(name);', 'game.players[i].init(l
 }
 // Draft disjoint character families before assigning candidates to online seats.
 patchMode('list=get.characterGets(list);', 'list=game.grailDistinctCharacters(get.characterGets(list));');
+// The upstream 4v4 branch bypasses freeChoose, and upstream freeChoose permits
+// duplicate human and AI roles. Route all room sizes through native events with
+// a host-serialized family claim before accepting each result.
+patchMode('chooseCharacterOL:function(){', `chooseCharacterOL:function(){
+                if (lib.configOL.choose_mode === 'freeChoose' && !lib.configOL.phaseswap) {
+                    game.grailChooseCharacterOLFree(); return;
+                }`);
 await writeFile(modePath, mode);
+await patch('noname/library/index.js', 'player.unwait(result);', `if (game.grailAcceptDraftResult && !game.grailAcceptDraftResult(player, result)) return;
+                    player.unwait(result);`);
+await patch('noname/library/index.js', 'reinited() {\n\t\t\t\tthis.inited = true;', `reinited() {
+                this.inited = true;
+                game.grailDraftReconnected?.(this.id);`);
 // Remove community character registrations, not just their menu buttons.
 const specialPath = path.join(output, "character/teDian.js");
 let special = await readFile(specialPath, "utf8");
