@@ -42,6 +42,15 @@ function update() {
     }
   }
   for (const player of game.players || []) {
+    // Presentation only: preserve native seat order and target nodes when the
+    // short landscape viewport lays opponents in one horizontal row.
+    const seat = Number(player.dataset.position);
+    if (seat > 0 && game.players.length > 2) {
+      const fraction = String(1 - (seat - 1) / (game.players.length - 2));
+      if (player.style.getPropertyValue("--grail-seat-fraction") !== fraction) {
+        player.style.setProperty("--grail-seat-fraction", fraction);
+      }
+    }
     if (typeof player.side !== "boolean") continue;
     const team = player.side ? "red" : "blue";
     if (player.dataset.grailTeam !== team) {
