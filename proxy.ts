@@ -3,9 +3,12 @@ import { ACCESS_COOKIE, PRIVATE_CACHE, safeAccessNext, validAccessToken } from "
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  // Only the gate and its framework assets are public. In particular, do not
-  // exclude /api, /engine, image optimization, file extensions or RSC requests.
-  if (path.startsWith("/_next/static/") || path === "/favicon.svg") return NextResponse.next();
+  // Installation metadata contains no credentials. Whitelist exact files only;
+  // the engine, room APIs, image optimization and RSC remain protected.
+  const installAsset = ["/manifest.webmanifest", "/favicon.svg",
+    "/app-icons/icon-192.png", "/app-icons/icon-512.png",
+    "/app-icons/maskable-512.png", "/app-icons/apple-touch-icon.png"].includes(path);
+  if (path.startsWith("/_next/static/") || installAsset && ["GET", "HEAD"].includes(request.method)) return NextResponse.next();
   let response: NextResponse;
   if (path === "/access" || path === "/api/access" || validAccessToken(request.cookies.get(ACCESS_COOKIE)?.value)) {
     response = NextResponse.next();
