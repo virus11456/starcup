@@ -22,14 +22,14 @@ for (const device of [
   { name: "iPad desktop user agent", touch: true, coarse: true, ua: "macintosh" },
   { name: "hybrid laptop with mouse", touch: true, coarse: false, ua: "windows" },
   { name: "desktop", touch: false, coarse: false, ua: "linux" },
-  { name: "desktop QA with actual phone stylesheet", touch: false, coarse: false, ua: "linux", phone: true },
+  { name: "desktop QA with actual phone stylesheet", touch: false, coarse: false, ua: "linux", phone: true, narrow: true },
 ]) test(`${device.name}: first launch and repeated launches never prompt or reload`, () => {
   const saved = new Map();
   let config;
   const classes = new Set();
   const context = {
     location: { search: "?players=6&edition=current" + (device.phone ? "&phone-layout=1" : "") }, URLSearchParams,
-    window: { config: { all: {} }, matchMedia: () => ({ matches: device.coarse }) },
+    window: { config: { all: {} }, matchMedia: query => ({ matches: query.includes("pointer") ? device.coarse : (device.narrow ?? device.coarse) }) },
     localStorage: { setItem: (key, value) => saved.set(key, value) },
     document: { ...(device.touch ? { ontouchstart: null } : {}), documentElement: { classList: {
       toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name),
@@ -51,6 +51,10 @@ for (const device of [
     assert.equal(config.totouched, true);
     assert.equal(config.touchscreen, device.coarse);
     assert.equal(config.phonelayout, device.coarse || !!device.phone);
+    if (device.narrow ?? device.coarse) {
+      assert.equal(config.fold_card, false, "Keep the upstream scrollh touch-scroll path enabled for larger phone hands");
+      assert.equal(context.window.config.fold_card, false);
+    }
     assert.equal(classes.has("grail-phone-layout"), config.phonelayout);
     assert.equal(context.window.config.touchscreen, device.coarse);
     assert.equal(config.auto_popped_config, false);
