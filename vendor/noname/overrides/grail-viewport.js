@@ -20,5 +20,10 @@ export function anchorToViewport(element, onScale) {
   const observer = new MutationObserver(resize);
   observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
   window.addEventListener("resize", resize);
-  return () => { observer.disconnect(); window.removeEventListener("resize", resize); };
+  window.visualViewport?.addEventListener("resize", resize);
+  return () => {
+    observer.disconnect();
+    window.removeEventListener("resize", resize);
+    window.visualViewport?.removeEventListener("resize", resize);
+  };
 }

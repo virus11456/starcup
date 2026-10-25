@@ -289,10 +289,18 @@
 }
 .full-running {
   padding: 0;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  min-height: 0;
   height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+html:has(.full-running), body:has(.full-running) {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 .full-running .full-header {
   flex: 0 0 auto;

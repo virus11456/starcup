@@ -38,6 +38,8 @@ body > #window {
      still scroll on focus and displace every click target. Keep it in bounds. */
   overflow: clip;
 }
+html, html > body { overflow: clip !important; overscroll-behavior: none; }
+#window > #system { top: 0; left: 0; }
 #window #arena:not(.chess) {
   top: 54px;
   height: calc(100% - 66px);
@@ -359,5 +361,89 @@ body > #window {
     top: 4px;
     right: 52px;
     width: 128px;
+  }
+}
+
+/* Keep draft choices in their own scrollable panel, clear of the action row.
+   Retain noname's body scale so its touch-coordinate conversion stays valid. */
+@media (max-width: 1049px) {
+  body:has(#arena.choose-character) .grail-motion-piles { display: none !important; }
+  #window #arena.choose-character > .dialog:not(.popped) {
+    top: 46% !important;
+    bottom: auto !important;
+    left: 2% !important;
+    width: 96% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    transform: translateY(-50%) !important;
+    overflow: hidden;
+    z-index: 6;
+  }
+  #window #arena.choose-character > .dialog > .content-container {
+    position: relative !important;
+    display: block;
+    width: 100%;
+    height: auto !important;
+    max-height: calc((100dvh - 180px) * var(--grail-touch-scale, 1));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  #window #arena.choose-character > .dialog .content {
+    position: relative;
+    display: block;
+    width: auto;
+    padding: calc(12px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character > .dialog .caption {
+    font: calc(14px * var(--grail-touch-scale, 1)) / 1.6 system-ui;
+    padding: calc(6px * var(--grail-touch-scale, 1)) 0;
+  }
+  #window #arena.choose-character > .dialog .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc(10px * var(--grail-touch-scale, 1));
+    width: 100%;
+    padding: calc(8px * var(--grail-touch-scale, 1)) 0;
+  }
+  #window #arena.choose-character > .dialog .button.character {
+    flex: 0 0 auto;
+    width: calc(76px * var(--grail-touch-scale, 1));
+    height: calc(106px * var(--grail-touch-scale, 1));
+    margin: 0;
+  }
+  #window #arena.choose-character > .dialog .button.character > .name {
+    font-size: calc(12px * var(--grail-touch-scale, 1));
+    line-height: 1.15;
+  }
+  #window #arena.choose-character > .dialog .button.character > .identity {
+    font-size: calc(9px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character > .dialog table.add-setting {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc(6px * var(--grail-touch-scale, 1));
+    padding: calc(8px * var(--grail-touch-scale, 1)) 0;
+  }
+  #window #arena.choose-character > .dialog .tdnode {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    margin: 0;
+    width: calc(44px * var(--grail-touch-scale, 1));
+    height: calc(44px * var(--grail-touch-scale, 1));
+    font: calc(14px * var(--grail-touch-scale, 1)) / 1 system-ui;
+  }
+  #window #arena.choose-character > .dialog .placeholder.add-setting { display: none; }
+  #window #arena.choose-character > #control {
+    top: auto !important;
+    bottom: calc(8px * var(--grail-touch-scale, 1)) !important;
+    height: calc(48px * var(--grail-touch-scale, 1));
+    z-index: 7;
   }
 }
