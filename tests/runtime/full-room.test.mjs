@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { ACCESS_COOKIE, createAccessToken } from '../../lib/site-access.ts';
+import { enterOnlineRoom, seatKey } from '../../lib/online-session.ts';
 
 // Use the same workerd/Miniflare toolchain already installed by Wrangler.
 // These bindings and credentials exist only in this in-memory local runtime.
@@ -125,6 +126,47 @@ test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', 
       assert.equal((await request({ type: 'leave', code, token: host.token })).status, 200);
       assert.equal((await sync(guest.socket, code, guest)).status, 410);
       assert.equal((await request({ type: 'join', code, token: guest.token, name: guest.name })).status, 410);
+    });
+    await t.test('a lost join reply can be retried after start without consuming a second seat', async () => {
+      const hostToken = randomBytes(32).toString('hex');
+      const created = await request({ type: 'create', token: hostToken, name: '房主', title: '加入回覆遺失', capacity: 4 });
+      assert.equal(created.status, 200);
+      const code = created.data.room.code;
+      const values = new Map();
+      const storage = { getItem: key => values.get(key) ?? null,
+        setItem: (key, value) => { values.set(key, value); }, removeItem: key => { values.delete(key); } };
+      const guestInput = { type: 'join', code, name: '重試玩家', title: '', capacity: 4 };
+      let replies = 0;
+      const clientRequest = async (_url, init) => {
+        const body = JSON.parse(init.body);
+        const response = await mf.dispatchFetch(origin + '/api/full-room', {
+          ...init, headers: { cookie, origin, 'content-type': 'application/json' },
+        });
+        assert.equal(response.status, 200);
+        assert.equal(body.token, storage.getItem(seatKey(code)));
+        if (++replies === 1) {
+          // Persist the first join, start the room, then lose only its HTTP
+          // reply. This is a local transport fixture, not a completed game.
+          await response.arrayBuffer();
+          const connection = randomUUID();
+          assert.equal((await request({ type: 'attach', code, token: hostToken, connection })).status, 200);
+          assert.equal((await request({ type: 'sync', code, token: hostToken, connection, ack: 0, messages: [], started: true })).status, 200);
+          throw new TypeError('Simulated lost reply');
+        }
+        return response;
+      };
+      const options = { storage: () => storage, request: clientRequest };
+      await assert.rejects(enterOnlineRoom(guestInput, new AbortController().signal, options), TypeError);
+      const retainedToken = storage.getItem(seatKey(code));
+      assert.match(retainedToken, /^[a-f0-9]{64}$/);
+      const joined = await enterOnlineRoom(guestInput, new AbortController().signal, options);
+      assert.equal(joined.nickname, '重試玩家');
+      assert.equal(joined.isHost, false);
+      assert.equal(storage.getItem(seatKey(code)), retainedToken);
+      const view = await request({ type: 'join', code, token: hostToken, name: '房主' });
+      assert.equal(view.data.room.status, 'playing');
+      assert.equal(view.data.room.count, 2, 'retry must not consume another seat');
+      assert.equal((await request({ type: 'leave', code, token: hostToken })).status, 200);
     });
   } finally {
     for (const socket of sockets) try { socket.close(); } catch {}

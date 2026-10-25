@@ -1,11 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, type OnlineRoom as Room } from '@/lib/online-session';
+import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, enterOnlineRoom, roomRequestMessage, type OnlineRoom as Room } from '@/lib/online-session';
 import { createRoomRequests } from '@/lib/room-request';
 import '../full/full.css';
 import './online.css';
-function seatToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join(''); }
 export default function OnlineGame() {
   const [name, setName] = useState('');
   const nameInput = useRef<HTMLInputElement>(null);
@@ -67,7 +66,7 @@ export default function OnlineGame() {
       const next = await resumeGuestRoom(previous, sessionStorage.getItem(seatKey(previous.code)) || '', operation.signal);
       if (operation.current()) openRoom(next);
     }
-    catch (error) { if (operation.current()) setError(error instanceof Error ? error.message : '重連失敗，請再試一次。'); }
+    catch (error) { if (operation.current()) setError(roomRequestMessage(error, operation.signal)); }
     finally { if (operation.finish()) setBusy(false); }
   }
   async function enter(type: 'create' | 'join') {
@@ -81,23 +80,15 @@ export default function OnlineGame() {
     if (!operation) return;
     setBusy(true); setError('');
     try {
-      const normalized = normalizeRoomCode(code);
-      if (type === 'join' && !normalized) throw new Error('請輸入 8 位英數字房間碼。');
-      const token = type === 'join' ? sessionStorage.getItem(seatKey(normalized)) || seatToken() : seatToken();
-      const response = await fetch('/api/full-room', { method: 'POST', signal: operation.signal, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, token, code: normalized, name, title, capacity: Number(capacity) }) });
-      const data = await response.json();
+      const next = await enterOnlineRoom({ type, code, name, title, capacity: Number(capacity) }, operation.signal);
       if (!operation.current()) return;
-      operation.signal.throwIfAborted();
-      if (!response.ok) throw new Error(data.error || '無法進入房間。');
-      sessionStorage.setItem(seatKey(data.room.code), token);
       try { localStorage.setItem('grail-name-v1', name.trim()); } catch { /* The seat credential is already saved in sessionStorage. */ }
-      if (type === 'join' && data.room.isHost) {
-        setResume(data.room);
+      if (type === 'join' && next.isHost) {
+        setResume(next);
         throw new Error('這是你主持的房間，請回到原本的分頁。房主重新整理後尚無法恢復牌局；可結束舊房間後重新開房。');
       }
-      openRoom(data.room);
-    } catch (error) { if (operation.current()) setError(error instanceof Error ? error.message : '無法進入房間。'); }
+      openRoom(next);
+    } catch (error) { if (operation.current()) setError(roomRequestMessage(error, operation.signal)); }
     finally { if (operation.finish()) setBusy(false); }
   }
   async function leave(target = room) {
