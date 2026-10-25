@@ -43,7 +43,7 @@ export class RoomStorage {
   }
   save(room) {
     this.storage.transactionSync(() => {
-      this.sql.exec('INSERT INTO room (id, state) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET state = excluded.state', JSON.stringify({ ...room, messages: [] }));
+      this.sql.exec('INSERT INTO room (id, state) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET state = excluded.state WHERE room.state != excluded.state', JSON.stringify({ ...room, messages: [] }));
       const batches = messageBatches(room.messages);
       const existing = new Map(this.sql.exec('SELECT id, data FROM inbox_batches').toArray().map(row => [row.id, row.data]));
       for (const id of existing.keys()) if (!batches.has(id)) this.sql.exec('DELETE FROM inbox_batches WHERE id = ?', id);

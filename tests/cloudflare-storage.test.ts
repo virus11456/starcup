@@ -132,11 +132,11 @@ test('burst messages and acknowledgements use bounded batches without rewriting 
   assert.deepEqual(rooms.load().messages.map((m: {seq: number}) => m.seq), Array.from({ length: 64 }, (_, i) => i + 1));
   const saved = changes();
   rooms.save(rooms.load());
-  assert.equal(changes() - saved, 1); // no inbox write for identical data
+  assert.equal(changes() - saved, 0); // identical state and inbox need no writes
   const restored = rooms.load();
   syncFullRoom(restored, 'guest', { connection: 'connection-guest-12345', ack: 64, messages: [] });
   rooms.save(restored);
-  assert.equal(changes() - saved, 3);
+  assert.equal(changes() - saved, 2);
   assert.equal(rooms.load().messages.length, 0);
   db.close();
 });
@@ -163,5 +163,85 @@ test('UTF-8 heavy native snapshots stay below SQLite row limits and retain all p
   rooms.save(room);
   assert.ok(Number(db.prepare('SELECT max(length(CAST(data AS BLOB))) AS n FROM inbox_batches').get()?.n) < 1_048_576);
   assert.deepEqual(rooms.load().messages, room.messages);
+  db.close();
+});
+
+for (const capacity of [4, 6, 8]) test(`${capacity} idle seats share a room checkpoint budget across storage reloads`, t => {
+  const { db, storage, rooms, room } = fixture();
+  room.capacity = capacity;
+  const now = room.updated;
+  for (let i = 2; i < capacity; i++) {
+    joinFullRoom(room, `guest-${i}`, `玩家${i}`, `seat-${i}`, now);
+    attachFullRoom(room, `guest-${i}`, `connection-guest-${i}-123456`, now);
+  }
+  for (const member of room.members) member.seen = now;
+  rooms.save(room);
+  const checkpoints = new Map();
+  const before = Number(db.prepare('SELECT total_changes() AS n').get()?.n);
+  for (let second = 1; second <= 60; second++) for (const member of room.members) {
+    // Each request starts with SQLite state, as after DO hibernation. Only
+    // WebSocket attachments survive between these independently loaded calls.
+    const restored = new RoomStorage(storage).load();
+    const at = now + second * 1000;
+    if (syncSocketRoom(restored, member.auth, { connection: member.connection, ack: 0, messages: [] }, [...checkpoints.values()], at)) {
+      restored.revision++;
+      restored.updated = at;
+      rooms.save(restored);
+    }
+    checkpoints.set(member.auth, socketCheckpoint(restored, member.auth));
+    assert.equal(relayView(restored, 'host', at).peers.length, capacity - 1);
+    assert.equal(relayView(restored, 'guest', at).hostAlive, true);
+  }
+  const writes = Number(db.prepare('SELECT total_changes() AS n').get()?.n) - before;
+  assert.ok(writes > 0 && writes <= 8, `idle room exceeded its local 8-row/minute test budget: ${writes}`);
+  assert.ok(rooms.load().members.every((m: { seen: number }) => m.seen >= now + 40_000));
+  t.diagnostic(`${capacity * 60} local sync requests, ${writes} changed SQLite rows; not Cloudflare billed usage`);
+  db.close();
+});
+
+test('duplicate payload retries do not persist again; fresh and discarded-epoch actions still commit', () => {
+  const { db, rooms, room } = fixture();
+  const now = room.updated;
+  const body = { connection: room.members[0].connection, ack: 0,
+    messages: [{ id: 'retry-action-12345678', to: 'guest-id', data: '["update",{}]' }] };
+  assert.equal(syncSocketRoom(room, 'host', body, [], now + 1), true);
+  room.updated = now + 1;
+  rooms.save(room);
+  for (let i = 2; i < 10; i++) {
+    const restored = rooms.load();
+    assert.equal(syncSocketRoom(restored, 'host', body, [], now + i), false);
+    assert.equal(restored.sequence, 1);
+    assert.equal(relayView(restored, 'guest', now + i).messages.length, 1);
+  }
+  const fresh = rooms.load();
+  body.messages[0].id = 'fresh-action-12345678';
+  assert.equal(syncSocketRoom(fresh, 'host', body, [], now + 10), true);
+  assert.equal(fresh.sequence, 2);
+  const offline = rooms.load();
+  offline.members[1].connection = '';
+  assert.equal(syncSocketRoom(offline, 'host', body, [], now + 11), true);
+  assert.ok(offline.received.includes('1:fresh-action-12345678'));
+  assert.equal(offline.sequence, 1, 'discarded offline messages must not enter a private inbox');
+  db.close();
+});
+
+test('other seats heartbeat activity cannot make a disconnected host appear online', () => {
+  const { db, rooms, room } = fixture();
+  const now = room.updated;
+  for (const member of room.members) member.seen = now;
+  rooms.save(room);
+  let checkpoint;
+  for (let second = 1; second <= 70; second++) {
+    const restored = rooms.load(), at = now + second * 1000;
+    if (syncSocketRoom(restored, 'guest', { connection: room.members[1].connection, ack: 0, messages: [] }, checkpoint ? [checkpoint] : [], at)) {
+      restored.updated = at;
+      restored.revision++;
+      rooms.save(restored);
+    }
+    checkpoint = socketCheckpoint(restored, 'guest');
+  }
+  assert.equal(relayView(rooms.load(), 'guest', now + 70_000).hostAlive, false);
+  assert.equal(rooms.load().members[0].seen, now);
+  assert.ok(rooms.load().members[1].seen >= now + 60_000);
   db.close();
 });

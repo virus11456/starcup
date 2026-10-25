@@ -16,6 +16,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:engine": "node --test tests/*.test.mjs",
+    "test:cloudflare": "node --experimental-strip-types --test tests/runtime/*.test.mjs",
+    "verify:local": "npm test && npm run build:vinext && npm run test:engine && npm run test:cloudflare && npm run typecheck",
     "dev:vinext": "vite dev --port 3001",
     "prebuild:vinext": "npm run prepare:engine",
     "build:vinext": "vite build",

@@ -80,6 +80,23 @@ await patch(
   'hallURL = "agserver.ssyy.tech:50000"',
   'hallURL = ""',
 );
+// Keep the native resource selection and transfer rules; give this picker a
+// dedicated layout so the enlarged phone action row cannot cover its choices.
+await patch(
+  "noname/library/index.js",
+  `var dialog=ui.create.dialog('提炼：选择星石','hidden');`,
+  `var dialog=ui.create.dialog('提炼：选择星石','hidden');
+                    dialog.classList.add('grail-resource-dialog');
+                    var maximum=Math.min(2,player.getNengLiangLimit()-player.countNengLiangAll(),get.zhanJi(player.side).length);
+                    ui.create.div('.grail-resource-hint',dialog.content).textContent='點選 '+(maximum>1?'1～'+maximum:'1')+' 顆星石，再按「確定」。';`,
+);
+await patch(
+  "noname/library/index.js",
+  `var dialog=ui.create.dialog('合成：选择星石','hidden');`,
+  `var dialog=ui.create.dialog('合成：选择星石','hidden');
+                    dialog.classList.add('grail-resource-dialog');
+                    ui.create.div('.grail-resource-hint',dialog.content).textContent='點選 3 顆星石，再按「確定」。';`,
+);
 // Browser deployments do not have the desktop client's filesystem API.
 await patch("game/entry.js", 'const readConfig = async () => {', 'const readConfig = async () => {\n                if (typeof game.readFileAsText !== "function") return;');
 // Native response prompts share a cancel command with every other picker.

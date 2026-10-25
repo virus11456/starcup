@@ -7,3 +7,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Local development and consolidated deployment
+
+- User preference (2026-10-26): finish and test changes locally, then publish one integrated release. Do not use the production Cloudflare deployment for repeated development iterations or push deployment branches for unfinished changes.
+- Run `npm run verify:local` before release. It prepares the pinned engine, builds the Cloudflare bundle, runs application/engine tests and checks types. Do not run engine preparation/build commands concurrently: they share generated files.
+- Use local SQLite and relay fixtures for repetitive storage/connection checks. Local simulations and unit tests do not count toward the requested naturally completed online game totals.
+- Do the necessary deployed WebSocket/platform checks only after local checks pass. Record Durable Objects SQL rows written before and after each game and preserve quota for users; stop tests at the documented budget.
+- Keep visual verification separate from logic tests. If the available browser cannot reach the local server, record the missing viewport/UI checks rather than claiming that automated logic tests prove the layout.
+- Keep Vercel until Cloudflare migration acceptance is complete. A required follow-up fix after live acceptance failure should be developed/tested locally before another release.
