@@ -77,7 +77,8 @@ export function validateRelayData(data: unknown, member: FullMember) {
   try { parsed = JSON.parse(data); } catch { roomError('同步訊息無效。'); }
   if (!Array.isArray(parsed) || typeof parsed[0] !== 'string') roomError('同步格式無效。');
   if (member.id !== '1') {
-    if (!GUEST_COMMANDS.has(parsed[0]) || !safeGuestValue(parsed)) roomError('這項連線指令不允許執行。', 403);
+    if (!GUEST_COMMANDS.has(parsed[0])) roomError('這項連線指令不允許執行：' + (/^[a-zA-Z]{1,24}$/.test(parsed[0]) ? parsed[0] : '無效指令'), 403);
+    if (!safeGuestValue(parsed)) roomError('這項連線資料不允許執行：' + parsed[0] + ' 含動態程式資料。', 403);
     if (parsed[0] === 'chat') { parsed[1] = member.id; parsed[2] = cleanName(parsed[2], 200); }
     if (parsed[0] === 'emotion') {
       parsed[1] = member.id;
