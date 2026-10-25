@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import '../full/full.css';
 import './online.css';
@@ -7,6 +7,8 @@ type Room = { code: string; name: string; capacity: number; isHost: boolean; nic
 function seatToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join(''); }
 export default function OnlineGame() {
   const [name, setName] = useState('');
+  const nameInput = useRef<HTMLInputElement>(null);
+  const [nameError, setNameError] = useState('');
   const [title, setTitle] = useState('星杯之約');
   const [capacity, setCapacity] = useState('4');
   const [code, setCode] = useState('');
@@ -20,6 +22,12 @@ export default function OnlineGame() {
     setCode((new URLSearchParams(location.search).get('room') || '').toUpperCase());
   }, []);
   async function enter(type: 'create' | 'join') {
+    if (busy) return;
+    if (!name.trim()) {
+      setNameError('請先填寫你的暱稱，才能建立或加入房間。');
+      nameInput.current?.focus();
+      return;
+    }
     setBusy(true); setError('');
     try {
       const token = type === 'join' ? sessionStorage.getItem('grail-full-seat-' + code) || seatToken() : seatToken();
@@ -57,9 +65,15 @@ export default function OnlineGame() {
     {error && <p role="alert" className="full-notice online-error">{error}</p>}
     {room ? <iframe src={launch} className="full-frame" title="星杯傳說多人完整角色對戰" allow="fullscreen" /> : <>
       <section className="online-intro"><p className="full-kicker">星杯之約 · 與夥伴共寫戰局</p><h1>多人角色對戰</h1><p>與單機使用相同的角色技能、牌庫與戰鬥畫面。建立房間，再將邀請碼分享給朋友。</p></section>
-      <div className="online-forms"><section className="full-panel"><h2>準備加入</h2><label>你的暱稱<input value={name} onChange={event => setName(event.target.value)} maxLength={16} autoComplete="nickname" placeholder="請輸入暱稱" /></label>
-        <form onSubmit={event => { event.preventDefault(); void enter('join'); }}><label>朋友的房間碼<input value={code} onChange={event => setCode(event.target.value.toUpperCase())} maxLength={8} placeholder="8 位英數字" autoCapitalize="characters" /></label><button className="full-primary" disabled={busy || !name.trim() || code.trim().length !== 8}>加入房間 →</button></form></section>
-      <form className="full-panel" onSubmit={event => { event.preventDefault(); void enter('create'); }}><h2>建立新牌局</h2><label>房間名稱<input value={title} onChange={event => setTitle(event.target.value)} maxLength={24} /></label><label>牌局人數<select value={capacity} onChange={event => setCapacity(event.target.value)}><option value="4">4 人 · 2 對 2</option><option value="6">6 人 · 3 對 3</option><option value="8">8 人 · 4 對 4</option></select></label><button className="full-primary" disabled={busy || !name.trim() || !title.trim()}>建立房間 →</button></form></div>
+      <section className="full-panel online-player" aria-labelledby="online-player-heading">
+        <div><h2 id="online-player-heading">先設定你的暱稱</h2><p id="online-name-help">建立房間和加入朋友房間，都會使用這個暱稱。</p></div>
+        <div><label>你的暱稱<input ref={nameInput} value={name} onChange={event => { setName(event.target.value); setNameError(''); }} maxLength={16} autoComplete="nickname" placeholder="請輸入暱稱（必填）" aria-required="true" aria-invalid={!!nameError} aria-describedby={nameError ? 'online-name-help online-name-error' : 'online-name-help'} /></label>
+          {nameError && <p id="online-name-error" className="online-field-error" role="alert">{nameError}</p>}</div>
+      </section>
+      <div className="online-forms">
+        <form className="full-panel" onSubmit={event => { event.preventDefault(); void enter('create'); }}><h2>建立新牌局</h2><p className="online-form-help">自己開房邀請朋友，不需要填寫房間碼。</p><label>房間名稱<input value={title} onChange={event => setTitle(event.target.value)} maxLength={24} required pattern=".*\S.*" title="請填寫房間名稱" /></label><label>牌局人數<select value={capacity} onChange={event => setCapacity(event.target.value)}><option value="4">4 人 · 2 對 2</option><option value="6">6 人 · 3 對 3</option><option value="8">8 人 · 4 對 4</option></select></label><button className="full-primary" disabled={busy}>{busy ? '正在連線…' : '建立房間 →'}</button></form>
+        <form className="full-panel" onSubmit={event => { event.preventDefault(); void enter('join'); }}><h2>加入朋友房間</h2><p className="online-form-help">已有邀請碼？填入朋友分享的房間碼。</p><label>朋友的房間碼<input value={code} onChange={event => setCode(event.target.value.toUpperCase())} maxLength={8} required pattern="[A-Z2-9]{8}" title="請輸入 8 位英數字房間碼" placeholder="8 位英數字" autoCapitalize="characters" /></label><button className="full-primary" disabled={busy}>{busy ? '正在連線…' : '加入房間 →'}</button></form>
+      </div>
       <aside className="full-panel online-notice"><h2>開始前的小提醒</h2><p>朋友入座後，由房主按「開始遊戲」，空位由電腦補上。每人隨機取得 5 名候選角色，同場角色不重複。</p><p>房主的頁面負責主持牌局，請保持開啟；房主重新整理或離開會結束牌局。其他玩家可用同一分頁的房間碼重新加入。手機切到背景可能暫停同步。</p><p>舊核心房間不會自動恢復，請在這裡建立新的完整角色房間。</p></aside>
     </>}
   </main>;
