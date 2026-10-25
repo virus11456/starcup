@@ -181,7 +181,7 @@ export default {
     if (!config.password || !/^[a-f0-9]{64}$/.test(config.secret || '') || !validAccessToken(cookie, config)) return response({ error: '請先輸入網站密碼。' }, 401);
     try {
       if (request.headers.get('sec-fetch-site') === 'cross-site' || request.headers.get('origin') && new URL(request.headers.get('origin')).origin !== url.origin) roomError('無法接受跨網站操作。', 403);
-      if (url.pathname.endsWith('/socket')) return env.GRAIL_ROOMS.getByName(codeFor(url.searchParams.get('code'))).fetch(request);
+      if (url.pathname.endsWith('/socket')) return await env.GRAIL_ROOMS.getByName(codeFor(url.searchParams.get('code'))).fetch(request);
       if (request.method === 'GET') return response({ rooms: await env.GRAIL_DIRECTORY.getByName('lobby').list(), configured: true });
       if (request.method !== 'POST') return response({ error: '不支援此操作。' }, 405);
       const text = await request.text();
