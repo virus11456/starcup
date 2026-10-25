@@ -1,0 +1,147 @@
+/* GPL-3.0: shared visual finish for solo and multiplayer. Keep all native
+   dimensions, transforms, visibility rules and pointer targets intact. */
+:root {
+  --grail-ink: #0b1822;
+  --grail-panel: #142a33;
+  --grail-panel-raised: #1c3540;
+  --grail-gold: #dac18b;
+  --grail-gold-soft: #dac18b55;
+  --grail-text: #f0ecdf;
+  --grail-muted: #b1c5c5;
+  --grail-picked: #a2ead8;
+  --grail-line: #9fbcb233;
+}
+body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #080f1a); }
+
+/* Element tints are separate from the gold selectable / mint selected ring. */
+[data-grail-element="an"] { --grail-card-accent: #c3b4e9; }
+[data-grail-element="shui"] { --grail-card-accent: #91d8f0; }
+[data-grail-element="huo"] { --grail-card-accent: #f3ad98; }
+[data-grail-element="feng"] { --grail-card-accent: #9fd8be; }
+[data-grail-element="lei"] { --grail-card-accent: #c9b5ff; }
+[data-grail-element="di"] { --grail-card-accent: #d7c199; }
+[data-grail-element="guang"] { --grail-card-accent: #f4dfa2; }
+#window #arena .handcards > .card[data-grail-element] {
+  border-radius: 9px;
+  outline: 1px solid var(--grail-card-accent);
+  outline-offset: -1px;
+  background-color: var(--grail-ink);
+  box-shadow: 0 5px 14px #0008, 0 1px 0 #fff3 inset;
+  transition: box-shadow 140ms ease, outline-color 140ms ease;
+}
+#window #arena .handcards > .card[data-grail-element] > .image { border-radius: inherit; }
+#window #arena .handcards > .card[data-grail-element] > .name {
+  color: var(--grail-text);
+  background: #0a1a24ed;
+  box-shadow: inset 2px 0 0 var(--grail-card-accent), 0 1px 5px #0005;
+  border-radius: 4px;
+  text-shadow: 0 1px 1px #000;
+}
+#window #arena .handcards > .card[data-grail-element] > .info {
+  color: var(--grail-card-accent);
+  background: #081721ed;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #081721ed;
+  text-shadow: none;
+  font-weight: 650;
+}
+#window #arena .handcards > .card[data-grail-element] > .range {
+  color: #f6e6bf;
+  background: #0a1825ed;
+  border-radius: 4px;
+  text-shadow: none;
+}
+#window #arena .handcards > .card[data-grail-element].selectable {
+  outline: 2px solid #e5c782; outline-offset: 1px;
+  box-shadow: 0 4px 14px #0008, 0 0 0 1px #e5c78255;
+}
+#window #arena .handcards > .card[data-grail-element].selected {
+  outline: 3px solid var(--grail-picked); outline-offset: 1px;
+  box-shadow: 0 6px 18px #0009, 0 0 14px #85dcc24d;
+}
+#window #arena .handcards > .card[data-grail-element].selected > .name {
+  background: #103a39f5; box-shadow: inset 3px 0 0 var(--grail-picked); color: #f3fff9;
+}
+
+/* Character portraits retain their original crop and seat locations. */
+#window #arena > .player { border-color: #a8b7ac77; background-color: #13242f; box-shadow: 0 6px 18px #0008, 0 1px 0 #ecdfb820 inset; }
+#window #arena > .player[data-grail-team="red"] { border-color: #d396898c; }
+#window #arena > .player[data-grail-team="blue"] { border-color: #86bccd8c; }
+#window #arena > .player > .avatar { border-radius: 10px; box-shadow: 0 0 0 1px #e3d2a82b inset; }
+#window #arena > .player > .name,
+#window #arena .dialog .button.character > .name {
+  color: #fff0d1; text-shadow: 0 1px 2px #000, 0 0 6px #000;
+  background: linear-gradient(90deg, #0b1b27c9, #0b1b2700); border-radius: 4px;
+}
+#window #arena > .player[data-grail-team] > .identity {
+  box-shadow: 0 2px 7px #0006, 0 1px 0 #fff2 inset; border-radius: 5px;
+}
+#window #arena > .player[data-grail-team="red"] > .identity { background: linear-gradient(145deg, #58363a, #31242d); color: #ffd1bd; border-color: #c58d827d; }
+#window #arena > .player[data-grail-team="blue"] > .identity { background: linear-gradient(145deg, #304e60, #172e3e); color: #c4eaff; border-color: #83aec57d; }
+#window #arena > .player.glow_phase { box-shadow: 0 0 0 2px #e8cf94, 0 0 20px #d9b76755, 0 6px 16px #0008; }
+#window #arena > .player.selectable { outline: 2px solid #e5c782; outline-offset: 2px; }
+#window #arena > .player.selected { outline: 3px solid var(--grail-picked); outline-offset: 2px; box-shadow: 0 0 18px #a2ead84d; }
+#window #arena .dialog .button.character { border-radius: 9px; box-shadow: 0 0 0 1px #d2bd8966, 0 5px 14px #0007; }
+#window #arena .dialog .button.character.selected { box-shadow: 0 0 0 2px var(--grail-picked), 0 0 18px #a2ead84d; }
+
+/* All controls share the same finish; meaning comes from the original link. */
+#window #control > .control {
+  color: var(--grail-text); border-color: #b9c8bd4d; border-radius: 8px;
+  background: linear-gradient(180deg, #2a434c, #132b36);
+  box-shadow: 0 4px 12px #0007, 0 1px 0 #e2eedc22 inset;
+}
+#window #control > .control > div {
+  color: inherit; text-shadow: none; font-weight: 600;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+#window #control > .control > div + div { box-shadow: -1px 0 0 #d8d1b52b; }
+#window #control > .control > [data-grail-action="confirm"] { color: #142630; background: linear-gradient(135deg, #f0dfb1, #c3a775); font-weight: 750; }
+#window #control > .control > [data-grail-action="cancel"] { color: #c5d6d6; background: #10232b66; }
+#window #control > .control > [data-grail-action="damage"] { color: #ffdcce; background: linear-gradient(135deg, #663e40, #412c38); box-shadow: inset 0 0 0 1px #d59c8877; }
+#window #control > .control > :first-child { border-top-left-radius: 7px; border-bottom-left-radius: 7px; }
+#window #control > .control > :last-child { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }
+#window #control > .control.disabled, #window #control > .control > .disabled { opacity: .45; box-shadow: none; }
+#window #system > div > div:not(.hidden) {
+  color: #e7e3d4; text-shadow: none; border-radius: 7px;
+  background: linear-gradient(180deg, #2b414b, #162b36);
+  box-shadow: inset 0 0 0 1px #a6c0bc40, inset 0 1px #ffffff12, 0 3px 9px #0004;
+}
+#window #arena > .dialog:not(.popped) {
+  background: radial-gradient(ellipse at top, #284244, #11232f 75%);
+  border-color: #d1bc8b66; box-shadow: 0 18px 50px #0009, 0 1px 0 #fff2 inset;
+}
+#window #arena > .dialog:not(.popped) .caption { color: #efdfb5; text-shadow: none; }
+#window #arena .grail-resource-dialog .tdnodes { background: linear-gradient(180deg, #304a53, #1a313e); border-color: #8daea5; color: #f2e6c8; box-shadow: 0 2px 6px #0004; }
+#window #arena .grail-resource-dialog .tdnodes.selected { background: linear-gradient(145deg, #6c5936, #463d2c); border-color: #eed298; box-shadow: 0 0 0 2px #e5c98d66; }
+
+/* Compact score surfaces; no extra scoreboard rows or height reservations. */
+#grail-scoreboard { background: linear-gradient(135deg, #20343cf5, #0e202cfb); border-color: #cbbb8952; box-shadow: 0 5px 18px #0006, 0 1px 0 #fff1 inset; }
+#grail-scoreboard .grail-score-team { border-radius: 5px; background: linear-gradient(90deg, #9b554019, transparent); }
+#grail-scoreboard .grail-score-team[data-team="blue"] { background: linear-gradient(90deg, #4d8bac1f, transparent); }
+#grail-scoreboard .grail-score-round { color: #f0dcb1; font-variant-numeric: tabular-nums; }
+#grail-scoreboard .grail-score-metric b { font-weight: 700; color: #f4eddb; }
+#grail-scoreboard [data-kind="morale"] b { color: var(--team-accent); }
+#grail-scoreboard [data-low-morale="true"] [data-kind="morale"] b { color: #ffc1ad; text-decoration: underline; text-underline-offset: 3px; }
+#grail-scoreboard .grail-score-mine { color: #e9d6ac; background: #d4bf8130; }
+
+#grail-help, #grail-history { background: linear-gradient(155deg, #1d343d, #0f202c); border-color: #c9b58066; }
+#grail-help-toggle, #grail-history-toggle { color: #f0dcb3; background: linear-gradient(155deg, #304951, #1b303c); border-color: #ccb67d66; box-shadow: 0 1px 0 #fff1 inset; }
+#grail-help-body .grail-inspect-tabs { background: #091c2633; }
+#grail-help-body .grail-inspect-tabs button { border-color: #a9bcb936; background: #16313e; }
+#grail-help-body .grail-inspect-tabs button[aria-pressed="true"] { color: #142630; background: linear-gradient(135deg, #efdfb2, #c4ad7e); border-color: #f0dcb3; }
+#grail-inspection article { background: linear-gradient(145deg, #213a43, #142a36); border-color: #b3c5b833; box-shadow: 0 3px 10px #0003; }
+#grail-inspection article[data-grail-element] { border-left: 3px solid var(--grail-card-accent); }
+#grail-inspection article[data-grail-element] h3 { color: var(--grail-card-accent); }
+#grail-inspection article header img { box-shadow: 0 0 0 1px #d0c89f55, 0 3px 10px #0006; }
+#grail-inspection .grail-inspect-count { color: #f3dfae; background: linear-gradient(135deg, #29414a, #102732); font-variant-numeric: tabular-nums; }
+#grail-history li { border-bottom-color: #9fbdb227; }
+#grail-history li:nth-child(even) { background: #b9cdb007; }
+.grail-motion-piles > div { background: linear-gradient(135deg, #2a4347, #132a37); border-color: #c1ab7477; box-shadow: 3px 3px 0 #142933, 4px 4px 0 #b79c5955, 0 5px 12px #0005; color: #f0dcb3; }
+
+@media (hover: hover) {
+  #window #control > .control:not(.disabled) > div:not(.disabled):hover { box-shadow: inset 0 0 0 1px #fff6; }
+  #grail-help-toggle:hover, #grail-history-toggle:hover { border-color: #e4c98c; color: #fff1cb; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #window #arena .handcards > .card[data-grail-element], #window #control > .control > div { transition: none; }
+}

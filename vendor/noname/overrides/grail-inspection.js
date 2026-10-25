@@ -1,5 +1,6 @@
 /* GPL-3.0: read-only, legible views of our hand and public character/mark data.
    Never inspect another player's hand, expansion cards or private storage. */
+import { cardElement } from './grail-card-skin.js';
 export const inspectionText = value => String(value ?? '')
   .replace(/<br\s*\/?>|<\/(?:p|div|li)>/gi, '\n').replace(/<[^>]*>/g, '')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim();
@@ -27,6 +28,7 @@ export function readInspection(kind, player, context) {
       const info = lib.card[card.name] || {};
       const stamps = typeof card.duYou === 'string' ? card.duYou.split(lib.natureSeparator || '|').filter(Boolean) : [];
       return {
+        element: cardElement(card),
         title: label(card.name), subtitle: [`第 ${index + 1} 張`, card.xiBie && label(card.xiBie) + '系', card.mingGe && label(card.mingGe) + '命格', info.type && label(info.type)].filter(Boolean).join(' · '),
         image: safeImage(`image/card/${card.name}.png`),
         status: card.classList?.contains('selected') ? '已選取' : card.classList?.contains('selectable') ? '目前可選' : '目前未開放選取',
@@ -119,6 +121,7 @@ export function createBattleInspection({ panel, toggle, help, context, document:
     if (!entries.length) list.append(node('p', active === 'hand' ? '目前沒有手牌；發牌後可在這裡查看。' : active === 'roles' ? '角色選定後會顯示技能說明。' : '此角色目前沒有公開指示物。', 'grail-inspect-empty'));
     for (const entry of entries) {
       const article = node('article');
+      if (entry.element) article.setAttribute('data-grail-element', entry.element);
       const header = node('header');
       if (entry.image) {
         const image = node('img'); image.src = entry.image; image.alt = ''; image.loading = 'lazy';

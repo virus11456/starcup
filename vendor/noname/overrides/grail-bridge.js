@@ -7,6 +7,7 @@ import { describeStage, teamSummary } from "./grail-battle-state.js";
 import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
 import { createBattleInspection } from "./grail-inspection.js";
+import { createHandSkin } from "./grail-card-skin.js";
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -20,6 +21,7 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
+const handSkin = createHandSkin();
 const text = (value) =>
   String(value || "")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -28,6 +30,7 @@ let last = "";
 function update() {
   history.attach(ui.sidebar);
   inspection.update();
+  handSkin.update(game.me);
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   // The native hall's restart/exit reloads only the iframe. Embedded rooms
   // return through the parent page so its authenticated leave flow runs.
@@ -185,6 +188,7 @@ window.addEventListener(
     stopHud();
     history.stop();
     inspection.stop();
+    handSkin.stop();
     hud.remove();
   },
 );

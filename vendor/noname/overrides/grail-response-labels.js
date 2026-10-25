@@ -11,6 +11,11 @@ export function updateResponseCancelLabel(control, event, fallback) {
     && (!event.skill || event.norestore)
     && !event.custom?.replace?.confirm;
   for (const button of control.childNodes) {
+    if (button.dataset) {
+      const action = button.link === 'ok' ? 'confirm' : button.link === 'cancel' ? acceptsDamage ? 'damage' : 'cancel' : '';
+      if (action) button.dataset.grailAction = action;
+      else delete button.dataset.grailAction;
+    }
     if (button.link !== 'cancel') continue;
     button.textContent = acceptsDamage ? '承受傷害' : fallback;
   }
