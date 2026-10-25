@@ -137,3 +137,21 @@ test('real adapter stops on a stale epoch and does not retry via HTTP or visibil
   h.emit(h.win, 'online'); h.emit(h.doc, 'visibilitychange'); await h.time.tick(60_000);
   assert.equal(h.calls.length, 1); assert.equal(h.sockets.length, 1);
 });
+
+test('permanently stopped adapters discard later engine messages instead of growing an unsendable outbox', async () => {
+  for (const isHost of [false, true]) for (const reason of ['native-close', 'unload', 'quota']) {
+    const h = await onlineHarness({ isHost });
+    await h.time.tick(); h.sockets[0].open(); await settle();
+    if (reason === 'quota') h.sockets[0].reply({ error: '今日額度已用完。' }, 0, 429);
+    else if (reason === 'unload') h.emit(h.win, 'pagehide', { persisted: false });
+    else h.game.ws.close();
+    await settle();
+    assert.equal(h.game.ws.readyState, 3, `${reason}: native transport must report closed`);
+    const before = h.generatedIds();
+    const data = '["result",{"bool":true}]';
+    for (let i = 0; i < 1000; i++) h.game.ws.send(isHost ? JSON.stringify(['server', 'send', '2', data]) : data);
+    assert.equal(h.generatedIds(), before, `${reason}: no new queued message identifiers after permanent stop`);
+    h.emit(h.win, 'online'); h.emit(h.doc, 'visibilitychange'); await h.time.tick(60_000);
+    assert.equal(h.time.timers.size, 0); assert.equal(h.calls.length, 1); assert.equal(h.sockets.length, 1);
+  }
+});

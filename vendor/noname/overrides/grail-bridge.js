@@ -5,11 +5,13 @@ import { startCardMotion } from "./grail-motion.js";
 import { anchorToViewport } from "./grail-viewport.js";
 import { describeStage, teamSummary } from "./grail-battle-state.js";
 import { createScoreboard } from "./grail-scoreboard.js";
+import { createBattleHistory } from "./grail-history.js";
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
+const history = createBattleHistory(hud, () => game.phaseNumber || 0);
 const stopHud = anchorToViewport(hud, (scale) => {
   document.documentElement.style.setProperty("--grail-touch-scale", String(scale > 0 ? 1 / scale : 1));
 });
@@ -20,12 +22,13 @@ const toggle = document.getElementById("grail-help-toggle");
 if (matchMedia("(max-width: 1049px)").matches) {
   help.hidden = true;
   toggle.setAttribute("aria-expanded", "false");
-  toggle.textContent = "本回合提示 ▸";
+  toggle.textContent = "提示 ▸";
 }
+toggle.setAttribute("aria-label", "本回合提示與圖示說明");
 toggle.addEventListener("click", () => {
   help.hidden = !help.hidden;
   toggle.setAttribute("aria-expanded", String(!help.hidden));
-  toggle.textContent = help.hidden ? "本回合提示 ▸" : "本回合提示 ▾";
+  toggle.textContent = help.hidden ? "提示 ▸" : "本回合提示 ▾";
 });
 const text = (value) =>
   String(value || "")
@@ -33,6 +36,7 @@ const text = (value) =>
     .replace(/<[^>]*>/g, "");
 let last = "";
 function update() {
+  history.attach(ui.sidebar);
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   // The native hall's restart/exit reloads only the iframe. Embedded rooms
   // return through the parent page so its authenticated leave flow runs.
@@ -132,7 +136,7 @@ function update() {
   help.append(p);
   const legend = document.createElement("p");
   legend.className = "grail-selection-legend";
-  legend.textContent = "金框可選 · 青框已選 · 依畫面按鈕確認";
+  legend.textContent = "金框可選 · 青框已選 · 依畫面按鈕確認。戰況圖示：盾牌＝士氣、杯＝星杯（目前／目標）、粉色寶石與青色水晶＝隊伍戰績。上方「紀錄」可查閱玩家動作與結算。";
   help.append(legend);
   for (const [label, values] of [
     ["可用手牌", cards],
@@ -181,15 +185,16 @@ try {
 }
 window.addEventListener(
   "pagehide",
-  () => {
+  (event) => {
+    if (event.persisted) return;
     clearInterval(handle);
     clearInterval(ready);
     stop();
     stopMotion();
     stopHud();
+    history.stop();
     hud.remove();
   },
-  { once: true },
 );
 // Self-hosted build has no upstream online hall, account or telemetry.
 const ready = setInterval(() => {

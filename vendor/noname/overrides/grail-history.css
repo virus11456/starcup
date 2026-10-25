@@ -1,0 +1,29 @@
+#grail-history, #grail-history *, #grail-history-toggle { box-sizing: border-box; position: static; font-family: system-ui, sans-serif; text-shadow: none; }
+#grail-history-toggle, #grail-history { pointer-events: auto; }
+#grail-history-toggle { position: fixed; right: 12px; top: 96px; width: 240px; height: 44px; border: 1px solid #bca87877; border-radius: 8px; background: #203538; color: #efd69f; font-size: 12px; cursor: pointer; }
+#grail-history { position: fixed; z-index: 30; top: 146px; bottom: 12px; right: 12px; width: min(440px, calc(100% - 24px)); display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid #a68a53; border-radius: 12px; background: #102129fa; color: #e7e5dd; box-shadow: 0 12px 40px #0009; }
+#grail-history[hidden], #grail-history [hidden] { display: none !important; }
+#grail-history header { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; }
+#grail-history h2 { margin: 0; font-size: 17px; color: #efd69f; }
+#grail-history button { min-height: 44px; padding: 8px 12px; flex-shrink: 0; border: 1px solid #bca87866; border-radius: 6px; color: #efd69f; background: #253b40; font-size: 12px; cursor: pointer; }
+#grail-history input { width: 100%; min-height: 44px; padding: 8px 10px; flex-shrink: 0; border: 1px solid #bca87866; border-radius: 6px; background: #0a1820; color: #f1e8d7; font-size: 16px; }
+#grail-history ol { flex: 1; min-height: 60px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; margin: 0; padding: 0; list-style: none; }
+#grail-history li { padding: 10px 4px; border-bottom: 1px solid #bca87826; overflow-wrap: anywhere; }
+#grail-history li small { color: #acbfc4; font-size: 10px; }
+#grail-history li p { margin: 4px 0 0; font-size: 13px; line-height: 1.65; }
+#grail-history .grail-history-summary, #grail-history .grail-history-note { flex: 0 0 auto; margin: 0; font-size: 10px; line-height: 1.5; color: #acbfc4; }
+#grail-history :focus-visible, #grail-history-toggle:focus-visible { outline: 2px solid #cde1bb; outline-offset: -3px; }
+@media (max-width: 1049px) {
+  #grail-history-toggle { top: 4px; right: 112px; width: 60px; font-size: 10px; padding: 4px; }
+  #grail-history { top: 54px; right: 8px; bottom: 8px; width: min(440px, calc(100% - 16px)); }
+}
+@media (max-height: 500px) {
+  #grail-history { padding: 8px; gap: 4px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 44px auto minmax(0, 1fr) auto; }
+  #grail-history header { grid-area: 1 / 1; gap: 4px; }
+  #grail-history h2 { font-size: 14px; }
+  #grail-history input { grid-area: 1 / 2; min-width: 0; }
+  #grail-history .grail-history-new { grid-area: 2 / 1 / 3 / -1; }
+  #grail-history ol { grid-area: 3 / 1 / 4 / -1; min-height: 0; }
+  #grail-history > button:last-of-type { grid-area: 4 / 1 / 5 / -1; }
+  #grail-history .grail-history-note, #grail-history .grail-history-summary { display: none; }
+}

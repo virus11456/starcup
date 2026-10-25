@@ -204,85 +204,43 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
 }
 #window .player[data-grail-team] > .identity > div::after { content: "隊"; }
 
-/* A single, viewport-anchored score panel; the original engine remains the source. */
-#grail-scoreboard, #grail-scoreboard * {
-  box-sizing: border-box;
-  position: static;
-  font-family: system-ui, sans-serif;
-  text-shadow: none;
-}
-#grail-scoreboard {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  width: 240px;
-  padding: 15px 12px 12px;
-  color: #e9e9e2;
-  background: linear-gradient(145deg, #1e2c33f7, #111c26fa);
-  border: 1px solid #c8b58d38;
-  border-radius: 14px;
-  box-shadow: 0 12px 32px #0004, inset 0 1px #ffffff08;
-  font-size: 12px;
-  line-height: 1.4;
-  z-index: 19;
-}
+/* Compact public score strip. Names remain in accessible labels and the guide. */
+#grail-scoreboard, #grail-scoreboard * { box-sizing: border-box; position: static; font-family: system-ui, sans-serif; text-shadow: none; }
+#grail-scoreboard { position: fixed; top: 12px; right: 12px; width: 240px; padding: 8px 10px; color: #e9e9e2; background: linear-gradient(145deg, #1e2c33f7, #111c26fa); border: 1px solid #c8b58d38; border-radius: 10px; box-shadow: 0 6px 20px #0004; font-size: 12px; line-height: 1.4; z-index: 19; }
 #grail-scoreboard[hidden], #grail-scoreboard [hidden] { display: none !important; }
 .grail-scoreboard-ready #window > .zhanJi.table { display: none !important; }
-#grail-scoreboard .grail-score-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  color: #b6bcb9;
-  font-size: 10px;
-  letter-spacing: .12em;
-}
-#grail-scoreboard .grail-score-round { color: #e0cda5; letter-spacing: 0; font-size: 10px; }
-#grail-scoreboard .grail-score-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-#grail-scoreboard .grail-score-team { --team-accent: #e4a096; min-width: 0; }
+#grail-scoreboard .grail-score-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; color: #abbaba; font-size: 10px; }
+#grail-scoreboard .grail-score-round { color: #e0cda5; }
+#grail-scoreboard .grail-score-teams { display: grid; gap: 6px; }
+#grail-scoreboard .grail-score-team { --team-accent: #e4a096; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 #grail-scoreboard .grail-score-team[data-team="blue"] { --team-accent: #9bcddd; }
-#grail-scoreboard .grail-score-team-heading { display: flex; align-items: center; gap: 6px; min-height: 21px; }
-#grail-scoreboard h3 { margin: 0; color: var(--team-accent); font-size: 12px; font-weight: 600; letter-spacing: .05em; white-space: nowrap; }
-#grail-scoreboard h3::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--team-accent); margin-right: 6px; vertical-align: 2px; }
-#grail-scoreboard .grail-score-mine { padding: 1px 4px; border-radius: 4px; background: #d9c99415; color: #d9c994; font-size: 9px; white-space: nowrap; }
-#grail-scoreboard .grail-score-morale { display: flex; align-items: baseline; gap: 6px; margin: 6px 0; }
-#grail-scoreboard .grail-score-morale strong { color: #f3efe4; font-size: 36px; line-height: 1.15; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.06em; }
-#grail-scoreboard .grail-score-morale > span { color: #a1aeaf; font-size: 10px; }
-#grail-scoreboard [data-low-morale="true"] .grail-score-morale strong { color: #edb0a1; }
-#grail-scoreboard .grail-score-cups { display: flex; align-items: baseline; gap: 5px; margin: 7px 0; white-space: nowrap; }
-#grail-scoreboard .grail-score-cup-label { color: #d9c392; font-size: 10px; }
-#grail-scoreboard .grail-score-cups b { margin-left: auto; color: #f0dcb2; font-size: 20px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; }
-#grail-scoreboard .grail-score-goal { color: #a0a8a4; font-size: 10px; }
-#grail-scoreboard .grail-score-track { display: block; width: 100%; height: 3px; overflow: hidden; background: #e6d9ad14; border-radius: 3px; margin: 0 0 13px; }
-#grail-scoreboard .grail-score-track > span { display: block; width: 0; height: 100%; background: #dbc28b; border-radius: inherit; transition: width .25s ease; }
-#grail-scoreboard .grail-score-resources { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid #cbd5d414; }
-#grail-scoreboard .grail-score-resource { display: inline-flex; align-items: center; gap: 4px; color: #b8c5c6; font-size: 10px; }
-#grail-scoreboard .grail-score-resource b { color: #dee6e3; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
-#grail-scoreboard .grail-stone { display: inline-block; width: 6px; height: 8px; background: #d9a3b8; clip-path: polygon(50% 0,100% 35%,75% 100%,25% 100%,0 35%); }
-#grail-scoreboard .grail-stone.crystal { background: #a1c9cf; }
-#grail-scoreboard .grail-resource-label { font-size: 9px; }
-.grail-scoreboard-ready #grail-help { top: 239px; max-height: calc(100vh - 255px); }
-@media (min-width: 1050px) {
-  #grail-scoreboard .grail-score-resources { gap: 6px; }
-}
+#grail-scoreboard .grail-score-team-heading { display: flex; align-items: center; gap: 4px; min-height: 18px; }
+#grail-scoreboard h3 { margin: 0; color: var(--team-accent); font-size: 11px; font-weight: 600; white-space: nowrap; }
+#grail-scoreboard h3::before { content: ""; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--team-accent); margin-right: 4px; vertical-align: 2px; }
+#grail-scoreboard .grail-score-mine { padding: 0 3px; border-radius: 3px; background: #d9c99415; color: #d9c994; font-size: 9px; white-space: nowrap; }
+#grail-scoreboard .grail-score-stats { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+#grail-scoreboard .grail-score-metric { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: #eee9df; }
+#grail-scoreboard .grail-score-metric b { font-size: 13px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+#grail-scoreboard svg { display: block; width: 12px; height: 14px; flex: 0 0 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#grail-scoreboard [data-kind="morale"] svg { color: var(--team-accent); }
+#grail-scoreboard [data-kind="grails"] { color: #e5cf9e; }
+#grail-scoreboard [data-kind="gems"] svg { color: #e1a1bb; }
+#grail-scoreboard [data-kind="crystals"] svg { color: #9dd8dc; }
+#grail-scoreboard [data-low-morale="true"] [data-kind="morale"] { color: #ffb2a0; }
+.grail-scoreboard-ready #grail-help { top: 146px; max-height: calc(100vh - 160px); }
 @media (max-width: 1049px) {
-  #grail-scoreboard { top: 56px; left: 50%; right: auto; transform: translateX(-50%); width: calc(100% - 16px); max-width: 480px; padding: 10px 14px; }
-  #grail-scoreboard .grail-score-heading { margin-bottom: 7px; }
-  #grail-scoreboard .grail-score-teams { gap: 22px; }
-  #grail-scoreboard .grail-score-stats { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  #grail-scoreboard .grail-score-morale strong { font-size: 29px; }
-  #grail-scoreboard .grail-score-cups b { font-size: 18px; }
-  #grail-scoreboard .grail-score-track { margin-bottom: 6px; }
-  #grail-scoreboard .grail-score-resources { border: 0; padding-top: 0; gap: 12px; }
-  .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(208px * var(--grail-touch-scale, 1)); height: calc(100% - 220px * var(--grail-touch-scale, 1)); }
-  .grail-scoreboard-ready #grail-help { top: 214px; max-height: min(38vh, calc(100vh - 230px)) !important; }
-  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) { top: 4px; bottom: auto !important; right: 52px; width: 128px; max-height: 44px !important; }
+  #grail-scoreboard { top: 54px; left: 50%; right: auto; transform: translateX(-50%); width: calc(100% - 16px); max-width: 480px; padding: 6px 10px; }
+  #grail-scoreboard .grail-score-teams { grid-template-columns: 1fr 1fr; gap: 16px; }
+  #grail-scoreboard .grail-score-team { display: block; }
+  .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(130px * var(--grail-touch-scale, 1)); height: calc(100% - 142px * var(--grail-touch-scale, 1)); }
+  .grail-scoreboard-ready #grail-help { top: 130px; max-height: min(45vh, calc(100vh - 146px)) !important; }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) { top: 4px; bottom: auto !important; right: 52px; width: 56px; max-height: 44px !important; }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) #grail-help-toggle { padding: 6px; font-size: 11px; letter-spacing: 0; white-space: nowrap; }
 }
 @media (max-width: 600px) {
   #window .player[data-grail-team] > .identity { top: calc(3px * var(--grail-touch-scale, 1)); right: calc(3px * var(--grail-touch-scale, 1)); min-width: 0; padding: calc(3px * var(--grail-touch-scale, 1)) calc(4px * var(--grail-touch-scale, 1)); border-radius: calc(4px * var(--grail-touch-scale, 1)); }
   #window .player[data-grail-team] > .identity > div { font-size: calc(9px * var(--grail-touch-scale, 1)) !important; }
 }
-@media (prefers-reduced-motion: reduce) { #grail-scoreboard .grail-score-track > span { transition: none; } }
 @media (prefers-reduced-motion: reduce) {
   #grail-help, #window .control { transition: none; }
 }
@@ -463,19 +421,13 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
    Keep the engine's body scale and its existing clickable player/card nodes. */
 @media (min-width: 601px) and (max-width: 1049px) and (max-height: 500px) {
   .grail-motion-piles { top: 4px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); }
-  #grail-scoreboard { top: 52px; width: calc(100% - 24px); max-width: none; display: flex; align-items: center; gap: 12px; padding: 6px 10px; min-height: 48px; }
+  #grail-scoreboard { top: 52px; width: calc(100% - 24px); max-width: none; display: flex; align-items: center; gap: 12px; padding: 6px 10px; min-height: 40px; }
   #grail-scoreboard .grail-score-heading { margin: 0; flex: 0 0 auto; }
   #grail-scoreboard .grail-score-heading > :first-child { display: none; }
   #grail-scoreboard .grail-score-teams { flex: 1; gap: 16px; }
   #grail-scoreboard .grail-score-team { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  #grail-scoreboard .grail-score-stats { gap: 8px; }
-  #grail-scoreboard .grail-score-morale, #grail-scoreboard .grail-score-cups { margin: 0; gap: 3px; }
-  #grail-scoreboard .grail-score-morale strong { font-size: 22px; }
-  #grail-scoreboard .grail-score-cups b { font-size: 18px; }
-  #grail-scoreboard .grail-score-resources { gap: 5px; }
-  #grail-scoreboard .grail-score-resource { gap: 3px; }
-  #grail-scoreboard .grail-score-track, #grail-scoreboard .grail-score-mine, #grail-scoreboard .grail-resource-label { display: none; }
-  .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(110px * var(--grail-touch-scale, 1)); height: calc(100% - 222px * var(--grail-touch-scale, 1)); }
+  #grail-scoreboard .grail-score-mine { display: none; }
+  .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(98px * var(--grail-touch-scale, 1)); height: calc(100% - 210px * var(--grail-touch-scale, 1)); }
   .grail-scoreboard-ready #window #arena:not(.chess) > .player {
     width: calc(60px * var(--grail-touch-scale, 1));
     height: calc(78px * var(--grail-touch-scale, 1)) !important;
@@ -489,5 +441,5 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   #window #arena > .player > .name { font-size: calc(10px * var(--grail-touch-scale, 1)); line-height: 1.1; }
   #window #arena > .player[data-grail-team] > .identity { padding: calc(2px * var(--grail-touch-scale, 1)); top: 0; right: 0; }
   #window #arena > .player[data-grail-team] > .identity > div { font-size: calc(9px * var(--grail-touch-scale, 1)) !important; }
-  .grail-scoreboard-ready #grail-help:not(:has(#grail-help-toggle[aria-expanded="false"])) { top: 106px; bottom: auto; width: 240px; max-height: calc(100vh - 118px) !important; }
+  .grail-scoreboard-ready #grail-help:not(:has(#grail-help-toggle[aria-expanded="false"])) { top: 98px; bottom: auto; width: 240px; max-height: calc(100vh - 110px) !important; }
 }

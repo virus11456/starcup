@@ -1,6 +1,6 @@
 // Preserve the existing native engine and connection epoch across bfcache.
 // Closing the actual page still ends this runner; it does not migrate the host.
-export function createRelayLifecycle({ poll, disconnect, onError = () => {},
+export function createRelayLifecycle({ poll, disconnect, onStop = () => {}, onError = () => {},
   window: win = window, document: doc = document, setTimer = setTimeout, clearTimer = clearTimeout }) {
   let stopped = false, suspended = false, running = false, queued = false, timer;
   function wake(delay = 0) {
@@ -34,6 +34,7 @@ export function createRelayLifecycle({ poll, disconnect, onError = () => {},
     win.removeEventListener('online', online);
     doc.removeEventListener('visibilitychange', visible);
     disconnect();
+    onStop();
   }
   function hide(event) {
     if (!event.persisted) { stop(); return; }

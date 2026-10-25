@@ -40,7 +40,21 @@ export async function startRelay() {
   let useSocket = false, wake = () => {};
   let socket, lifecycle, activeFetch;
   const peers = new Map();
-  const queue = (to, data) => { pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) }); wake(40); };
+  const queue = (to, data) => {
+    if (stopped) return;
+    pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) }); wake(40);
+  };
+  const finish = () => {
+    stopped = true;
+    pending = [];
+    peers.clear();
+    if (game.ws) game.ws.readyState = 3;
+  };
+  const closeRelay = () => {
+    finish();
+    if (lifecycle) lifecycle.stop();
+    else { socket?.close(); activeFetch?.abort(); }
+  };
   async function request(type, extra = {}) {
     const body = { type, code, token, connection, ...extra };
     if (useSocket && type === 'sync') {
@@ -79,7 +93,8 @@ export async function startRelay() {
     game.sandbox = security.createSandbox();
     // Preserve the native message parser and its sandbox, replacing only
     // WebSocket IO. No public upstream hall or third-party relay is contacted.
-    game.ws = { readyState: 1, close() { stopped = true; lifecycle?.stop(); socket?.close(); activeFetch?.abort(); }, send(serialized) {
+    game.ws = { readyState: 1, close: closeRelay, send(serialized) {
+      if (stopped) return;
       if (!room.isHost) { queue('1', serialized); return; }
       const command = JSON.parse(serialized);
       if (command[0] !== 'server') return;
@@ -100,6 +115,7 @@ export async function startRelay() {
     }
     lifecycle = createRelayLifecycle({ poll,
       disconnect() { socket?.close(); activeFetch?.abort(); },
+      onStop: finish,
       onError(error) { console.warn('Full room resume:', error.name); },
     });
     wake = delay => { if (!stopped) lifecycle.wake(delay); };
@@ -116,6 +132,8 @@ export async function startRelay() {
           batch.push(message); bytes += message.data.length;
         }
         const data = await request('sync', { ack, messages: batch, started });
+        if (stopped) return null;
+        if (lifecycle.inactive) return delay;
         pending.splice(0, batch.length);
         if (room.isHost) {
           for (const [id, epoch] of peers) {
@@ -161,6 +179,7 @@ export async function startRelay() {
     }
     wake(0);
   } catch (error) {
+    closeRelay();
     tell(error.message || '無法連接房間，請返回大廳重試。', true);
     document.getElementById('grail-loading')?.remove();
   }

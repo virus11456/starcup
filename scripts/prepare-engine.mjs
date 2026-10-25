@@ -37,6 +37,12 @@ await mkdir(unpack, { recursive: true });
 execFileSync("tar", ["-xzf", archive, "--strip-components=1", "-C", unpack]);
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
+// Never materialize unused upstream modes/characters in the public tree.
+// This also avoids copy-then-delete churn on synchronized workspaces.
+const excludedFiles = new Set([
+  "character/poXiao.js", "character/boss.js", "mode/boss.js",
+  "mode/leaderboard.js", "mode/connect.js", "game/server.js",
+]);
 for (const item of [
   "audio",
   "card",
@@ -54,6 +60,7 @@ for (const item of [
 ]) {
   await cp(path.join(unpack, item), path.join(output, item), {
     recursive: true,
+    filter: source => !excludedFiles.has(path.relative(unpack, source).split(path.sep).join('/')),
   });
 }
 // The imported browser engine is self-hosted. It must not submit matches,
@@ -256,15 +263,6 @@ await cp(
   path.join(output, "image/character/nong_baoShiShaoNv.jpg"),
   path.join(output, "image/character/baoShiShaoNv.jpg"),
 );
-for (const file of [
-  "character/poXiao.js",
-  "character/boss.js",
-  "mode/boss.js",
-  "mode/leaderboard.js",
-  "mode/connect.js",
-  "game/server.js",
-])
-  await rm(path.join(output, file), { force: true });
 // Only the explicitly selected editions appear in the game menus.
 await writeFile(
   path.join(output, "game/package.js"),

@@ -74,10 +74,10 @@ export async function onlineHarness({ transport = 'websocket', isHost = false } 
   const lib = { config: {}, wsOL: [], mode: { xingBei: { connect: {} } }, message: { client: {
     onmessage: (from, data) => received.push(JSON.parse(data)), onclose() {}, onconnection() {},
   } }, element: { ws: { onmessage: event => received.push(JSON.parse(event.data)) } } };
-  let sessionReads = 0;
+  let sessionReads = 0, generatedIds = 0;
   const start = vm.runInNewContext(onlineSource + '\nstartRelay;', {
     game, lib, ui: {}, _status: {}, freeDraftMethods: {}, characterFamily() {}, availableCharacters() {},
-    security: { createSandbox() {} }, URLSearchParams, crypto: webcrypto, AbortController,
+    security: { createSandbox() {} }, URLSearchParams, crypto: { randomUUID() { generatedIds++; return webcrypto.randomUUID(); } }, AbortController,
     location: { search: '?online=LOCAL123' }, window: surface.win, document: doc,
     sessionStorage: { getItem() { sessionReads++; return 'local-seat'; } }, matchMedia: () => ({ matches: false }),
     console: { warn: (...args) => warnings.push(args) }, setTimeout: time.setTimer, clearTimeout: time.clearTimer,
@@ -93,5 +93,5 @@ export async function onlineHarness({ transport = 'websocket', isHost = false } 
     },
   });
   await start();
-  return { ...surface, ...wire, game, lib, calls, received, warnings, status, sessionReads: () => sessionReads };
+  return { ...surface, ...wire, game, lib, calls, received, warnings, status, sessionReads: () => sessionReads, generatedIds: () => generatedIds };
 }
