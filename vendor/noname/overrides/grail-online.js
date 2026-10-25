@@ -28,7 +28,7 @@ export async function startRelay() {
   };
   let stopped = false, ack = 0, started = false, pending = [], failures = 0;
   const peers = new Map();
-  const queue = (to, data) => pending.push({ id: crypto.randomUUID(), to, data });
+  const queue = (to, data) => pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) });
   async function request(type, extra = {}) {
     const response = await fetch('/api/full-room', { method: 'POST', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15_000),
@@ -103,6 +103,12 @@ export async function startRelay() {
         }
         for (const message of data.messages) {
           if (message.seq <= ack) continue;
+          // A host may have an in-flight broadcast when a guest reconnects.
+          // Until the native handshake creates playerOL, old exec messages
+          // refer to players that do not exist on this new page yet.
+          if (!room.isHost && !game.online && !['opened', 'init', 'reinit', 'denied'].includes(JSON.parse(message.data)[0])) {
+            ack = message.seq; continue;
+          }
           if (room.isHost) lib.message.client.onmessage(message.from, message.data);
           else lib.element.ws.onmessage.call(game.ws, { data: message.data });
           ack = message.seq;
@@ -115,6 +121,7 @@ export async function startRelay() {
         if (ui.cardPileButton && matchMedia('(max-width: 600px)').matches) ui.cardPileButton.style.display = 'none';
         if (pending.length) delay = 80;
       } catch (error) {
+        console.warn('Full room synchronization:', error.name, error.message);
         failures++;
         const fatal = [400, 401, 403, 409, 410, 413].includes(error.status);
         tell(fatal ? error.message + ' 請使用上方的返回按鈕。' : '網路同步中斷，正在重試…', fatal);

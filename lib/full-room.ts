@@ -63,12 +63,12 @@ export function attachFullRoom(room: FullRoom, auth: string, connection: unknown
   member.seen = now;
 }
 const GUEST_COMMANDS = new Set(['init', 'inited', 'reinited', 'result', 'tempResult', 'auto', 'unauto', 'chat', 'emotion', 'throwEmotion']);
-function safeGuestValue(value: unknown, depth = 0): boolean {
+function safeGuestValue(value: unknown, depth = 0, nativeBackup = false): boolean {
   if (depth > 30) return false;
-  if (typeof value === 'string') return !value.startsWith('_noname_func:') && !value.startsWith('_noname_event:');
-  if (Array.isArray(value)) return value.every(v => safeGuestValue(v, depth + 1));
+  if (typeof value === 'string') return (nativeBackup || !value.startsWith('_noname_func:')) && !value.startsWith('_noname_event:');
+  if (Array.isArray(value)) return value.every(v => safeGuestValue(v, depth + 1, nativeBackup));
   if (value && typeof value === 'object') return Object.entries(value).every(([k, v]) =>
-    !['__proto__', 'prototype', 'constructor'].includes(k) && safeGuestValue(v, depth + 1));
+    !['__proto__', 'prototype', 'constructor'].includes(k) && safeGuestValue(v, depth + 1, nativeBackup));
   return true;
 }
 export function validateRelayData(data: unknown, member: FullMember) {
@@ -78,7 +78,19 @@ export function validateRelayData(data: unknown, member: FullMember) {
   if (!Array.isArray(parsed) || typeof parsed[0] !== 'string') roomError('同步格式無效。');
   if (member.id !== '1') {
     if (!GUEST_COMMANDS.has(parsed[0])) roomError('這項連線指令不允許執行：' + (/^[a-zA-Z]{1,24}$/.test(parsed[0]) ? parsed[0] : '無效指令'), 403);
-    if (!safeGuestValue(parsed)) roomError('這項連線資料不允許執行：' + parsed[0] + ' 含動態程式資料。', 403);
+    // Native chooseButton skills send a temporary "*_backup" definition in
+    // result._sendskill. Preserve that protocol and its per-client sandbox;
+    // rejecting every serialized function breaks real role skills. Functions
+    // elsewhere, arbitrary exec/log and event injection remain disallowed.
+    const result = parsed[0] === 'result' ? parsed[1] : null;
+    const backup = result?._sendskill;
+    let safe = safeGuestValue(parsed);
+    if (backup !== undefined) {
+      safe = Array.isArray(backup) && backup.length === 2 && /^[a-zA-Z0-9_]+_backup$/.test(backup[0]) &&
+        backup[1] && typeof backup[1] === 'object' && !Array.isArray(backup[1]) &&
+        safeGuestValue(backup[1], 0, true) && safeGuestValue([parsed[0], { ...result, _sendskill: null }, ...parsed.slice(2)]);
+    }
+    if (!safe) roomError('這項連線資料不允許執行：' + parsed[0] + ' 含動態程式資料。', 403);
     if (parsed[0] === 'chat') { parsed[1] = member.id; parsed[2] = cleanName(parsed[2], 200); }
     if (parsed[0] === 'emotion') {
       parsed[1] = member.id;
@@ -96,7 +108,7 @@ export function validateRelayData(data: unknown, member: FullMember) {
   }
   return JSON.stringify(parsed);
 }
-type Outgoing = { id: string; to: string; data: string };
+type Outgoing = { id: string; to: string; data: string; connection?: string };
 export function syncFullRoom(room: FullRoom, auth: string, input: { connection?: unknown; ack?: unknown; messages?: unknown; started?: unknown }, now = Date.now()) {
   const member = memberFor(room, auth);
   if (!member.connection || member.connection !== input.connection) roomError('此牌局已在另一個頁面開啟，請重新加入。', 409);
@@ -122,6 +134,9 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
     // Their reconnect uses the native reinit snapshot, not this stale inbox.
     if (!recipient?.connection && member.id === '1') { room.received.push(key); changed = true; continue; }
     if (!recipient?.connection) roomError('對方尚未連線。', 409);
+    if (member.id === '1' && message.connection && message.connection !== recipient.connection) {
+      room.received.push(key); changed = true; continue;
+    }
     const data = validateRelayData(message.data, member);
     size += data.length;
     if (size > 500_000) roomError('同步批次過大。', 413);

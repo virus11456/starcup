@@ -38,6 +38,15 @@ test('lost HTTP responses are safe to retry and acknowledged messages are remove
   syncFullRoom(room, 'alice-secret', { connection, ack: 1, messages: [] }, 1000);
   assert.equal(room.messages.length, 0);
 });
+test('native temporary skill backups retain their sandboxed protocol without enabling exec', () => {
+  const member = ready().members[1];
+  const payload = JSON.stringify(['result', { skill: 'example_backup', _sendskill: ['example_backup', { filterCard: '_noname_func:function(card) { return true; }' }] }]);
+  assert.deepEqual(JSON.parse(validateRelayData(payload, member)), JSON.parse(payload));
+  assert.throws(() => validateRelayData(payload.replace('example_backup', 'anything').replace('example_backup', 'anything'), member), /不允許/);
+  const chat = JSON.parse(validateRelayData('["chat","1","測試訊息"]', member));
+  assert.equal(chat[1], 'alice');
+  assert.throws(() => validateRelayData('["chat","1","<script>"]', member), /特殊標記/);
+});
 test('reconnect rotates connection epoch, discards stale choices, rejects old page', () => {
   const room = ready();
   syncFullRoom(room, 'alice-secret', { connection, ack: 0, messages: [{ id: 'message-1234567890', to: '1', data: '["result",{}]' }] }, 1000);
@@ -53,6 +62,15 @@ test('host reload closes a match instead of silently replacing its event stack',
   attachFullRoom(room, 'host-secret', 'new-connection-123456789', 1200);
   assert.equal(room.status, 'closed');
   assert.throws(() => syncFullRoom(room, 'alice-secret', { connection, ack: 0, messages: [] }), /已結束/);
+});
+test('in-flight broadcasts cannot enter a replacement connection before its handshake', () => {
+  const room = ready();
+  attachFullRoom(room, 'alice-secret', 'replacement-connection-123', 1100);
+  syncFullRoom(room, 'host-secret', { connection, ack: 0, messages: [
+    { id: 'stale-message-123456', to: 'alice', connection, data: '["exec","old-player-reference"]' },
+    { id: 'fresh-message-123456', to: 'alice', connection: 'replacement-connection-123', data: '["opened"]' },
+  ] }, 1200);
+  assert.deepEqual(relayView(room, 'alice-secret', 1200).messages.map(m => JSON.parse(m.data)[0]), ['opened']);
 });
 test('only host starts, active matches reject late joins, capacity is enforced', () => {
   const room = ready();
