@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import ts from "typescript";
-import { characterFamily, availableCharacters, uniqueCharacters } from "../vendor/noname/overrides/grail-characters.js";
+import { characterFamily, availableCharacters, uniqueCharacters, distinctCharacters } from "../vendor/noname/overrides/grail-characters.js";
 
 test("a claimed role excludes the same role, historical editions and alternate forms", () => {
   assert.deepEqual(availableCharacters(["fengZhiJianSheng", "san_fengZhiJianSheng", "moFaShaoNv", "si_moFaShaoNv"], ["san_fengZhiJianSheng"]), ["moFaShaoNv", "si_moFaShaoNv"]);
@@ -26,7 +26,7 @@ for (const count of [4, 6, 8]) test(`${count}-player shipped draft never duplica
     const game = { addRecentCharacter() {}, grailCharacterFamily: characterFamily, grailAvailableCharacters: availableCharacters };
     let content;
     game.createEvent = () => ({ setContent(fn) { content = fn; } });
-    const mode = vm.runInNewContext(source + "\ngetMode();", { game, characterFamily, availableCharacters });
+    const mode = vm.runInNewContext(source + "\ngetMode();", { game, characterFamily, availableCharacters, distinctCharacters });
     mode.game.chooseCharacterDuoXuanYi();
     const text = `const fn = ${content.toString()};`;
     const ast = ts.createSourceFile("draft.js", text, ts.ScriptTarget.Latest, true);
@@ -49,4 +49,11 @@ for (const count of [4, 6, 8]) test(`${count}-player shipped draft never duplica
     assert.equal(game.me.name1, chosen, "preserve the player's explicit selection");
     assert.equal(uniqueCharacters(game.players.map(p => p.name1)), true);
   }
+});
+
+for (const count of [4, 6, 8]) test(`${count}-player online candidates are disjoint by role family`, () => {
+  const pool = distinctCharacters([...catalog.characters, ...catalog.legacyCharacters].map(c => c.id));
+  assert.ok(pool.length >= count * 5);
+  const hands = Array.from({ length: count }, (_, i) => pool.slice(i * 5, i * 5 + 5));
+  assert.equal(uniqueCharacters(hands.flat()), true);
 });

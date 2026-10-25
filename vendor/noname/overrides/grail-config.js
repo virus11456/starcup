@@ -11,7 +11,7 @@
   ];
   const legacy = query.get("edition") === "legacy";
   const packs = legacy ? [...official, "sanBan", "siBan"] : official;
-  const mode = query.get("view") === "catalog" ? "illustration" : "xingBei";
+  const mode = query.has("online") ? "connect" : query.get("view") === "catalog" ? "illustration" : "xingBei";
   // The upstream first-touch prompt saves a flag and reloads. This launcher
   // rebuilds its config on every visit, so omitting that flag caused an
   // endless confirm/reload loop on iOS and Android. Set both config layers
@@ -36,7 +36,7 @@
   window.config.characters = packs;
   window.config.all.sgscharacters = packs;
   window.config.all.sgsmodes = [mode];
-  window.config.all.stockmode = ["xingBei", "illustration"];
+  window.config.all.stockmode = ["xingBei", "illustration", "connect"];
   window.config.all.nogamemode = ["illustration"];
   window.config.connect_characters = [];
   window.config.show_connect = false;

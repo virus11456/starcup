@@ -1,0 +1,11 @@
+.online-intro { max-width: 760px; padding: 48px 0 26px; }
+.online-intro h1 { color: #e5d3a8; font-size: clamp(28px, 5vw, 44px); }
+.online-intro p, .online-notice p { color: #b3c2c7; line-height: 1.9; }
+.online-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.online-forms label { display: grid; gap: 10px; margin: 22px 0; color: #d7c9a9; font-size: 14px; }
+.online-forms input, .online-forms select { width: 100%; box-sizing: border-box; min-height: 48px; border: 1px solid #b49b6150; border-radius: 8px; background: #0e1920; color: #eee6d5; font: inherit; padding: 12px; }
+.online-forms button { width: 100%; min-height: 48px; }
+.online-notice { margin: 24px 0; }
+.online-error { position: relative; z-index: 9; margin: 0; }
+.online-shell .full-header nav button { min-height: 44px; padding: 8px; }
+@media(max-width: 650px) { .online-forms { grid-template-columns: 1fr; } .online-shell .full-header { gap: 8px; } .online-shell .full-header nav { gap: 4px; } .online-shell .full-header > a { font-size: 17px; } }

@@ -13,7 +13,7 @@ const config: NextConfig = {
       },
       // The opt-in layout preview can embed public pages on this same origin.
       // Normal URLs retain DENY; cross-origin framing remains disallowed.
-      ...["/", "/cards", "/learn", "/rules", "/full"].map(source => ({
+      ...["/", "/cards", "/learn", "/rules", "/full", "/online"].map(source => ({
         source,
         has: [{ type: "query" as const, key: "layout-test", value: "1" }],
         headers: [

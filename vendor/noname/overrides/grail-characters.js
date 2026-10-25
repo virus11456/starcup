@@ -16,3 +16,13 @@ export function uniqueCharacters(selected) {
   const families = selected.filter(Boolean).map(characterFamily);
   return new Set(families).size === families.length;
 }
+
+export function distinctCharacters(candidates) {
+  const seen = new Set();
+  return candidates.filter(id => {
+    const family = characterFamily(id);
+    if (seen.has(family)) return false;
+    seen.add(family);
+    return true;
+  });
+}

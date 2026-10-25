@@ -22,11 +22,11 @@ type Stored = {
   summary: Record<string, unknown>;
   updated_at: string;
 };
-async function rest(
+export async function roomRest<T = Stored>(
   query: string,
   method = "GET",
   body?: unknown,
-): Promise<Stored[]> {
+): Promise<T[]> {
   if (!configured())
     throw Object.assign(
       new GameError("連線服務尚未完成設定，請先使用本機練習模式。"),
@@ -65,6 +65,7 @@ async function rest(
   }
   return res.json();
 }
+const rest = roomRest;
 export function summary(r: Room) {
   return {
     code: r.code,
@@ -92,6 +93,8 @@ export async function getRoom(code: string) {
     `code=eq.${code}&select=code,revision,state,updated_at`,
   );
   const row = rows[0];
+  if (row && (row.state as unknown as { engine?: string }).engine)
+    throw new GameError("請從完整角色對戰入口加入此房間。");
   if (!row || Date.now() - Date.parse(row.updated_at) > 24 * 3600000)
     throw Object.assign(
       new GameError("找不到房間，或房間已超過 24 小時未活動。"),

@@ -119,12 +119,12 @@ mode =
 // Keep the upstream draft and random selection; remove every edition/form
 // of a claimed role before the next AI picks. Event contents are compiled by
 // noname, so helper calls must use the installed game methods, not a closure.
-mode = 'import { characterFamily, availableCharacters } from "../grail-characters.js";\n' + mode;
+mode = 'import { characterFamily, availableCharacters, distinctCharacters } from "../grail-characters.js";\n' + mode;
 function patchMode(before, after) {
   if (!mode.includes(before)) throw new Error(`Pinned roster patch no longer matches: ${before}`);
   mode = mode.replaceAll(before, after);
 }
-patchMode('game:{', 'game:{\n        grailCharacterFamily: characterFamily,\n        grailAvailableCharacters: availableCharacters,');
+patchMode('game:{', 'game:{\n        grailCharacterFamily: characterFamily,\n        grailDistinctCharacters: distinctCharacters,\n        grailAvailableCharacters: availableCharacters,');
 patchMode("game.me.chooseButton(true,dialog,basenum).set('onfree',true);", `game.me.chooseButton(true,dialog,basenum).set('onfree',true).set('filterButton', function(button) {
     return ui.selected.buttons.every(selected => selected === button || game.grailCharacterFamily(selected.link) !== game.grailCharacterFamily(button.link));
   });`);
@@ -133,6 +133,8 @@ patchMode('_status.characterList = result.links.slice();', '_status.characterLis
 for (const initialize of ['game.players[i].init(name);', 'game.players[i].init(list.randomGet());', 'player.init(name);']) {
   patchMode(initialize, initialize + '\n                    event.list = game.grailAvailableCharacters(event.list, game.players.map(player => player.name1));');
 }
+// Draft disjoint character families before assigning candidates to online seats.
+patchMode('list=get.characterGets(list);', 'list=game.grailDistinctCharacters(get.characterGets(list));');
 await writeFile(modePath, mode);
 // Remove community character registrations, not just their menu buttons.
 const specialPath = path.join(output, "character/teDian.js");
@@ -189,7 +191,7 @@ for (const file of [
 // Only the explicitly selected editions appear in the game menus.
 await writeFile(
   path.join(output, "game/package.js"),
-  `window.noname_package = ${JSON.stringify({ character: { shiZhouNian: "十週年", yiDuanYeHuo: "異端業火", shenZiChuangLin: "神子創臨", zhongMoDaoZhu: "終末禱鑄", teDian: "特典", sanBan: "三版（舊版）", siBan: "四版（舊版）" }, card: { xingBei: "星杯傳說" }, play: {}, mode: { xingBei: "星杯傳說", illustration: "圖鑑", tutorial: "教學" }, submode: {}, background: {}, music: {}, font: {}, theme: { music: "星杯" } })};`,
+  `window.noname_package = ${JSON.stringify({ character: { shiZhouNian: "十週年", yiDuanYeHuo: "異端業火", shenZiChuangLin: "神子創臨", zhongMoDaoZhu: "終末禱鑄", teDian: "特典", sanBan: "三版（舊版）", siBan: "四版（舊版）" }, card: { xingBei: "星杯傳說" }, play: {}, mode: { connect: "多人角色對戰", xingBei: "星杯傳說", illustration: "圖鑑", tutorial: "教學" }, submode: {}, background: {}, music: {}, font: {}, theme: { music: "星杯" } })};`,
 );
 await cp(path.join(root, "vendor/noname/overrides"), output, {
   recursive: true,

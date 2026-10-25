@@ -202,7 +202,7 @@ export default function FullGame() {
                 </ol>
                 <p className="full-notice">
                   本模式目前是本機對
-                  電腦，尚未接通跨裝置多人連線。角色技能的交互裁定仍持續核對中。
+                  電腦。與朋友連線請前往「多人角色對戰」，兩者使用同一套引擎；角色技能的交互裁定仍持續核對中。
                 </p>
               </div>
             </section>

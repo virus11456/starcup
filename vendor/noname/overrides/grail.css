@@ -449,3 +449,8 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
     z-index: 7;
   }
 }
+
+/* Same-origin online transport status; never overlaps selection controls. */
+#grail-online-status { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 10000; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 9px; background: #152b31f5; color: #ebd7a4; font: 14px/1.6 sans-serif; pointer-events: none; text-align: center; }
+#grail-online-status[hidden] { display: none; }
+#grail-online-status.fatal { top: 35%; width: min(360px, 80%); border: 1px solid #ab7567; }
