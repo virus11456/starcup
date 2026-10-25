@@ -8,8 +8,8 @@
   }
   #window #arena:not(.chess) #handcards1 {
     top: 0;
-    left: calc(64px * var(--grail-touch-scale, 1));
-    width: calc(100% - 72px * var(--grail-touch-scale, 1));
+    left: calc(64px * var(--grail-touch-scale, 1)) !important;
+    width: calc(100% - 72px * var(--grail-touch-scale, 1)) !important;
     height: 100%;
     padding: 0;
     overflow-x: auto !important;
