@@ -20,7 +20,10 @@
   const touchscreen = typeof window.matchMedia === "function"
     ? window.matchMedia("(pointer: coarse)").matches
     : /iphone|ipad|ipod|android/i.test(window.navigator?.userAgent || "");
-  const input = { totouched: true, touchscreen, phonelayout: touchscreen, fold_mode: false };
+  // QA may load the actual phone stylesheet while keeping mouse input usable.
+  const phonelayout = touchscreen || query.get("phone-layout") === "1";
+  const input = { totouched: true, touchscreen, phonelayout, fold_mode: false };
+  document.documentElement.classList.toggle("grail-phone-layout", phonelayout);
   // A separate localStorage namespace avoids modifying existing core matches.
   window.nodb = true;
   Object.assign(window.config, input);

@@ -1,0 +1,69 @@
+/* GPL-3.0: override the real phone.css, which is loaded after this stylesheet.
+   Keep native nodes and their event handlers; only fix layout and hit boxes. */
+.grail-phone-layout #window #system {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 100% !important;
+  height: calc(52px * var(--grail-touch-scale, 1));
+  padding: calc(4px * var(--grail-touch-scale, 1));
+  overflow: visible;
+}
+.grail-phone-layout #window #system > div {
+  position: relative !important;
+  display: flex;
+  align-items: flex-start;
+  gap: calc(4px * var(--grail-touch-scale, 1));
+  left: auto;
+  right: auto;
+  float: none;
+  width: auto !important;
+  height: auto !important;
+  /* phone.css otherwise translates unexpanded groups -80px off the screen. */
+  transform: none !important;
+  transition: none;
+}
+.grail-phone-layout #window #system > div > div {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: calc(44px * var(--grail-touch-scale, 1)) !important;
+  min-width: calc(44px * var(--grail-touch-scale, 1));
+  margin: 0;
+  padding: 0 calc(6px * var(--grail-touch-scale, 1));
+  font: calc(12px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  pointer-events: auto;
+  overflow: visible;
+}
+.grail-phone-layout #window #system #pausebutton:not(.hidden),
+.grail-phone-layout #window #system #autobutton:not(.hidden) {
+  display: inline-flex !important;
+}
+.grail-phone-layout #window #system > div > div.disabled { pointer-events: none; }
+/* The toolbar stays visible, so its old floating reveal button is redundant. */
+.grail-phone-layout #window #systembutton { display: none !important; }
+.grail-phone-layout #window #control > .control {
+  box-sizing: border-box;
+  height: auto !important;
+  min-height: calc(44px * var(--grail-touch-scale, 1));
+  max-height: none;
+  padding: 0;
+  line-height: normal;
+  overflow: visible;
+}
+.grail-phone-layout #window #control > .control > div {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: calc(44px * var(--grail-touch-scale, 1));
+  min-height: calc(44px * var(--grail-touch-scale, 1));
+  padding: 0 calc(12px * var(--grail-touch-scale, 1));
+  margin: 0;
+  font: calc(14px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+}
+.grail-phone-layout #window .menu-container > .menu.main:not(.center) {
+  top: calc(60px * var(--grail-touch-scale, 1)) !important;
+}

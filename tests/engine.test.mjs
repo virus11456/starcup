@@ -47,6 +47,7 @@ test("local-storage integration disables replay persistence in both config layer
   const source = await fs.readFile(root + "grail-config.js", "utf8");
   const values = new Map();
   const context = { location: { search: "?players=4&edition=current" }, URLSearchParams, window: { config: { all: {} } }, localStorage: { setItem(key, value) { values.set(key, value); } } };
+  context.document = { documentElement: { classList: { toggle() {} } } };
   vm.runInNewContext(source, context);
   assert.equal(context.window.nodb, true);
   assert.equal(context.window.config.video, 0);

@@ -22,14 +22,18 @@ for (const device of [
   { name: "iPad desktop user agent", touch: true, coarse: true, ua: "macintosh" },
   { name: "hybrid laptop with mouse", touch: true, coarse: false, ua: "windows" },
   { name: "desktop", touch: false, coarse: false, ua: "linux" },
+  { name: "desktop QA with actual phone stylesheet", touch: false, coarse: false, ua: "linux", phone: true },
 ]) test(`${device.name}: first launch and repeated launches never prompt or reload`, () => {
   const saved = new Map();
   let config;
+  const classes = new Set();
   const context = {
-    location: { search: "?players=6&edition=current" }, URLSearchParams,
+    location: { search: "?players=6&edition=current" + (device.phone ? "&phone-layout=1" : "") }, URLSearchParams,
     window: { config: { all: {} }, matchMedia: () => ({ matches: device.coarse }) },
     localStorage: { setItem: (key, value) => saved.set(key, value) },
-    document: device.touch ? { ontouchstart: null } : {},
+    document: { ...(device.touch ? { ontouchstart: null } : {}), documentElement: { classList: {
+      toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name),
+    } } },
     lib: {}, ua: device.ua,
     config: { get: key => config[key] },
     game: {
@@ -46,7 +50,8 @@ for (const device of [
     vm.runInNewContext(touchBranch, context);
     assert.equal(config.totouched, true);
     assert.equal(config.touchscreen, device.coarse);
-    assert.equal(config.phonelayout, device.coarse);
+    assert.equal(config.phonelayout, device.coarse || !!device.phone);
+    assert.equal(classes.has("grail-phone-layout"), config.phonelayout);
     assert.equal(context.window.config.touchscreen, device.coarse);
     assert.equal(config.auto_popped_config, false);
     assert.equal(context.window.config.auto_popped_config, false);

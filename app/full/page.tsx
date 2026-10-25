@@ -67,7 +67,8 @@ export default function FullGame() {
       matchesCatalog(`${c.name} ${c.aliases?.join(" ") || ""} ${c.skills.map((s) => s.name + " " + s.description).join(" ")}`, query),
   );
   function start() {
-    setLaunch(`/engine/index.html?players=${players}&edition=${edition}`);
+    const phoneLayout = new URLSearchParams(window.location.search).get("phone-layout") === "1";
+    setLaunch(`/engine/index.html?players=${players}&edition=${edition}${phoneLayout ? "&phone-layout=1" : ""}`);
     setRunning(true);
   }
   function leave() {
