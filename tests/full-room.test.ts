@@ -63,6 +63,16 @@ test('host reload closes a match instead of silently replacing its event stack',
   assert.equal(room.status, 'closed');
   assert.throws(() => syncFullRoom(room, 'alice-secret', { connection, ack: 0, messages: [] }), /已結束/);
 });
+test('closed rooms reject former seats at join instead of launching a broken iframe', () => {
+  const room = ready();
+  attachFullRoom(room, 'host-secret', 'new-connection-123456789', 1200);
+  const before = JSON.stringify(room);
+  for (const auth of ['host-secret', 'alice-secret', 'new-player']) {
+    assert.throws(() => joinFullRoom(room, auth, '測試', 'other'),
+      (error: Error & { status?: number }) => error.status === 410 && /已結束/.test(error.message));
+  }
+  assert.equal(JSON.stringify(room), before);
+});
 test('in-flight broadcasts cannot enter a replacement connection before its handshake', () => {
   const room = ready();
   attachFullRoom(room, 'alice-secret', 'replacement-connection-123', 1100);

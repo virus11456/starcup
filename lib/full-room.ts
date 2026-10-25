@@ -32,6 +32,7 @@ export function fullSummary(room: FullRoom) {
     status: room.status, public: true, host: room.members[0]?.name || '', created: room.created };
 }
 export function joinFullRoom(room: FullRoom, auth: string, name: unknown, id: string, now = Date.now()) {
+  if (room.status === 'closed') roomError('房間已結束，請建立新牌局。', 410);
   const existing = room.members.find(m => m.auth === auth);
   if (existing) return existing;
   if (room.status !== 'waiting') roomError('牌局已開始或結束，請加入其他房間。', 409);
