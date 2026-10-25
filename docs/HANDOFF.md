@@ -7,7 +7,7 @@
 - 全站共用密碼入口，驗證資料僅存 Vercel Production sensitive 環境變數；首頁、引擎直連、JSON、圖片及遊戲 API 均驗證伺服器簽章 cookie。7 天到期，可在 `/access` 重新鎖定。設定與測試見 [網站入口](site-access.md)。
 - 手機選角改成置中且可捲動的面板，角色候選換行，座位 44×44px，控制列獨立留空；選角時隱藏裝飾牌堆。外層遊戲改用固定可視高度，消除 `min-height:100vh` 大於 Safari `100dvh` 的衝突，原引擎縮放與座標保留。
 - 正式站版面修正 `ebb3b8000dd760b6977b3b1acedd5e6d58d2cd24` 已驗證：390×844、390×667、844×390；選祈禱師、切第四座位後確定開局。短屏面板底部約 507px、控制列頂部 544px，兩者不重疊；橫向內容可獨立捲動。這是 Chromium 尺寸檢查，不是實體 iOS Safari 測試。
-- 37 項核心／入口單元測試、32 項引擎測試、typecheck 與獨立路由整合測試通過。正式入口部署後另執行 HTTP 驗證，結果不含密碼或 cookie。本機 Next dev 因宿主 `uv_resident_set_memory` 無法服務，正式建置以 Vercel 結果為準。
+- 37 項核心／入口單元測試、32 項引擎測試、typecheck 與獨立路由整合測試通過。正式站 37 項 HTTP 驗證通過，涵蓋錯誤／正確密碼、簽章 Cookie、未登入頁面／API／引擎／圖片轉換攔截、私有快取、重新鎖定與外站回跳。功能提交 `695ffa0b2d3bf5fa3a0bb86fb91e700fa74058ce`，Vercel `dpl_G7AbvviiiXYLHKdSHDhimwN7BHs9` READY，原 alias 已生效。結果不含密碼或 cookie。本機 Next dev 因宿主 `uv_resident_set_memory` 無法服務，正式建置以 Vercel 結果為準。
 
 ![手機短屏選角修正](qa-mobile-draft-2026-10-25.jpg)
 

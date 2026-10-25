@@ -19,3 +19,11 @@
 - `scripts/check-site-access.mjs`：以 HTTP 檢查實際部署，透過 `ACCESS_TEST_URL` 與 `ACCESS_TEST_PASSWORD` 傳入；不記錄密碼、Cookie、完整回應或環境變數內容。勿把正式密碼寫進命令紀錄或報告。
 
 手機修正保留原引擎 body 縮放及點擊座標；固定外層遊戲於可視高度，選角面板置中、內容獨立捲動，角色候選卡片換行，座位按鈕為 44px，底部控制列獨立保留空間。選角時隱藏裝飾用牌庫／棄牌堆。
+
+## 正式站驗收結果
+
+功能提交 `695ffa0b2d3bf5fa3a0bb86fb91e700fa74058ce`，Vercel `dpl_G7AbvviiiXYLHKdSHDhimwN7BHs9` READY，原正式網域已生效。37 項 HTTP 檢查通過：登入前頁面、API、引擎 HTML／JS、圖鑑 JSON 及受保護圖片的轉換入口皆不能取得內容；正確密碼後 `/full`、引擎、圖鑑及遊戲 API 回傳 200，且回應不允許公開快取。錯誤密碼與跨網站登入不發憑證，外站回跳被拒絕，重新鎖定會清除 Cookie。瀏覽器開啟 `/full` 也確認轉到密碼入口。
+
+測試時 Vercel 的 Location 使用相對路徑，HTTP 檢查已兼容；圖片檢查使用受保護的實際角色 JPG，公開 favicon.svg 不屬於受保護內容。之後的提交只更新驗收文件與測試工具。
+
+![正式站密碼入口](qa-site-access-2026-10-25.jpg)
