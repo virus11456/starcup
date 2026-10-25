@@ -2,6 +2,8 @@
  * in the pinned noname engine's native Client/NodeWS/message implementation. */
 import { lib, game, ui, _status } from './noname.js';
 import security from './noname/util/security.js';
+import { freeDraftMethods } from './grail-free-draft.js';
+import { characterFamily, availableCharacters } from './grail-characters.js';
 
 const packs = ['shiZhouNian', 'yiDuanYeHuo', 'shenZiChuangLin', 'zhongMoDaoZhu', 'teDian'];
 function onlineConfig(capacity) {
@@ -16,6 +18,11 @@ function onlineConfig(capacity) {
     shiQiMax: capacity === 8 ? 18 : 15, zhanJiMax: 5, xingBeiMax: 5, hasPassword: false, onlyChooseCharacter: false });
 }
 export async function startRelay() {
+  // Native guests copy only a small allowlist of mode.game methods during
+  // init/reinit. Install our shared UI helpers before the first handshake.
+  Object.assign(game, freeDraftMethods, {
+    grailCharacterFamily: characterFamily, grailAvailableCharacters: availableCharacters,
+  });
   const code = new URLSearchParams(location.search).get('online');
   const token = sessionStorage.getItem('grail-full-seat-' + code);
   const connection = crypto.randomUUID();

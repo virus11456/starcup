@@ -11,6 +11,22 @@ const source = (await fs.readFile(new URL('../public/engine/grail-free-draft.js'
   .replace(/^import .*;\s*$/gm, '').replace('export const freeDraftMethods', 'const freeDraftMethods');
 const library = await fs.readFile(new URL('../public/engine/noname/library/index.js', import.meta.url), 'utf8');
 const nativeResultSource = library.match(/\t\t\tresult\(result\) \{([\s\S]*?)\n\t\t\t\},/)[1];
+test('fresh guest installs shared draft methods before the native init/reinit handshake', async () => {
+  const relay = (await fs.readFile(new URL('../vendor/noname/overrides/grail-online.js', import.meta.url), 'utf8'))
+    .replace(/^import .*;\s*$/gm, '').replace('export async function', 'async function');
+  const game = {}, method = () => {}, family = () => {};
+  const context = vm.createContext({
+    game, lib: {}, _status: {}, ui: {}, freeDraftMethods: { grailRenderFreeDraft: method },
+    characterFamily: family, availableCharacters, URLSearchParams, location: { search: '?online=TEST1234' },
+    sessionStorage: { getItem: () => 'test-seat' }, crypto: { randomUUID: () => 'test-connection' },
+    document: { createElement: () => ({ setAttribute() {}, classList: { toggle() {} } }), body: { append() {} } },
+    AbortSignal: { timeout() {} }, fetch: () => new Promise(() => {}),
+  });
+  vm.runInContext(relay + '\nstartRelay();', context);
+  assert.equal(game.grailRenderFreeDraft, method);
+  assert.equal(game.grailCharacterFamily, family);
+  assert.equal(game.grailAvailableCharacters, availableCharacters);
+});
 function harness(count = 4) {
   const sends = [], accepted = [], updates = [];
   const players = Array.from({ length: count }, (_, i) => ({
