@@ -6,7 +6,7 @@
     bottom: calc(12px * var(--grail-touch-scale, 1));
     height: calc(96px * var(--grail-touch-scale, 1));
   }
-  #window #arena:not(.chess) #handcards1 {
+  #window #arena:not(.chess) #me #handcards1 {
     top: 0;
     left: calc(64px * var(--grail-touch-scale, 1)) !important;
     width: calc(100% - 72px * var(--grail-touch-scale, 1)) !important;
@@ -20,7 +20,7 @@
   }
   /* The old fan uses fixed 104px cards and inline translations. A scrolling
      row keeps full-size cards readable regardless of hand size. */
-  #window #arena #handcards1 > .handcards {
+  #window #arena #me #handcards1 > .handcards {
     display: flex;
     align-items: flex-end;
     gap: calc(6px * var(--grail-touch-scale, 1));
@@ -29,6 +29,7 @@
     min-width: 100%;
     height: 100%;
     left: 0;
+    top: 0;
     margin: 0;
     padding: calc(12px * var(--grail-touch-scale, 1)) calc(6px * var(--grail-touch-scale, 1));
   }
