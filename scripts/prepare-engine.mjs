@@ -80,6 +80,42 @@ await patch(
   'hallURL = "agserver.ssyy.tech:50000"',
   'hallURL = ""',
 );
+// Keep the native resource selection and transfer rules; give this picker a
+// dedicated layout so the enlarged phone action row cannot cover its choices.
+await patch(
+  "noname/library/index.js",
+  `var dialog=ui.create.dialog('提炼：选择星石','hidden');`,
+  `var dialog=ui.create.dialog('提炼：选择星石','hidden');
+                    dialog.classList.add('grail-resource-dialog');
+                    var maximum=Math.min(2,player.getNengLiangLimit()-player.countNengLiangAll(),get.zhanJi(player.side).length);
+                    ui.create.div('.grail-resource-hint',dialog.content).textContent='點選 '+(maximum>1?'1～'+maximum:'1')+' 顆星石，再按「確定」。';`,
+);
+await patch(
+  "noname/library/index.js",
+  `var dialog=ui.create.dialog('合成：选择星石','hidden');`,
+  `var dialog=ui.create.dialog('合成：选择星石','hidden');
+                    dialog.classList.add('grail-resource-dialog');
+                    ui.create.div('.grail-resource-hint',dialog.content).textContent='點選 3 顆星石，再按「確定」。';`,
+);
+// The native picker returns to a final action confirmation. Name that action
+// explicitly instead of leaving the unrelated attack/spell prompt on screen.
+for (const [skill, title] of [['_tiLian', '提煉'], ['_heCheng', '合成']]) {
+  const file = path.join(output, 'noname/library/index.js');
+  const source = await readFile(file, 'utf8');
+  const ast = ts.createSourceFile('library.js', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let picker;
+  const visit = (node) => {
+    if (ts.isPropertyAssignment(node) && node.name.getText(ast) === skill && ts.isObjectLiteralExpression(node.initializer)) {
+      picker = node.initializer.properties.find((property) => property.name?.getText(ast) === 'chooseButton')?.initializer;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(ast);
+  if (!picker || !ts.isObjectLiteralExpression(picker)) throw new Error(`Missing native resource picker: ${skill}`);
+  const start = picker.getStart(ast) + 1;
+  const prompt = `\n                prompt:function(links){return '已選擇：'+links.map(function(stone){return get.translation(stone);}).join('、')+'。按「確定」完成${title}。';},`;
+  await writeFile(file, source.slice(0, start) + prompt + source.slice(start));
+}
 // Browser deployments do not have the desktop client's filesystem API.
 await patch("game/entry.js", 'const readConfig = async () => {', 'const readConfig = async () => {\n                if (typeof game.readFileAsText !== "function") return;');
 // The native reconnect snapshot omitted the public turn/limit counters, so

@@ -34,7 +34,23 @@ const text = (value) =>
 let last = "";
 function update() {
   if (ui.arena) document.getElementById("grail-loading")?.remove();
+  // The native hall's restart/exit reloads only the iframe. Embedded rooms
+  // return through the parent page so its authenticated leave flow runs.
+  if (game.grailEmbeddedRoom && _status.over) {
+    for (const control of [ui.restart, ui.exit]) {
+      control?.style.setProperty("display", "none", "important");
+    }
+  }
   for (const player of game.players || []) {
+    // Presentation only: preserve native seat order and target nodes when the
+    // short landscape viewport lays opponents in one horizontal row.
+    const seat = Number(player.dataset.position);
+    if (seat > 0 && game.players.length > 2) {
+      const fraction = String(1 - (seat - 1) / (game.players.length - 2));
+      if (player.style.getPropertyValue("--grail-seat-fraction") !== fraction) {
+        player.style.setProperty("--grail-seat-fraction", fraction);
+      }
+    }
     if (typeof player.side !== "boolean") continue;
     const team = player.side ? "red" : "blue";
     if (player.dataset.grailTeam !== team) {
@@ -111,7 +127,7 @@ function update() {
   help.append(progress);
   const p = document.createElement("p");
   p.textContent =
-    (_status.over ? "對局已結束，請查看結算畫面；可使用上方「結束並返回」準備下一局。" : prompt) ||
+    (_status.over ? `對局已結束，請查看結算畫面；可使用上方「${game.grailEmbeddedRoom ? "離開" : "結束並返回"}」準備下一局。` : prompt) ||
     "可選的手牌、目標與技能會亮起；回應窗口出現時，請先處理畫面中的選擇。";
   help.append(p);
   const legend = document.createElement("p");
