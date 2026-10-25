@@ -64,3 +64,13 @@ test('only host starts, active matches reject late joins, capacity is enforced',
   assert.throws(() => joinFullRoom(room, 'new', '新', 'new'), /已開始/);
   assert.equal(joinFullRoom(room, 'alice-secret', '甲', 'other').id, 'alice');
 });
+test('a guest leaving during broadcast does not disconnect the remaining table', () => {
+  const room = ready();
+  room.members[1].connection = '';
+  syncFullRoom(room, 'host-secret', { connection, ack: 0, messages: [
+    { id: 'message-1234567890', to: 'alice', data: '["update",{}]' },
+    { id: 'message-1234567891', to: 'bob', data: '["update",{}]' },
+  ] }, 1000);
+  assert.equal(room.messages.length, 1);
+  assert.equal(relayView(room, 'bob-secret').messages.length, 1);
+});

@@ -80,6 +80,8 @@ await patch(
   'hallURL = "agserver.ssyy.tech:50000"',
   'hallURL = ""',
 );
+// Browser deployments do not have the desktop client's filesystem API.
+await patch("game/entry.js", 'const readConfig = async () => {', 'const readConfig = async () => {\n                if (typeof game.readFileAsText !== "function") return;');
 // Direct launch bypasses the upstream settings menu that normally writes
 // defaults. Populate every missing mode setting before the mode starts.
 await patch(

@@ -109,9 +109,12 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
     if (!message || typeof message.id !== 'string' || !/^[\w-]{16,64}$/.test(message.id)) roomError('訊息識別無效。');
     if ((member.id === '1' && message.to === '1') || (member.id !== '1' && message.to !== '1')) roomError('不能傳送到這個玩家。', 403);
     const recipient = room.members.find(m => m.id === message.to);
-    if (!recipient?.connection) roomError('對方尚未連線。', 409);
     const key = member.id + ':' + message.id;
     if (room.received.includes(key)) continue;
+    // A departing guest must not abort the host's entire broadcast batch.
+    // Their reconnect uses the native reinit snapshot, not this stale inbox.
+    if (!recipient?.connection && member.id === '1') { room.received.push(key); changed = true; continue; }
+    if (!recipient?.connection) roomError('對方尚未連線。', 409);
     const data = validateRelayData(message.data, member);
     size += data.length;
     if (size > 500_000) roomError('同步批次過大。', 413);

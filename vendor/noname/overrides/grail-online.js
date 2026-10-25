@@ -81,7 +81,12 @@ export async function startRelay() {
       try {
         // Do not acknowledge a handshake until createServer installed wsOL.
         if (room.isHost && !lib.wsOL) { setTimeout(poll, 100); return; }
-        const batch = pending.slice(0, 60);
+        const batch = [];
+        let bytes = 0;
+        for (const message of pending) {
+          if (batch.length && (bytes + message.data.length > 400_000 || batch.length >= 60)) break;
+          batch.push(message); bytes += message.data.length;
+        }
         const data = await request('sync', { ack, messages: batch, started });
         pending.splice(0, batch.length);
         if (room.isHost) {
