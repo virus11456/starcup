@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from "@/lib/site-access";
 import {
   applyCommand,
   createRoom,
@@ -48,6 +49,8 @@ function fail(error: unknown, token: string) {
   return reply({ error: "操作未完成，請重試。" }, token, 500);
 }
 export async function GET(req: NextRequest) {
+  if (!validAccessToken(req.cookies.get(ACCESS_COOKIE)?.value))
+    return NextResponse.json({ error: "請先輸入網站密碼。" }, { status: 401, headers: { "Cache-Control": PRIVATE_CACHE } });
   const s = session(req);
   try {
     const code = req.nextUrl.searchParams.get("room");
@@ -67,6 +70,8 @@ export async function GET(req: NextRequest) {
   }
 }
 export async function POST(req: NextRequest) {
+  if (!validAccessToken(req.cookies.get(ACCESS_COOKIE)?.value))
+    return NextResponse.json({ error: "請先輸入網站密碼。" }, { status: 401, headers: { "Cache-Control": PRIVATE_CACHE } });
   const s = session(req);
   try {
     const origin = req.headers.get("origin");
