@@ -5,6 +5,7 @@ import security from './noname/util/security.js';
 import { freeDraftMethods } from './grail-free-draft.js';
 import { characterFamily, availableCharacters } from './grail-characters.js';
 import { createRelaySocket } from './grail-relay-socket.js';
+import { createRelayLifecycle } from './grail-relay-lifecycle.js';
 
 const packs = ['shiZhouNian', 'yiDuanYeHuo', 'shenZiChuangLin', 'zhongMoDaoZhu', 'teDian'];
 function onlineConfig(capacity) {
@@ -37,21 +38,26 @@ export async function startRelay() {
   };
   let stopped = false, ack = 0, started = false, pending = [], failures = 0;
   let useSocket = false, wake = () => {};
-  let socket;
+  let socket, lifecycle, activeFetch;
   const peers = new Map();
   const queue = (to, data) => { pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) }); wake(40); };
   async function request(type, extra = {}) {
     const body = { type, code, token, connection, ...extra };
     if (useSocket && type === 'sync') {
       try { return await socket.request(body); }
-      catch (error) { if (error.status) throw error; }
+      catch (error) { if (error.status || stopped || lifecycle?.inactive) throw error; }
     }
-    const response = await fetch('/api/full-room', { method: 'POST', cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify(body) });
-    const data = await response.json();
-    if (!response.ok) throw Object.assign(new Error(data.error || '連線暫時中斷'), { status: response.status });
-    return data;
+    if (stopped || lifecycle?.inactive) throw new Error('頁面暫停同步');
+    const controller = activeFetch = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch('/api/full-room', { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+        body: JSON.stringify(body) });
+      const data = await response.json();
+      if (!response.ok) throw Object.assign(new Error(data.error || '連線暫時中斷'), { status: response.status });
+      return data;
+    } finally { clearTimeout(timeout); if (activeFetch === controller) activeFetch = null; }
   }
   try {
     tell('正在連接完整角色房間…');
@@ -73,7 +79,7 @@ export async function startRelay() {
     game.sandbox = security.createSandbox();
     // Preserve the native message parser and its sandbox, replacing only
     // WebSocket IO. No public upstream hall or third-party relay is contacted.
-    game.ws = { readyState: 1, close() { stopped = true; socket?.close(); }, send(serialized) {
+    game.ws = { readyState: 1, close() { stopped = true; lifecycle?.stop(); socket?.close(); activeFetch?.abort(); }, send(serialized) {
       if (!room.isHost) { queue('1', serialized); return; }
       const command = JSON.parse(serialized);
       if (command[0] !== 'server') return;
@@ -92,20 +98,17 @@ export async function startRelay() {
       // The host sends the native "opened" handshake after discovering this
       // authenticated seat; the existing init/reinit flow does everything else.
     }
-    window.addEventListener('pagehide', () => { stopped = true; socket?.close(); });
-    let timer, running = false, wakeQueued = false;
-    wake = delay => {
-      if (stopped) return;
-      if (running) { wakeQueued = true; return; }
-      clearTimeout(timer); timer = setTimeout(poll, delay);
-    };
+    lifecycle = createRelayLifecycle({ poll,
+      disconnect() { socket?.close(); activeFetch?.abort(); },
+      onError(error) { console.warn('Full room resume:', error.name); },
+    });
+    wake = delay => { if (!stopped) lifecycle.wake(delay); };
     async function poll() {
-      if (stopped) return;
+      if (stopped) return null;
       let delay = useSocket ? 10_000 : 600;
       try {
         // Do not acknowledge a handshake until createServer installed wsOL.
-        if (room.isHost && !lib.wsOL) { wake(100); return; }
-        running = true;
+        if (room.isHost && !lib.wsOL) return 100;
         const batch = [];
         let bytes = 0;
         for (const message of pending) {
@@ -140,24 +143,23 @@ export async function startRelay() {
         }
         ack = Math.max(ack, data.sequence);
         failures = 0;
-        tell(!room.isHost && !data.hostAlive ? '房主暫時離線，等待恢復連線…' : '');
+        tell(!room.isHost && !data.hostAlive ? '房主連線中斷，請讓房主回到原本的分頁恢復連線。' : '');
         if (ui.connectShareButton) ui.connectShareButton.style.display = 'none';
         if (!room.isHost && ui.connectStartButton) ui.connectStartButton.style.display = 'none';
         if (ui.cardPileButton && matchMedia('(max-width: 600px)').matches) ui.cardPileButton.style.display = 'none';
         if (pending.length) delay = 80;
       } catch (error) {
+        if (lifecycle.inactive) return delay;
         console.warn('Full room synchronization:', error.name, error.message);
         failures++;
         const fatal = [400, 401, 403, 409, 410, 413, 429].includes(error.status);
         tell(fatal ? error.message + ' 請使用上方的返回按鈕。' : '網路同步中斷，正在重試…', fatal);
-        if (fatal) { stopped = true; socket?.close(); return; }
+        if (fatal) { stopped = true; return null; }
         delay = Math.min(5000, 600 * 2 ** failures);
       }
-      running = false;
-      if (wakeQueued) { delay = Math.min(delay, 80); wakeQueued = false; }
-      wake(delay);
+      return delay;
     }
-    poll();
+    wake(0);
   } catch (error) {
     tell(error.message || '無法連接房間，請返回大廳重試。', true);
     document.getElementById('grail-loading')?.remove();

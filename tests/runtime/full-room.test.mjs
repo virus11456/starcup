@@ -113,9 +113,15 @@ test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', 
       const privateResult = await sync(guest.socket, code, guest, { ack: next.data.sequence,
         messages: [{ id: randomUUID(), to: host.id, data: '["result",{"bool":true}]' }] });
       assert.equal(privateResult.status, 200);
+      // A cached host page retains its engine and epoch. Reopen transport only:
+      // do not attach a new session or discard an unacknowledged guest result.
+      host.socket.close();
+      host.socket = await openSocket(code, host);
       const hostInbox = await sync(host.socket, code, host);
       assert.equal(hostInbox.data.messages.length, 1);
+      assert.equal(hostInbox.data.room.status, 'playing');
       assert.deepEqual(JSON.parse(hostInbox.data.messages[0].data), ['result', { bool: true }]);
+      assert.equal((await sync(host.socket, code, host, { ack: hostInbox.data.sequence })).data.messages.length, 0);
       assert.equal((await request({ type: 'leave', code, token: host.token })).status, 200);
       assert.equal((await sync(guest.socket, code, guest)).status, 410);
       assert.equal((await request({ type: 'join', code, token: guest.token, name: guest.name })).status, 410);

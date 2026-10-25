@@ -20,7 +20,7 @@ test('fresh guest installs shared draft methods before the native init/reinit ha
     characterFamily: family, availableCharacters, URLSearchParams, location: { search: '?online=TEST1234' },
     sessionStorage: { getItem: () => 'test-seat' }, crypto: { randomUUID: () => 'test-connection' },
     document: { createElement: () => ({ setAttribute() {}, classList: { toggle() {} } }), body: { append() {} } },
-    AbortSignal: { timeout() {} }, fetch: () => new Promise(() => {}),
+    AbortController, setTimeout: () => 0, clearTimeout() {}, fetch: () => new Promise(() => {}),
   });
   vm.runInContext(relay + '\nstartRelay();', context);
   assert.equal(game.grailRenderFreeDraft, method);

@@ -1,1 +1,9 @@
-{ "framework": "nextjs", "regions": ["hnd1"] }
+{
+  "framework": "nextjs",
+  "regions": ["hnd1"],
+  "git": {
+    "deploymentEnabled": {
+      "fix/relay-recovery-20261026": false
+    }
+  }
+}
