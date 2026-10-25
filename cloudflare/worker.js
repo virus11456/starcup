@@ -154,6 +154,7 @@ export class GrailRoom extends DurableObject {
       this.ctx.storage.transactionSync(() => {
         this.ctx.storage.sql.exec('DELETE FROM room');
         this.ctx.storage.sql.exec('DELETE FROM inbox');
+        this.ctx.storage.sql.exec('DELETE FROM inbox_batches');
       });
     } else await this.ctx.storage.setAlarm(room.updated + DAY);
   }
