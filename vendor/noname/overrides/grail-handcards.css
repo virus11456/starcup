@@ -75,9 +75,9 @@
 
 @media (min-width: 601px) and (max-width: 1049px) and (max-height: 500px) {
   #window #arena:not(.chess) > #me {
-    bottom: calc(-100px * var(--grail-touch-scale, 1));
-    width: 100%;
-    left: 0;
+    bottom: calc(-100px * var(--grail-touch-scale, 1)) !important;
+    width: 100% !important;
+    left: 0 !important;
   }
   #window #arena:not(.chess):not(.choose-character) > #control {
     bottom: calc(-12px * var(--grail-touch-scale, 1));
