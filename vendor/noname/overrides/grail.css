@@ -434,10 +434,12 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    margin: 0;
-    width: calc(44px * var(--grail-touch-scale, 1));
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 auto;
+    width: calc(44px * var(--grail-touch-scale, 1)) !important;
     height: calc(44px * var(--grail-touch-scale, 1));
-    font: calc(14px * var(--grail-touch-scale, 1)) / 1 system-ui;
+    font: calc(14px * var(--grail-touch-scale, 1)) / 1 system-ui !important;
   }
   #window #arena.choose-character > .dialog .placeholder.add-setting { display: none; }
   #window #arena.choose-character > #control {
