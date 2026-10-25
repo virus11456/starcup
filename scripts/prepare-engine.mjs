@@ -161,6 +161,10 @@ await patch('noname/library/index.js', 'player.unwait(result);', `if (game.grail
 await patch('noname/library/index.js', 'reinited() {\n\t\t\t\tthis.inited = true;', `reinited() {
                 this.inited = true;
                 game.grailDraftReconnected?.(this.id);`);
+// A brief reconnect must not immediately assign a random role. Keep the
+// existing native selection deadline; its timeout still calls unwait("ai").
+await patch('noname/library/element/client.js', 'player.unwait("ai");',
+  'if (!game.grailDraftPending?.(this.id)) player.unwait("ai");');
 // Remove community character registrations, not just their menu buttons.
 const specialPath = path.join(output, "character/teDian.js");
 let special = await readFile(specialPath, "utf8");
@@ -233,6 +237,22 @@ for (const name of ["three.module.js", "three.core.js"])
   );
 const localization = await localizeEngine(output);
 const catalog = await createCatalog(output, pin);
+// Never publish a partially prepared tree (for example overlapping local
+// preparation runs). The generated engine must retain every required patch.
+for (const [file, marker] of [
+  ['mode/xingBei.js', 'game.grailChooseCharacterOLFree(); return;'],
+  ['noname/library/index.js', '!game.grailAcceptDraftResult(player, result)'],
+  ['noname/library/index.js', 'game.grailDraftReconnected?.(this.id)'],
+  ['noname/library/element/client.js', '!game.grailDraftPending?.(this.id)'],
+  ['character/teDian.js', 'return installOfficialGlutton({'],
+]) {
+  if (!(await readFile(path.join(output, file), 'utf8')).includes(marker)) {
+    throw new Error(`Prepared engine is missing a required patch: ${file}`);
+  }
+}
+if (catalog.characters.length !== 68 || catalog.deck.length !== 150) {
+  throw new Error('Prepared engine roster or deck is incomplete');
+}
 await writeFile(path.join(output, "catalog.json"), JSON.stringify(catalog));
 await writeFile(
   path.join(root, "public/full-engine/catalog.json"),

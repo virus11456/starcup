@@ -113,3 +113,22 @@ test('reconnecting during selection receives the current claims instead of a fre
   assert.equal(h.sends.at(-1).args[1].claims['1'], pool[0]);
   assert.equal(h.sends.at(-1).args[1].id, 10);
 });
+test('native disconnect preserves a pending draft until its existing timeout, but battle still auto-resolves', async () => {
+  const h = harness();
+  const nativeClient = (await fs.readFile(new URL('../public/engine/noname/library/element/client.js', import.meta.url), 'utf8'))
+    .replace(/^import .*;\s*$/gm, '').replace('export class Client', 'class Client');
+  const clientLib = { node: { clients: { remove() {} }, observing: { remove() {} } }, playerOL: { '2': h.players[1] } };
+  h.players[1].setNickname = () => {};
+  h.game.broadcast = () => {};
+  const Client = vm.runInNewContext(nativeClient + '\nClient', { lib: clientLib, game: h.game, _status: {}, ui: {}, window: {}, get: {} });
+  const connection = new Client({ wsid: '2' }, true);
+  connection.close();
+  assert.equal(h.accepted.length, 0, 'disconnect must retain the original native wait and timer');
+  assert.equal(h.game.grailDraftPending('2'), true);
+  h.game.grailDraftReconnected('2');
+  h.receive.call({ id: '2' }, { links: [pool[1]], grailDraftId: 10 });
+  assert.equal(h.game.grailFreeDraftState.claims['2'], pool[1]);
+  delete h.game.grailFreeDraftState;
+  connection.close();
+  assert.equal(h.accepted.length, 2, 'ordinary battle disconnect still resolves through native AI');
+});

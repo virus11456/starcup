@@ -86,6 +86,10 @@ export const freeDraftMethods = {
     const player = lib.playerOL[id];
     player.send(function (view) { game.grailPromptFreeDraft(view); }, game.grailDraftSnapshot());
   },
+  grailDraftPending(id) {
+    const draft = game.grailFreeDraftState;
+    return !!draft && draft.humans.includes(id) && !Object.hasOwn(draft.claims, id);
+  },
   grailDraftSendback(result, player) {
     const draft = game.grailFreeDraftState;
     if (!draft || draft.claims[player.playerid]) return;
