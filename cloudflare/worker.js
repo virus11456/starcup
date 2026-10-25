@@ -5,11 +5,11 @@ import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from '../lib/site-acce
 import { attachFullRoom, createFullRoom, fullSummary, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '../lib/full-room.ts';
 import { RoomStorage } from './room-storage.js';
 import { socketCheckpoint, syncSocketRoom } from './room-checkpoints.js';
+import { roomFailure as failure } from './service-errors.js';
 
 const DAY = 86_400_000;
 const hash = value => createHash('sha256').update(value).digest('hex');
 const response = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': PRIVATE_CACHE, 'X-Robots-Tag': 'noindex, nofollow' } });
-function failure(error) { return { status: Number(error?.status) || 500, error: error?.status ? error.message : '房間服務暫時無法連線，請稍後重試。' }; }
 function seatToken(token) {
   if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) roomError('玩家識別無效，請重新加入房間。', 403);
   return hash(token);

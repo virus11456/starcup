@@ -45,12 +45,13 @@ export default function OnlineGame() {
   }
   async function leave() {
     if (!room || !confirm(room.isHost ? '離開會結束所有玩家的牌局，確定返回？' : '確定離開牌局並返回？')) return;
+    // A service outage must not trap the player inside a retrying iframe.
+    setRoom(null); setLaunch(''); setError('');
     try {
-      const response = await fetch('/api/full-room', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const response = await fetch('/api/full-room', { method: 'POST', signal: AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'leave', code: room.code, token: sessionStorage.getItem('grail-full-seat-' + room.code) }) });
       if (!response.ok) { const data = await response.json(); throw new Error(data.error); }
-      setRoom(null); setLaunch(''); setError('');
-    } catch (error) { setError(error instanceof Error ? error.message : '離開失敗，請再試一次。'); }
+    } catch (error) { setError('已返回；伺服器尚未確認離開操作。' + (error instanceof Error ? error.message : '請稍後再試。')); }
   }
   async function copyInvite() {
     if (!room) return;

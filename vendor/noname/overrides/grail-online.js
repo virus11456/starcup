@@ -148,7 +148,7 @@ export async function startRelay() {
       } catch (error) {
         console.warn('Full room synchronization:', error.name, error.message);
         failures++;
-        const fatal = [400, 401, 403, 409, 410, 413].includes(error.status);
+        const fatal = [400, 401, 403, 409, 410, 413, 429].includes(error.status);
         tell(fatal ? error.message + ' 請使用上方的返回按鈕。' : '網路同步中斷，正在重試…', fatal);
         if (fatal) { stopped = true; socket?.close(); return; }
         delay = Math.min(5000, 600 * 2 ** failures);
