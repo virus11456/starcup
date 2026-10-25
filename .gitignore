@@ -3,6 +3,7 @@ node_modules/
 .vercel/
 .env*
 !.env.example
+.dev.vars*
 *.tsbuildinfo
 next-env.d.ts
 outputs/
@@ -12,3 +13,6 @@ outputs/
 .engine-cache-tmp*
 public/engine/
 *.tar.gz
+/dist/
+.vinext/
+.wrangler/

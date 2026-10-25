@@ -38,6 +38,8 @@
   ],
   "exclude": [
     "node_modules",
+    "dist",
+    ".wrangler",
     "public/engine",
     ".engine-cache",
     "vendor/noname/overrides"

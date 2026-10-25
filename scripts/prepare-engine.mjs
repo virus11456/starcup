@@ -82,6 +82,14 @@ await patch(
 );
 // Browser deployments do not have the desktop client's filesystem API.
 await patch("game/entry.js", 'const readConfig = async () => {', 'const readConfig = async () => {\n                if (typeof game.readFileAsText !== "function") return;');
+// Native response prompts share a cancel command with every other picker.
+// Change only its label, including when the same confirm control is reused.
+await patch('noname/ui/create/index.js', 'export class Create {',
+  'import { updateResponseCancelLabel } from "../../../grail-response-labels.js";\n\nexport class Create {');
+await patch('noname/ui/create/index.js', 'if (ui.confirm && ui.confirm.str == str) {\n\t\t\treturn;',
+  'if (ui.confirm && ui.confirm.str == str) {\n            updateResponseCancelLabel(ui.confirm, _status.event, get.translation("cancel"));\n\t\t\treturn;');
+await patch('noname/ui/create/index.js', 'ui.confirm.str = str;',
+  'ui.confirm.str = str;\n            updateResponseCancelLabel(ui.confirm, _status.event, get.translation("cancel"));');
 // The native reconnect snapshot omitted the public turn/limit counters, so
 // returning clients displayed the old fallback score table until the next turn.
 await patch('noname/get/index.js', 'roomId: game.roomId,', `roomId: game.roomId,
@@ -245,6 +253,7 @@ for (const [file, marker] of [
   ['noname/library/index.js', 'game.grailDraftReconnected?.(this.id)'],
   ['noname/library/element/client.js', '!game.grailDraftPending?.(this.id)'],
   ['character/teDian.js', 'return installOfficialGlutton({'],
+  ['noname/ui/create/index.js', 'updateResponseCancelLabel(ui.confirm, _status.event'],
 ]) {
   if (!(await readFile(path.join(output, file), 'utf8')).includes(marker)) {
     throw new Error(`Prepared engine is missing a required patch: ${file}`);

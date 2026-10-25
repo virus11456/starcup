@@ -12,23 +12,38 @@
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build --webpack",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "test:engine": "node --test tests/*.test.mjs"
+    "test:engine": "node --test tests/*.test.mjs",
+    "dev:vinext": "vite dev --port 3001",
+    "prebuild:vinext": "npm run prepare:engine",
+    "build:vinext": "vite build",
+    "start:vinext": "wrangler dev --config dist/server/wrangler.json",
+    "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
+    "@vinext/cloudflare": "^1.2.0",
     "lucide-react": "1.31.0",
     "next": "16.3.4",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
-    "three": "0.186.1"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-server-dom-webpack": "^19.3.1",
+    "three": "0.186.1",
+    "vinext": "^1.3.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.65.0",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@types/three": "0.183.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-rsc": "^0.5.38",
     "opencc-js": "1.4.2",
-    "typescript": "5.9.3"
+    "postcss": "^8.5.31",
+    "typescript": "5.9.3",
+    "vite": "^8.3.5",
+    "vite-css-modules": "^1.16.0",
+    "wrangler": "^4.152.0"
   }
 }
