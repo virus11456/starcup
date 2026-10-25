@@ -50,3 +50,12 @@ test('expired/closed rooms fail visibly and a server-reported host is never resu
     init?.signal?.throwIfAborted(); return Response.json({ room: guest });
   }), { name: 'AbortError' });
 });
+test('a response arriving after cancellation cannot restore a guest even if the transport ignores abort', async () => {
+  const controller = new AbortController();
+  let deliver!: (response: Response) => void;
+  const response = new Promise<Response>(resolve => { deliver = resolve; });
+  const pending = resumeGuestRoom(guest, token, controller.signal, () => response);
+  controller.abort();
+  deliver(Response.json({ room: guest }));
+  await assert.rejects(pending, { name: 'AbortError' });
+});

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, type OnlineRoom as Room } from '@/lib/online-session';
+import { createRoomRequests } from '@/lib/room-request';
 import '../full/full.css';
 import './online.css';
 function seatToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join(''); }
@@ -22,6 +23,7 @@ export default function OnlineGame() {
   const [shareMessage, setShareMessage] = useState('');
   const inviteDialog = useRef<HTMLDialogElement>(null);
   const inviteInput = useRef<HTMLInputElement>(null);
+  const [requests] = useState(() => createRoomRequests());
   function openRoom(next: Room) {
     sessionStorage.setItem(ACTIVE_ROOM_KEY, JSON.stringify(next));
     const url = new URL(location.href);
@@ -33,9 +35,8 @@ export default function OnlineGame() {
     setRoom(next); setResume(null); setCopied(false); setShareMessage('');
   }
   useEffect(() => {
-    const controller = new AbortController();
     try {
-      setName(localStorage.getItem('grail-name-v1') || '');
+      try { setName(localStorage.getItem('grail-name-v1') || ''); } catch { /* Remembering a nickname is optional. */ }
       const raw = new URLSearchParams(location.search).get('room') || '';
       const invited = normalizeRoomCode(raw);
       setCode(invited);
@@ -45,16 +46,11 @@ export default function OnlineGame() {
         setResume(previous);
         const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
         if (shouldResumeRoom(previous, invited, navigation?.type || 'navigate')) {
-          setBusy(true);
-          resumeGuestRoom(previous, sessionStorage.getItem(seatKey(previous.code))!,
-            AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]))
-            .then(next => { if (!controller.signal.aborted) openRoom(next); })
-            .catch(error => { if (!controller.signal.aborted) setError(error instanceof Error ? error.message : '重連失敗，請再試一次。'); })
-            .finally(() => { if (!controller.signal.aborted) setBusy(false); });
+          void reconnect(previous);
         }
       }
     } catch { setError('瀏覽器無法保存座位，請允許此網站使用儲存空間後再試。'); }
-    return () => controller.abort();
+    return () => requests.cancel();
   }, []);
   useEffect(() => {
     if (!room?.isHost) return;
@@ -62,12 +58,17 @@ export default function OnlineGame() {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [room?.isHost]);
-  async function reconnect() {
-    if (!resume || busy) return;
+  async function reconnect(previous = resume) {
+    if (!previous) return;
+    const operation = requests.begin();
+    if (!operation) return;
     setBusy(true); setError('');
-    try { openRoom(await resumeGuestRoom(resume, sessionStorage.getItem(seatKey(resume.code)) || '', AbortSignal.timeout(15_000))); }
-    catch (error) { setError(error instanceof Error ? error.message : '重連失敗，請再試一次。'); }
-    finally { setBusy(false); }
+    try {
+      const next = await resumeGuestRoom(previous, sessionStorage.getItem(seatKey(previous.code)) || '', operation.signal);
+      if (operation.current()) openRoom(next);
+    }
+    catch (error) { if (operation.current()) setError(error instanceof Error ? error.message : '重連失敗，請再試一次。'); }
+    finally { if (operation.finish()) setBusy(false); }
   }
   async function enter(type: 'create' | 'join') {
     if (busy) return;
@@ -76,37 +77,44 @@ export default function OnlineGame() {
       nameInput.current?.focus();
       return;
     }
+    const operation = requests.begin();
+    if (!operation) return;
     setBusy(true); setError('');
     try {
       const normalized = normalizeRoomCode(code);
       if (type === 'join' && !normalized) throw new Error('請輸入 8 位英數字房間碼。');
       const token = type === 'join' ? sessionStorage.getItem(seatKey(normalized)) || seatToken() : seatToken();
-      const response = await fetch('/api/full-room', { method: 'POST', signal: AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json' },
+      const response = await fetch('/api/full-room', { method: 'POST', signal: operation.signal, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, token, code: normalized, name, title, capacity: Number(capacity) }) });
       const data = await response.json();
+      if (!operation.current()) return;
+      operation.signal.throwIfAborted();
       if (!response.ok) throw new Error(data.error || '無法進入房間。');
       sessionStorage.setItem(seatKey(data.room.code), token);
-      localStorage.setItem('grail-name-v1', name.trim());
+      try { localStorage.setItem('grail-name-v1', name.trim()); } catch { /* The seat credential is already saved in sessionStorage. */ }
       if (type === 'join' && data.room.isHost) {
         setResume(data.room);
         throw new Error('這是你主持的房間，請回到原本的分頁。房主重新整理後尚無法恢復牌局；可結束舊房間後重新開房。');
       }
       openRoom(data.room);
-    } catch (error) { setError(error instanceof Error ? error.message : '無法進入房間。'); }
-    finally { setBusy(false); }
+    } catch (error) { if (operation.current()) setError(error instanceof Error ? error.message : '無法進入房間。'); }
+    finally { if (operation.finish()) setBusy(false); }
   }
   async function leave(target = room) {
     if (!target || !confirm(target.isHost ? '離開會結束所有玩家的牌局，確定返回？' : '確定離開牌局並返回？')) return;
+    requests.cancel();
+    const operation = requests.begin()!;
     // A service outage must not trap the player inside a retrying iframe.
-    setRoom(null); setLaunch(''); setError(''); setResume(null); setCode('');
-    sessionStorage.removeItem(ACTIVE_ROOM_KEY);
-    const url = new URL(location.href); url.searchParams.delete('room');
-    history.replaceState(history.state, '', url.pathname + url.search);
+    setRoom(null); setLaunch(''); setError(''); setResume(null); setCode(''); setBusy(true);
     try {
-      const response = await fetch('/api/full-room', { method: 'POST', signal: AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json' },
+      const url = new URL(location.href); url.searchParams.delete('room');
+      history.replaceState(history.state, '', url.pathname + url.search);
+      sessionStorage.removeItem(ACTIVE_ROOM_KEY);
+      const response = await fetch('/api/full-room', { method: 'POST', signal: operation.signal, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'leave', code: target.code, token: sessionStorage.getItem(seatKey(target.code)) }) });
       if (!response.ok) { const data = await response.json(); throw new Error(data.error); }
-    } catch (error) { setError('已返回；伺服器尚未確認離開操作。' + (error instanceof Error ? error.message : '請稍後再試。')); }
+    } catch (error) { if (operation.current()) setError('已返回；伺服器尚未確認離開操作。' + (error instanceof Error ? error.message : '請稍後再試。')); }
+    finally { if (operation.finish()) setBusy(false); }
   }
   async function copyInvite() {
     if (!invite) return;

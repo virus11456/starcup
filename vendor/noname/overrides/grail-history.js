@@ -112,8 +112,13 @@ export function createBattleHistory(parent, getTurn) {
     close.focus();
   });
   close.addEventListener('click', hide);
+  // Native window.onkeydown treats A and Space as auto/pause regardless of
+  // focus. Keep history typing and keyboard controls out of that handler;
+  // retain normal input, scrolling, browser shortcuts and button defaults.
+  toggle.addEventListener('keydown', event => event.stopPropagation());
   panel.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.stopPropagation(); hide(); }
+    event.stopPropagation();
+    if (event.key === 'Escape') { event.preventDefault(); hide(); }
   });
   search.addEventListener('input', () => { shown = 100; render(); list.scrollTop = 0; });
   more.addEventListener('click', () => { const top = list.scrollTop; shown += 100; render(false); list.scrollTop = top; });

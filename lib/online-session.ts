@@ -34,6 +34,7 @@ export async function resumeGuestRoom(room: OnlineRoom, token: string, signal?: 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: 'join', code: room.code, name: room.nickname, token }) });
   const data = await response.json();
+  signal?.throwIfAborted();
   if (!response.ok) throw new Error(data.error || '無法恢復房間，請稍後再試。');
   if (data.room.isHost) throw new Error('請回到房主原本的分頁繼續牌局。');
   return data.room;
