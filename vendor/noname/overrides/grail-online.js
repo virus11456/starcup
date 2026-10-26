@@ -6,6 +6,7 @@ import { freeDraftMethods } from './grail-free-draft.js';
 import { characterFamily, availableCharacters } from './grail-characters.js';
 import { createRelaySocket } from './grail-relay-socket.js';
 import { createRelayLifecycle } from './grail-relay-lifecycle.js';
+import { createHostGuard, guardHostInput } from './grail-host-guard.js';
 
 const packs = ['shiZhouNian', 'yiDuanYeHuo', 'shenZiChuangLin', 'zhongMoDaoZhu', 'teDian'];
 function onlineConfig(capacity) {
@@ -40,6 +41,7 @@ export async function startRelay() {
   let stopped = false, rejoining = false, ack = 0, started = false, pending = [], failures = 0;
   let useSocket = false, wake = () => {};
   let socket, lifecycle;
+  let hostGuard;
   const activeFetches = new Set();
   const disconnect = () => { socket?.close(); for (const controller of activeFetches) controller.abort(); };
   const peers = new Map();
@@ -48,7 +50,10 @@ export async function startRelay() {
     pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) }); wake(40);
   };
   const finish = () => {
+    const wasStopped = stopped;
     stopped = true;
+    hostGuard?.stop();
+    if (!wasStopped && hostGuard) tell('本分頁的牌局連線已停止，請使用上方的返回按鈕。', true);
     pending = [];
     peers.clear();
     if (game.ws) game.ws.readyState = 3;
@@ -114,6 +119,15 @@ export async function startRelay() {
       }
     } };
     if (room.isHost) {
+      hostGuard = createHostGuard({ onChange(blocked) {
+        status.classList.toggle('recovering', blocked);
+        if (blocked) tell('房主連線中斷，已暫停後續操作。請保留此分頁，連線恢復後會繼續。');
+      } });
+      // Installed only on the authoritative native host. PauseManager and
+      // native choice timeouts await this without replacing their own pauses.
+      game.grailWaitForRelay = () => hostGuard.wait();
+      guardHostInput(window, hostGuard);
+      if (room.status === 'playing') hostGuard.arm();
       // Commit the no-restart boundary before native waitForPlayer resumes.
       // A failed/lost reply keeps the button usable for an idempotent retry.
       game.grailRequestStart = async () => {
@@ -124,6 +138,7 @@ export async function startRelay() {
           if (stopped || lifecycle?.inactive) return false;
           if (result.room?.status !== 'playing') throw new Error('開局尚未確認，請再試一次。');
           started = true;
+          hostGuard.arm();
           tell('');
           return true;
         } catch (error) {
@@ -142,6 +157,7 @@ export async function startRelay() {
     lifecycle = createRelayLifecycle({ poll,
       disconnect,
       onStop: finish,
+      onSuspend() { hostGuard?.hold(); },
       onError(error) { console.warn('Full room resume:', error.name); },
     });
     wake = delay => { if (!stopped) lifecycle.wake(delay); };
@@ -164,6 +180,7 @@ export async function startRelay() {
           if (batch.length && (bytes + message.data.length > 400_000 || batch.length >= 60)) break;
           batch.push(message); bytes += message.data.length;
         }
+        const hostTicket = hostGuard?.ticket();
         const data = await request('sync', { ack, messages: batch, started });
         if (stopped) return null;
         if (lifecycle.inactive) return delay;
@@ -219,7 +236,9 @@ export async function startRelay() {
         }
         ack = Math.max(ack, data.sequence);
         failures = 0;
-        tell(!room.isHost && !data.hostAlive ? '房主連線中斷，請讓房主回到原本的分頁恢復連線。' : '');
+        const confirmed = hostGuard?.confirm(hostTicket);
+        if (!hostGuard?.blocked) tell(!room.isHost && !data.hostAlive ? '房主連線中斷，請讓房主回到原本的分頁恢復連線。' : '');
+        if (confirmed === false) delay = 80; // require a reply requested after the interruption
         if (ui.connectShareButton) ui.connectShareButton.style.display = 'none';
         if (!room.isHost && ui.connectStartButton) ui.connectStartButton.style.display = 'none';
         if (ui.cardPileButton && matchMedia('(max-width: 600px)').matches) ui.cardPileButton.style.display = 'none';
@@ -229,6 +248,8 @@ export async function startRelay() {
         console.warn('Full room synchronization:', error.name, error.message);
         failures++;
         const fatal = [400, 401, 403, 409, 410, 413, 429].includes(error.status);
+        if (fatal) hostGuard?.stop();
+        else hostGuard?.hold();
         tell(fatal ? error.message + ' 請使用上方的返回按鈕。' : '網路同步中斷，正在重試…', fatal);
         if (fatal) { stopped = true; return null; }
         delay = Math.min(5000, 600 * 2 ** failures);

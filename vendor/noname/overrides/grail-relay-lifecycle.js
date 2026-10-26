@@ -1,6 +1,6 @@
 // Preserve the existing native engine and connection epoch across bfcache.
 // Closing the actual page still ends this runner; it does not migrate the host.
-export function createRelayLifecycle({ poll, disconnect, onStop = () => {}, onError = () => {},
+export function createRelayLifecycle({ poll, disconnect, onStop = () => {}, onError = () => {}, onSuspend = () => {},
   window: win = window, document: doc = document, setTimer = setTimeout, clearTimer = clearTimeout }) {
   let stopped = false, suspended = false, running = false, queued = false, timer;
   function wake(delay = 0) {
@@ -32,6 +32,7 @@ export function createRelayLifecycle({ poll, disconnect, onStop = () => {}, onEr
     win.removeEventListener('pagehide', hide);
     win.removeEventListener('pageshow', show);
     win.removeEventListener('online', online);
+    win.removeEventListener('offline', offline);
     doc.removeEventListener('visibilitychange', visible);
     disconnect();
     onStop();
@@ -40,6 +41,7 @@ export function createRelayLifecycle({ poll, disconnect, onStop = () => {}, onEr
     if (!event.persisted) { stop(); return; }
     suspended = true;
     clearTimer(timer);
+    onSuspend();
     disconnect();
   }
   function show(event) {
@@ -48,10 +50,12 @@ export function createRelayLifecycle({ poll, disconnect, onStop = () => {}, onEr
     wake();
   }
   function online() { wake(); }
+  function offline() { onSuspend(); }
   function visible() { if (doc.visibilityState === 'visible') wake(); }
   win.addEventListener('pagehide', hide);
   win.addEventListener('pageshow', show);
   win.addEventListener('online', online);
+  win.addEventListener('offline', offline);
   doc.addEventListener('visibilitychange', visible);
   return { wake, stop, get inactive() { return stopped || suspended; } };
 }

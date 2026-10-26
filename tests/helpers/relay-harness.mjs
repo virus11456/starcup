@@ -2,6 +2,7 @@ import vm from 'node:vm';
 import fs from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
 import { createRelayLifecycle } from '../../vendor/noname/overrides/grail-relay-lifecycle.js';
+import { createHostGuard, guardHostInput } from '../../vendor/noname/overrides/grail-host-guard.js';
 
 const socketSource = (await fs.readFile(new URL('../../vendor/noname/overrides/grail-relay-socket.js', import.meta.url), 'utf8'))
   .replace('export function', 'function');
@@ -70,7 +71,8 @@ export function socketHarness(time = clock()) {
 export async function onlineHarness({ transport = 'websocket', isHost = false, roomStatus = 'playing' } = {}) {
   const time = clock(), surface = page(), wire = socketHarness(time);
   const calls = [], received = [], warnings = [];
-  const status = { setAttribute() {}, classList: { toggle() {} } };
+  const classes = new Set();
+  const status = { setAttribute() {}, classList: { toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); }, contains: name => classes.has(name) } };
   const doc = Object.assign(surface.doc, { createElement: () => status, body: { append() {} }, getElementById: () => null });
   const game = { online: true, requireSandboxOn() {}, switchMode() {} };
   const nativeStatus = {};
@@ -86,6 +88,8 @@ export async function onlineHarness({ transport = 'websocket', isHost = false, r
     sessionStorage: { getItem() { sessionReads++; return 'local-seat'; } }, matchMedia: () => ({ matches: false }),
     console: { warn: (...args) => warnings.push(args) }, setTimeout: time.setTimer, clearTimeout: time.clearTimer,
     createRelaySocket: wire.createSocket,
+    createHostGuard: options => createHostGuard({ ...options, now: time.now, setTimer: time.setTimer, clearTimer: time.clearTimer }),
+    guardHostInput,
     createRelayLifecycle: options => createRelayLifecycle({ ...options, window: surface.win, document: doc, setTimer: time.setTimer, clearTimer: time.clearTimer }),
     fetch: async (url, options) => {
       const body = JSON.parse(options.body), pending = deferred();

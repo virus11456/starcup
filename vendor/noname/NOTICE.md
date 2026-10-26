@@ -8,6 +8,8 @@
 
 2026-10-26 等待室恢復：中繼 adapter 新增明確的原房主等待室恢復協定與客人代次重入。固定上游 `noname/ui/create/index.js` 的開始按鈕改為等待中繼伺服器保存開局狀態，成功後才呼叫原生 `game.resume()`；失敗保留原按鈕供重試，防止連點。無中繼 hook 的單機路徑保留，不改選角、角色技能、AI 或結算。這不包含進行中牌局的房主遷移或事件堆疊復原。
 
+2026-10-26 房主暫時斷線：新增 grail-host-guard.js，原房主開始後在傳輸失敗、offline／bfcache 或超過 25 秒未獲同步確認時停止後續輸入及原生事件續行。固定上游 PauseManager.waitPause 加入獨立傳輸等待，原選擇／手動暫停仍保留；Player.wait 的逾時 callback 等待傳輸恢復並確認 timeout 尚有效，避免已收到真人答案後又觸發過期 AI。確認套用收件匣後才解除等待，舊回覆／終止連線不能復活事件；無 hook 的單機與原 AI 決策保留。分頁真正被關閉或系統回收後仍不能復原。
+
 2026-10-24 修改：以固定 SHA-256 驗證上游來源；增加本機啟動、版本篩選、角色技能圖鑑、操作提示與 Three.js 桌面；移除上游戰績上傳與預設公共連線大廳。修改程式亦依 GPL-3.0 提供。
 
 可由本專案的 scripts/prepare-engine.mjs、scripts/engine-catalog.mjs、vendor/noname/overrides 重建完整修改版；npm run prepare:engine 會取得上述固定版本。網站中的原版引擎不是本專案重新撰寫的角色技能。

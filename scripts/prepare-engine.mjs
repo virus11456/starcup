@@ -237,6 +237,26 @@ await patch('noname/library/index.js', 'reinited() {\n\t\t\t\tthis.inited = true
 // existing native selection deadline; its timeout still calls unwait("ai").
 await patch('noname/library/element/client.js', 'player.unwait("ai");',
   'if (!game.grailDraftPending?.(this.id)) player.unwait("ai");');
+// Preserve the running native event stack through temporary host transport
+// failures. Keep manual/choice pauses independent; do not restart any event.
+await patch('noname/game/PauseManager.js',
+  'import { lib, _status } from "../../noname.js"',
+  'import { lib, game, _status } from "../../noname.js"');
+await patch('noname/game/PauseManager.js',
+  'await Promise.all([this.pause, this.pause2, this.pause3, this.over, this.delay].filter(i => i.isStarted));',
+  `const reasons = [this.pause, this.pause2, this.pause3, this.over, this.delay];
+        do {
+            await Promise.all(reasons.filter(i => i.isStarted));
+            if (game.grailWaitForRelay) await game.grailWaitForRelay();
+        } while (game.grailWaitForRelay && reasons.some(i => i.isStarted));`);
+await patch('noname/library/element/player.js',
+  'lib.node.torespondtimeout[this.playerid] = setTimeout(function () {\n\t\t\t\t\tplayer.unwait("ai");',
+  `var grailTimeout = lib.node.torespondtimeout[this.playerid] = setTimeout(async function () {
+                    if (game.grailWaitForRelay) {
+                        await game.grailWaitForRelay();
+                        if (lib.node.torespondtimeout[player.playerid] !== grailTimeout) return;
+                    }
+                    player.unwait("ai");`);
 // Remove community character registrations, not just their menu buttons.
 const specialPath = path.join(output, "character/teDian.js");
 let special = await readFile(specialPath, "utf8");
@@ -310,6 +330,8 @@ for (const [file, marker] of [
   ['character/teDian.js', 'return installOfficialGlutton({'],
   ['noname/ui/create/index.js', 'updateResponseCancelLabel(ui.confirm, _status.event'],
   ['noname/ui/create/index.js', 'if (!await game.grailRequestStart()) return;'],
+  ['noname/game/PauseManager.js', 'if (game.grailWaitForRelay) await game.grailWaitForRelay();'],
+  ['noname/library/element/player.js', 'lib.node.torespondtimeout[player.playerid] !== grailTimeout'],
   ['noname/game/index.js', 'if (!game.grailEmbeddedRoom) setTimeout(game.reload, 15000);'],
 ]) {
   if (!(await readFile(path.join(output, file), 'utf8')).includes(marker)) {
