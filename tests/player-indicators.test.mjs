@@ -135,7 +135,7 @@ test('hand-number mirror is only switched on when an external badge is safely po
   const source = await fs.readFile(
     new URL('../vendor/noname/overrides/grail-player-indicators.js', import.meta.url), 'utf8');
   const active = source.indexOf('active.add(player);');
-  const safe = source.indexOf('if (!position) {');
+  const safe = source.indexOf('if (!candidate) {');
   const mirror = source.indexOf("player.dataset.grailHandCountMirror = String(Boolean(handCount));");
   assert.ok(safe !== -1 && safe < active && active < mirror,
     'do not hide original hand count before a collision-free external strip exists');
