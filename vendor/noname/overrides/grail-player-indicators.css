@@ -1,0 +1,39 @@
+/* Clearly named, compact public markers immediately in front of each seat. */
+#grail-player-indicators, #grail-player-indicators * { box-sizing: border-box; text-shadow: none; }
+#grail-player-indicators { position: absolute; inset: 0; z-index: 15; pointer-events: none; }
+#grail-player-indicators[hidden] { display: none !important; }
+.grail-player-indicator-strip {
+  position: absolute; display: flex; flex-wrap: wrap; justify-content: center;
+  align-content: flex-start; width: max-content; max-width: min(230px, 34vw);
+  gap: 3px; transform: translateX(-50%); pointer-events: none;
+}
+.grail-indicator {
+  display: inline-flex; align-items: center; gap: 3px; padding: 3px 5px;
+  min-height: 23px; border: 1px solid #cdbd9688; border-radius: 6px;
+  background: #183039f7; color: #f5f0e2; box-shadow: 0 3px 10px #000a;
+  font: 600 11px/1.2 system-ui, sans-serif; white-space: nowrap;
+}
+.grail-indicator-icon { font-size: 13px; line-height: 1; color: #f4da9c; }
+.grail-indicator-name { max-width: 7em; overflow: hidden; text-overflow: ellipsis; }
+.grail-indicator b {
+  min-width: 15px; padding: 1px 3px; border-radius: 4px;
+  background: #ffffff29; color: white; text-align: center;
+  font: 700 11px/1.1 system-ui; font-variant-numeric: tabular-nums;
+}
+.grail-indicator-shield { background: #173d56f7; border-color: #87d0e9; }
+.grail-indicator-shield .grail-indicator-icon { color: #beeafa; }
+.grail-indicator-heal { background: #244631f7; border-color: #a2d69b; }
+.grail-indicator-heal .grail-indicator-icon { color: #cdf5c9; }
+.grail-indicator-crystal { background: #174452f7; border-color: #75d2df; }
+.grail-indicator-crystal .grail-indicator-icon { color: #acf0f9; }
+.grail-indicator-gem { background: #493145f7; border-color: #e1a0c4; }
+.grail-indicator-gem .grail-indicator-icon { color: #f6b6d8; }
+.grail-indicator-danger { background: #512d31f7; border-color: #db9689; }
+.grail-indicator-danger .grail-indicator-icon { color: #ffb6a6; }
+@media (max-width: 600px) {
+  .grail-player-indicator-strip { max-width: min(132px, 31vw); gap: 2px; }
+  .grail-indicator { min-height: 21px; padding: 2px 4px; gap: 2px; font-size: 10px; border-radius: 5px; }
+  .grail-indicator-icon { font-size: 11px; }
+  .grail-indicator-name { max-width: 4em; }
+  .grail-indicator b { min-width: 13px; font-size: 10px; }
+}

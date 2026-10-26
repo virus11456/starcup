@@ -8,6 +8,7 @@ import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
 import { createHistorySession } from './grail-history-session.js';
 import { createBattleInspection } from "./grail-inspection.js";
+import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
 const hud = document.createElement("div");
@@ -27,6 +28,7 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
+const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
 const handSkin = createHandSkin();
 const text = (value) =>
   String(value || "")
@@ -37,6 +39,7 @@ function update() {
   addRoleLegend(ui.arena);
   history.attach(ui.sidebar);
   inspection.update();
+  indicators.update();
   handSkin.update(game.me);
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   // The native hall's restart/exit reloads only the iframe. Embedded rooms
@@ -194,6 +197,7 @@ window.addEventListener(
     stop();
     stopMotion();
     stopHud();
+    indicators.stop();
     history.stop();
     document.removeEventListener('visibilitychange', flushHistory);
     inspection.stop();
