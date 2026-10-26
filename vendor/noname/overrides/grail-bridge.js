@@ -14,6 +14,7 @@ import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints, positionActionHint } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
+import { updateScoreboardSeatClearance } from './grail-seat-clearance.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -113,6 +114,13 @@ function update() {
   const stage = describeStage(_status.event, { started: game.phaseNumber > 0, over: _status.over });
   const teams = teamSummary(game);
   updateScoreboard(teams, { side: me.side, turn: game.phaseNumber, over: Boolean(_status.over) });
+  // Keep enlarging portraits away from the public scoreboard's real bottom.
+  // Don't touch native game selection, offsets, or the local hand.
+  updateScoreboardSeatClearance(game.players, scoreboardNode,
+    window.innerWidth, window.innerHeight, {
+      enabled: Boolean(scoreboardNode && !scoreboardNode.hidden && !_status.over),
+      isChoosing: Boolean(ui.arena?.classList?.contains('choose-character')),
+    });
   const prompt = [
     ...(ui.arena?.querySelectorAll(".dialog .prompt, .dialog .caption") || []),
   ]

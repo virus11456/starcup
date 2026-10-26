@@ -154,14 +154,20 @@ export function createQuickDetailView({ hud, context, document: doc = document,
   const cardAt = target => target?.closest?.('#arena #handcards1 .handcards > .card');
   const draftAt = target => target?.closest?.('#arena.choose-character .dialog .button.character');
   function onTouchStart(event) {
+    if (!overlay.hidden) return;
     const card = cardAt(event.target);
-    if (!card) return;
-    // The pinned engine attaches a 500ms touchstart → ui.click.intro timer
-    // to the physical card, while our read-only viewer opens at 580ms. This
-    // BUBBLE-phase handler runs AFTER the card's own touchstart listener and
-    // cancels ONLY its native intro timer; it never prevents selection,
-    // scrolling, native touchend or other player/skill intros.
-    if (readQuickDetail('card', card, context)) cancelNativeLongPress(card);
+    const player = playerAt(event.target);
+    const draft = draftAt(event.target);
+    const subject = card || player || draft;
+    if (!subject) return;
+    const kind = card ? 'card' : player ? 'role' : 'draft-role';
+    // Native noname setIntro sets a 500ms touchstart timer for real cards,
+    // public player portraits AND draft role cards. Our 580ms full-card viewer
+    // otherwise opens alongside the original enormous grey intro popup.
+    // Bubble-phase runs after the subject's native touchstart listener;
+    // cancel just that intro timer, NEVER its click, target selection or
+    // gesture defaults. Preserve native intros for undisclosed roles.
+    if (readQuickDetail(kind, subject, context)) cancelNativeLongPress(subject);
   }
   function onClick(event) {
     if (suppresses(event.target)) {
@@ -226,7 +232,11 @@ export function createQuickDetailView({ hud, context, document: doc = document,
     if (!overlay.hidden) return;
     const card = cardAt(event.target);
     const draft = draftAt(event.target);
-    if ((card && open('card', card, card)) || (draft && open('draft-role', draft, draft))) {
+    const player = playerAt(event.target);
+    if ((card && open('card', card, card)) ||
+        (draft && open('draft-role', draft, draft)) ||
+        (player && !player.classList.contains('selectable') &&
+          !player.classList.contains('selected') && open('role', player, player))) {
       event.preventDefault(); event.stopImmediatePropagation();
     }
   }

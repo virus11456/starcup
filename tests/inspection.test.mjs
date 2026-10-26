@@ -364,3 +364,42 @@ test('viewer outputs text and blocks unavailable artwork instead of inserting so
   assert.equal(paragraph.textContent, '完整技能\n下一行'); assert.equal(paragraph.children.length, 0);
   assert.equal(inspectionText('<p>第一段</p><p>第二段</p>'), '第一段\n第二段');
 });
+
+test('touching a public player or draft role cancels only the native grey intro', () => {
+  const c = context('fengZhiJianSheng');
+  const h = historyHarness(), handlers = new Map(), cancelled = [];
+  h.doc.addEventListener = (name, fn) => handlers.set(name, fn);
+  h.doc.removeEventListener = name => handlers.delete(name);
+  const viewer = createQuickDetailView({ hud: h.doc.createElement('div'), context: c,
+    document: h.doc, cancelNativeLongPress: subject => cancelled.push(subject) });
+  const playerTarget = { closest: selector => selector === '#arena > .player' ? c.other : null };
+  handlers.get('touchstart')({ target: playerTarget });
+  assert.deepEqual(cancelled, [c.other], 'readable public player uses full-sized viewer only');
+  const draft = { link: 'fengZhiJianSheng', classList: classes('character'),
+    closest: selector => selector === '#arena.choose-character' ? {} : null };
+  const draftTarget = { closest: selector =>
+    selector === '#arena.choose-character .dialog .button.character' ? draft : null };
+  handlers.get('touchstart')({ target: draftTarget });
+  assert.deepEqual(cancelled, [c.other, draft], 'draft role cancels native long popup too');
+  c.other.isUnseen = () => true;
+  handlers.get('touchstart')({ target: playerTarget });
+  assert.equal(cancelled.length, 2, 'unknown role keeps native privacy safeguards');
+  viewer.stop();
+  assert.equal(handlers.size, 0);
+});
+test('mobile public hand-count chip, gentle portrait enlargement and stable safe shift are present', async () => {
+  const css = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.06/);
+  assert.match(css, /translate:\s*0 calc\(var\(--grail-score-shift, 0px\)/);
+  assert.match(css, /> \.player > \.count:not\(\.hidden\)[\s\S]*?font:\s*750 calc\(15px/);
+  assert.match(css, /\.count:not\(\.hidden\)::before\s*\{\s*content:\s*'牌'/);
+  assert.match(bridge, /updateScoreboardSeatClearance\(game\.players, scoreboardNode,/);
+  const { scoreboardSeatShift } = await import('../vendor/noname/overrides/grail-seat-clearance.js');
+  const score = { left: 0, right: 390, bottom: 476 };
+  assert.equal(scoreboardSeatShift(score, { left: 159, right: 230, top: 468 }), 22);
+  assert.equal(scoreboardSeatShift(score, { left: 159, right: 230, top: 490 }, 22), 22,
+    'subtract previous translate to avoid a 400ms up/down layout loop');
+  assert.equal(scoreboardSeatShift(score, { left: 420, right: 498, top: 468 }), 0,
+    'offscreen/side scoreboard does not shift irrelevant seats');
+});
