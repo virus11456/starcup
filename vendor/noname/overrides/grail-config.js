@@ -80,7 +80,10 @@
     viewHandcard_mode_config_xingBei: false,
     xingBei_banned: [],
   };
-  localStorage.setItem(prefix + "config", JSON.stringify(options));
+  // Native imports load configuration asynchronously. Keep launch conditions
+  // in this document: another solo/catalog/online tab shares localStorage and
+  // can otherwise change the selected mode before loadConfig finishes.
+  window.grailLaunchConfig = options;
   localStorage.setItem(prefix + "directstart", "true");
   // Credit and license are displayed on the launcher and linked in the game.
   localStorage.setItem("gplv3_noname_alerted", "true");

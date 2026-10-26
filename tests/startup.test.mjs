@@ -46,7 +46,7 @@ for (const device of [
   saved.set("star_grail_full_v1_config", JSON.stringify({ totouched: true, touchscreen: true }));
   for (let launch = 0; launch < 3; launch++) {
     vm.runInNewContext(launcher, context);
-    config = JSON.parse(saved.get("star_grail_full_v1_config"));
+    config = context.window.grailLaunchConfig;
     vm.runInNewContext(touchBranch, context);
     assert.equal(config.totouched, true);
     assert.equal(config.touchscreen, device.coarse);

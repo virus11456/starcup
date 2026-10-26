@@ -51,7 +51,7 @@ test("local-storage integration disables replay persistence in both config layer
   vm.runInNewContext(source, context);
   assert.equal(context.window.nodb, true);
   assert.equal(context.window.config.video, 0);
-  assert.equal(JSON.parse(values.get("star_grail_full_v1_config")).video, 0);
+  assert.equal(context.window.grailLaunchConfig.video, 0);
 });
 test("physical deck matches official quantities, seven elements, factions and unique identities", () => {
   assert.equal(catalog.deck.length, 150);

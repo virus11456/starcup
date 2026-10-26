@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Local development and consolidated deployment
 
-- Read `docs/guest-rejoin-history-handoff.md` for the latest staged code and verified counts. Older handoffs contain historical deployment and scheduling instructions; the current instruction is immediate local work followed by a consolidated release. Host-close takeover remains unfinished.
+- Read `docs/release-20261026-stage2.md` for the current release, live acceptance failure and tested launcher isolation fix. `docs/guest-rejoin-history-handoff.md` describes the previous staged batch, now deployed. Older handoffs contain historical deployment and scheduling instructions. Host-close takeover remains unfinished.
 
 - Latest instruction supersedes the old schedule: continue development now, finish local implementation and verification, then deploy one consolidated Cloudflare release. The 08:00 automation was disabled on 2026-10-26. Do not wait for or recreate it. Notify the user when Vercel retirement is safe; do not delete it before migration acceptance.
 - Latest user instruction (2026-10-26): work in stages and deploy once per completed major stage. Stage work can be backed up on the non-deploying GitHub branch. Do not turn an individual fix or documentation update into its own deployment; see `docs/stage-room-entry-and-role-tags.md` for current acceptance criteria.

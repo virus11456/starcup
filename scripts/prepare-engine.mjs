@@ -156,7 +156,9 @@ await patch('noname/library/index.js', 'game.arrangePlayers();\n\t\t\t\t\t//xing
 await patch(
   "noname/init/index.js",
   "const config2 = await loadConfigPromise;",
-  `const config2 = await loadConfigPromise;
+  `const savedConfig = await loadConfigPromise;
+  const config2 = window.grailLaunchConfig || savedConfig;
+  delete window.grailLaunchConfig;
   for (const [key, setting] of Object.entries(lib.mode.xingBei.config)) {
     const storedKey = key + '_mode_config_xingBei';
     if (config2[storedKey] === undefined && setting.init !== undefined) config2[storedKey] = setting.init;
