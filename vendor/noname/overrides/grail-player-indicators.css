@@ -96,3 +96,30 @@
   }
   #grail-player-indicators .grail-indicator-hand b { font-size: 18px; }
 }
+
+/* Make the public hand-count indicator subordinate to the portrait:
+   no duplicate pictogram, single horizontal line, legible 4/6 at 17px. */
+#grail-player-indicators .grail-indicator-hand {
+  width: max-content;
+  max-width: 118px;
+  min-height: 29px;
+  padding: 3px 6px;
+  gap: 4px;
+  font-size: 12px;
+}
+#grail-player-indicators .grail-indicator-hand .grail-indicator-icon { display: none !important; }
+#grail-player-indicators .grail-indicator-hand .grail-indicator-name { font-size: 12px; line-height: 1.15; }
+#grail-player-indicators .grail-indicator-hand b {
+  min-width: 37px;
+  padding: 2px 4px;
+  font-size: 16px;
+  white-space: nowrap;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-player-indicators .grail-indicator-hand {
+    max-width: 108px;
+    min-height: 30px;
+    padding: 3px 5px;
+  }
+  #grail-player-indicators .grail-indicator-hand b { font-size: 17px; }
+}

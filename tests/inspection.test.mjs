@@ -390,8 +390,8 @@ test('touching a public player or draft role cancels only the native grey intro'
 test('mobile public hand-count chip, gentle portrait enlargement and stable safe shift are present', async () => {
   const css = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
-  assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.13/);
-  assert.match(css, /scale:\s*1\.20/);
+  assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.22/);
+  assert.match(css, /scale:\s*1\.38/);
   assert.match(css, /translate:\s*0 calc\(var\(--grail-score-shift, 0px\)/);
   assert.match(css, /> \.player > \.count:not\(\.hidden\)[\s\S]*?font:\s*750 calc\(15px/);
   assert.match(css, /\.count:not\(\.hidden\)::before\s*\{\s*content:\s*'牌'/);
@@ -413,10 +413,21 @@ test('inward native portrait scale and modal toolbars remain separate in portrai
   const global = await fs.readFile(new URL('../vendor/noname/overrides/grail.css',import.meta.url),'utf8');
   const reader = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css',import.meta.url),'utf8');
   const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js',import.meta.url),'utf8');
-  assert.match(global,/scale:\s*1\.13/);
-  assert.match(global,/scale:\s*1\.20/);
+  assert.match(global,/scale:\s*1\.22/);
+  assert.match(global,/scale:\s*1\.38/);
   assert.match(global,/transform-origin:\s*var\(--grail-role-origin, center center\)/);
   assert.match(reader,/html:has\(#grail-detail-overlay:not\(\[hidden\]\)\) #window #system/);
   assert.match(reader,/padding:\s*max\(90px, env\(safe-area-inset-top, 0px\)\)/);
   assert.match(bridge,/updatePlayerZoomOrigins\(game\.players, window\.innerWidth\)/);
+});
+
+
+test('large portrait scale preserves inward origin without left-right jitter', async () => {
+  const { playerZoomOrigin } = await import('../vendor/noname/overrides/grail-player-zoom.js');
+  assert.equal(playerZoomOrigin({ left: 12, right: 88 }, 390), 'left center');
+  assert.equal(playerZoomOrigin({ left: 45, right: 122 }, 390, 34, 'left center'), 'left center');
+  assert.equal(playerZoomOrigin({ left: 53, right: 128 }, 390, 34, 'left center'), 'center center');
+  assert.equal(playerZoomOrigin({ left: 309, right: 383 }, 390), 'right center');
+  assert.equal(playerZoomOrigin({ left: 283, right: 361 }, 390, 34, 'right center'), 'right center');
+  assert.equal(playerZoomOrigin({ left: 120, right: 205 }, 390), 'center center');
 });

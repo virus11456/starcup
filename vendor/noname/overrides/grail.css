@@ -830,7 +830,7 @@ body:has(#arena.choose-character) #roundmenu {
    small enough for the outer seats to stay inside the available table. */
 @media (max-width: 1049px) and (orientation: portrait) {
   .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
-    scale: 1.13;
+    scale: 1.22;
     translate: 0 calc(var(--grail-score-shift, 0px) * var(--grail-touch-scale, 1));
     transform-origin: var(--grail-role-origin, center center);
   }
@@ -890,11 +890,11 @@ body:has(#arena.choose-character) #roundmenu {
   }
 }
 
-/* iPhone portrait: recognizable 20% original role enlargement. Do not
+/* iPhone portrait: enlarged native role art balanced with a compact public badge. Do not
    enlarge ultra-short landscape seats or duplicate game target elements. */
 @media (max-width: 600px) and (orientation: portrait) {
   .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
-    scale: 1.20;
+    scale: 1.38;
   }
 }
 /* Rotated noname seats inherit rotation on .count. Once its public
