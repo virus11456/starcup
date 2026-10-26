@@ -553,17 +553,69 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
 @media (min-width: 601px) and (max-width: 1049px) {
   #window #arena:not(.choose-character) > .dialog.grail-action-hint:not(.popped) {
     top: 6px !important;
-    left: calc(178px * var(--grail-touch-scale, 1)) !important;
-    width: calc(220px * var(--grail-touch-scale, 1)) !important;
-    max-width: calc(100% - 190px * var(--grail-touch-scale, 1)) !important;
+    /* Passive tip stays in the left lane, clear of the centre-seat card. */
+    left: calc(7px * var(--grail-touch-scale, 1)) !important;
+    width: min(calc(190px * var(--grail-touch-scale, 1)), 37%) !important;
+    max-width: 37% !important;
   }
 }
 @media (max-width: 600px) {
   #window #arena:not(.choose-character) > .dialog.grail-action-hint:not(.popped) {
     top: 5px !important;
-    left: calc(8px * var(--grail-touch-scale, 1)) !important;
-    width: calc(222px * var(--grail-touch-scale, 1)) !important;
-    max-width: calc(100% - 16px * var(--grail-touch-scale, 1)) !important;
-    max-height: calc(60px * var(--grail-touch-scale, 1)) !important;
+    left: calc(6px * var(--grail-touch-scale, 1)) !important;
+    /* iPhone centre role begins beyond 40% of the table width. */
+    width: min(calc(146px * var(--grail-touch-scale, 1)), 36%) !important;
+    max-width: 36% !important;
+    max-height: calc(84px * var(--grail-touch-scale, 1)) !important;
+    border-radius: 7px !important;
+  }
+}
+
+/* Keep passive prompts readable when the left-side lane wraps. Native
+   selectable dialogs are excluded by grail-action-hints.js. */
+@media (max-width: 1049px) {
+  #window #arena:not(.choose-character) > .dialog.grail-action-hint :is(.caption, .prompt, .content > .text) {
+    padding: calc(5px * var(--grail-touch-scale, 1)) calc(6px * var(--grail-touch-scale, 1)) !important;
+    font-size: calc(12px * var(--grail-touch-scale, 1)) !important;
+    line-height: 1.35 !important;
+    text-align: center !important;
+    word-break: break-word;
+  }
+}
+/* Match the unscaled HUD to native system/pile buttons without relocating
+   or rebuilding native button nodes, their listeners or action hit boxes. */
+@media (max-width: 1049px) {
+  #grail-history-toggle,
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]),
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) #grail-help-toggle {
+    box-sizing: border-box !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    border-radius: 8px !important;
+    border: 1px solid #ccb88d75 !important;
+    background: linear-gradient(180deg, #2e4851, #172d37) !important;
+    color: #f4e5c6 !important;
+    box-shadow: 0 2px 8px #0006, inset 0 1px 0 #fff2 !important;
+    font: 650 13px/1.2 system-ui, sans-serif !important;
+    letter-spacing: 0 !important;
+    text-align: center !important;
+  }
+  #grail-history-toggle { top: 4px !important; right: 116px !important; width: 76px !important; padding: 3px 5px !important; }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) {
+    top: 4px !important; right: 52px !important; width: 60px !important; padding: 0 !important;
+  }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) #grail-help-toggle {
+    width: 100% !important; padding: 3px 5px !important;
+  }
+  #window .grail-top-pile-tool {
+    box-sizing: border-box !important;
+    min-height: calc(44px * var(--grail-touch-scale, 1)) !important;
+    border-radius: calc(8px * var(--grail-touch-scale, 1)) !important;
+    border: 1px solid #ccb88d75 !important;
+    box-shadow: 0 2px 8px #0006, inset 0 1px 0 #fff2 !important;
+    background: linear-gradient(180deg, #2e4851, #172d37) !important;
+    color: #f4e5c6 !important;
+    font: 650 calc(13px * var(--grail-touch-scale, 1))/1.2 system-ui, sans-serif !important;
   }
 }

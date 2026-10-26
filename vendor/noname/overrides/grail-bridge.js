@@ -45,6 +45,8 @@ function update() {
   inspection.update();
   indicators.update();
   handSkin.update(game.me);
+  // Preserve the native deck button and click handler; CSS-only finish.
+  ui.cardPileButton?.classList?.add('grail-top-pile-tool');
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   // The native hall's restart/exit reloads only the iframe. Embedded rooms
   // return through the parent page so its authenticated leave flow runs.

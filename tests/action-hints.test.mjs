@@ -92,3 +92,16 @@ test('iOS fallback color and in-card faction label are explicitly provided', asy
   assert.match(role, /\.button\.character > \.identity[\s\S]*?inset:\s*5px 5px auto auto !important/);
   assert.match(role, /\.button\.character > \.identity > div[\s\S]*?writing-mode:\s*horizontal-tb !important/);
 });
+
+test('iPhone passive action tip uses left lane rather than covering centre portrait', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(css, /grail-action-hint:not\(\.popped\)[\s\S]*?max-width:\s*37% !important/);
+  assert.match(css, /grail-action-hint:not\(\.popped\)[\s\S]*?max-width:\s*36% !important/);
+});
+test('top system/history/help/deck buttons have consistent 44px touch dimensions', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  const phone = await readFile(new URL('../vendor/noname/overrides/grail-phone-controls.css', import.meta.url), 'utf8');
+  assert.match(phone, /#window #system > div > div:not\(\.hidden\)[\s\S]*?height:\s*calc\(44px \* var\(--grail-touch-scale, 1\)\) !important/);
+  assert.match(css, /#grail-history-toggle,[\s\S]*?#grail-help:has\(#grail-help-toggle\[aria-expanded="false"\]\)[\s\S]*?height:\s*44px !important/);
+  assert.match(css, /#window \.grail-top-pile-tool[\s\S]*?min-height:\s*calc\(44px \* var\(--grail-touch-scale, 1\)\) !important/);
+});

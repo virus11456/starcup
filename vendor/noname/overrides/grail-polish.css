@@ -171,3 +171,39 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
 @media (prefers-reduced-motion: reduce) {
   #window #arena .handcards > .card[data-grail-element], #window #control > .control > div { transition: none; }
 }
+
+/* Gold from the first instant this owned printed special attack enters hand.
+   Native noname .card::after has z-index:-1; previously its outline/glow
+   could be hidden by the art or clipped until native selection lifted it. */
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"] {
+  position: relative;
+  box-sizing: border-box;
+  border: 3px solid #ffd454 !important;
+  outline: 2px solid #ffe6a0;
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px #aa690c, 0 0 12px 2px #e7aa2e80, 0 4px 12px #000a;
+}
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"]::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  border: 3px solid #ffe177 !important;
+  border-radius: inherit !important;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px #6c3e0d, inset 0 0 12px #ffc65778 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  z-index: 9 !important;
+  pointer-events: none !important;
+}
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"].selected {
+  border-color: #ffd454 !important;
+  outline-color: #ffd454 !important;
+  box-shadow: 0 0 0 3px var(--grail-picked), 0 0 12px 2px #e7aa2e80, 0 6px 16px #000a;
+}
+@media (prefers-reduced-motion: reduce) {
+  #window #arena #handcards1 .handcards > .card[data-grail-own-special="true"] { transition: none !important; }
+}

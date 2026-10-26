@@ -7,7 +7,11 @@ export function cardElement(card) {
 // A printed unique-attack stamp matters only to the character who actually
 // owns that skill. It must not turn gold in another character's hand.
 export function isOwnSpecialAttack(card, player, { lib, get } = {}) {
-  if (!card || !player || !lib?.character || !get?.type || get.type(card) !== 'gongJi') return false;
+  if (!card || !player || !lib?.character) return false;
+  // Use the actual printed attack type; skill modifications during a turn
+  // must not affect a purely decorative hand border.
+  const printedType = lib.card?.[card.name]?.type || get?.type?.(card, false) || card.type;
+  if (printedType !== 'gongJi') return false;
   if (typeof card.duYou !== 'string' || !card.duYou) return false;
   const owned = new Set([player.name1, player.name2, player.name]
     .flatMap(name => lib.character[name]?.[3] || []));

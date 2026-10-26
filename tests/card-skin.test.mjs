@@ -224,3 +224,28 @@ test('remaining actions and nested skill selection retain their original cancel 
     assert.equal(cancel.dataset.grailAction, 'cancel');
   }
 });
+
+test('special-attack gold ring paints over actual local hand artwork even without selection', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail-polish.css', import.meta.url), 'utf8');
+  const overlay = css.match(/#window #arena #handcards1 \.handcards > \.card\[data-grail-own-special="true"\]::after\s*\{([^}]*)\}/)?.[1];
+  assert.ok(overlay, 'own special hand-card overlay must NOT depend on selected/selectable');
+  assert.match(overlay, /border:\s*3px solid #ffe177 !important/);
+  assert.match(overlay, /z-index:\s*9 !important/);
+  assert.match(overlay, /pointer-events:\s*none !important/);
+  const base = css.match(/#window #arena #handcards1 \.handcards > \.card\[data-grail-own-special="true"\]\s*\{([^}]*)\}/)?.[1];
+  assert.match(base, /border:\s*3px solid #ffd454 !important/);
+  assert.ok(css.indexOf('#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"]')
+    > css.indexOf('[data-grail-own-special="true"].selected'));
+});
+test('printed special attack is marked before native dynamic type resolves', () => {
+  const unique = { ...card('lei'), name: 'leiGuangZhan', duYou: 'jiFengJi' };
+  const context = {
+    lib: { natureSeparator: '|', character: { fengZhiJianSheng: [null, null, null, ['jiFengJi']] },
+      card: { leiGuangZhan: { type: 'gongJi' } } },
+    get: { type: () => undefined },
+  };
+  const skin = createHandSkin(context);
+  skin.update({ name1: 'fengZhiJianSheng', getCards: () => [unique] });
+  assert.equal(unique.dataset.grailOwnSpecial, 'true');
+  skin.stop(); assert.equal(unique.dataset.grailOwnSpecial, undefined);
+});
