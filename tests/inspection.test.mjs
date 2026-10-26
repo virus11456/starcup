@@ -390,7 +390,8 @@ test('touching a public player or draft role cancels only the native grey intro'
 test('mobile public hand-count chip, gentle portrait enlargement and stable safe shift are present', async () => {
   const css = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
-  assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.06/);
+  assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.13/);
+  assert.match(css, /scale:\s*1\.20/);
   assert.match(css, /translate:\s*0 calc\(var\(--grail-score-shift, 0px\)/);
   assert.match(css, /> \.player > \.count:not\(\.hidden\)[\s\S]*?font:\s*750 calc\(15px/);
   assert.match(css, /\.count:not\(\.hidden\)::before\s*\{\s*content:\s*'牌'/);
