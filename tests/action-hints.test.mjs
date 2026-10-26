@@ -169,3 +169,48 @@ test('native hidden secondary draft filter remains hidden until user taps 篩選
   assert.doesNotMatch(positionCSS, /top:\s*auto\s*!important/, 'runtime geometry must be able to set the top position');
   assert.match(positionCSS, /position:\s*absolute !important/);
 });
+
+test('responsive hint uses a clear LEFT/RIGHT lane when centre is occupied', async () => {
+  const { chooseActionHintPlacement } = await import('../vendor/noname/overrides/grail-action-hints.js');
+  const area = { width: 844, height: 390, scoreboard: { bottom: 98 },
+    players: [{ left: 375, right: 470, top: 114, bottom: 248 }],
+    controls: { left: 370, right: 550, top: 294, bottom: 338 },
+    hand: { left: 10, right: 620, top: 350, bottom: 390 },
+    extras: [{ left: 760, right: 840, top: 245, bottom: 300 }] };
+  const hint = { width: 260, height: 48 };
+  const placed = chooseActionHintPlacement(area, hint);
+  assert.ok(placed, 'a side lane should remain available');
+  assert.ok(placed.left + hint.width < area.players[0].left - 4 ||
+    placed.left > area.players[0].right + 4 ||
+    placed.top + hint.height < area.players[0].top - 4 ||
+    placed.top > area.players[0].bottom + 4, 'must not cover the centre role');
+  assert.ok(placed.top + hint.height <= 294 - 4 || placed.left + hint.width <= 370 - 4 ||
+    placed.left >= 550 + 4, 'must not cover confirm/cancel');
+});
+test('impossible hint placement gracefully rejects overlap, preserving engine prompt fallback', async () => {
+  const { chooseActionHintPlacement, positionActionHint } =
+    await import('../vendor/noname/overrides/grail-action-hints.js');
+  const area = { width: 390, height: 590, scoreboard: { bottom: 200 },
+    players: [{ left: 0, right: 390, top: 210, bottom: 570 }],
+    controls: { left: 50, right: 310, top: 480, bottom: 550 } };
+  assert.equal(chooseActionHintPlacement(area, { width: 350, height: 58 }), null);
+  const variables = [];
+  const hint = { hidden: false, offsetWidth: 350, offsetHeight: 58,
+    style: { setProperty: (...args) => variables.push(args) } };
+  assert.equal(positionActionHint(hint, area), false, 'do not draw across actual native choices');
+  assert.deepEqual(variables, [], 'no stale anchor should be set if there is no safe placement');
+});
+test('portrait HUD placement avoids the selected portrait and native hand while keeping text visible', async () => {
+  const { chooseActionHintPlacement } = await import('../vendor/noname/overrides/grail-action-hints.js');
+  const area = { width: 390, height: 850, scoreboard: { bottom: 230 },
+    players: [{ left: 155, right: 235, top: 264, bottom: 376 }],
+    controls: { left: 145, right: 290, top: 618, bottom: 680 },
+    hand: { left: 90, right: 390, top: 710, bottom: 835 } };
+  const box = { width: 300, height: 64 };
+  const placed = chooseActionHintPlacement(area, box);
+  assert.ok(placed && placed.top >= 388 && placed.top + box.height <= 610);
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(css, /left:\s*var\(--grail-hint-center-x, 50%\) !important/);
+  const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(bridge, /if \(!hintHasSafeSlot && !phaseHint.hidden\)[\s\S]*?grail-inline-action-hint/);
+});

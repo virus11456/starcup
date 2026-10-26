@@ -75,12 +75,61 @@ export function chooseActionHintTop({ width, height, scoreboard, players = [], c
   const safe = candidates.filter(top => top >= min && top <= max && !overlaps(top));
   return safe.length ? safe.sort((a,b) => Math.abs(a-ideal) - Math.abs(b-ideal))[0] : ideal;
 }
+// Search for a fully clear rectangle, not merely an available vertical slot.
+// On narrow landscape screens the centre column may be blocked but the left
+// or right side of the table can still fit the hint without hiding a target.
+export function chooseActionHintPlacement({ width, height, scoreboard,
+  players = [], controls, hand, extras = [] }, hintSize = { width: 320, height: 52 }) {
+  if (!(width > 0 && height > 0)) return null;
+  const margin = 12, gap = 8;
+  const w = Math.min(width - 2 * margin, Math.max(1, Number(hintSize.width) || 320));
+  const h = Math.max(24, Number(hintSize.height) || 52);
+  const minTop = Math.max(margin, Number.isFinite(scoreboard?.bottom) ? scoreboard.bottom + gap : height * .15);
+  const maxTop = height - h - margin;
+  if (w <= 0 || maxTop < minTop) return null;
+  const blockers = [controls, hand, ...players, ...extras].filter(rect =>
+    rect && [rect.left, rect.right, rect.top, rect.bottom].every(Number.isFinite) &&
+    rect.right > rect.left && rect.bottom > rect.top);
+  const idealY = Math.max(minTop, Math.min(maxTop, height * (height > width ? .565 : .61)));
+  const centerX = width / 2;
+  const safeX = value => Math.max(margin, Math.min(width - margin - w, value));
+  const safeY = value => Math.max(minTop, Math.min(maxTop, value));
+  const xChoices = new Set([safeX(centerX - w/2), margin, width - margin - w]);
+  for (const rect of blockers) {
+    xChoices.add(safeX(rect.left - w - gap));
+    xChoices.add(safeX(rect.right + gap));
+  }
+  const yChoices = new Set([idealY, minTop, maxTop]);
+  for (const rect of blockers) {
+    yChoices.add(safeY(rect.top - h - gap));
+    yChoices.add(safeY(rect.bottom + gap));
+  }
+  let best = null, lowest = Infinity;
+  for (const left of xChoices) for (const top of yChoices) {
+    // Safeguard actual actionable objects, including other seated players:
+    // a HUD message must never lie on top of a card or control just because
+    // the preferred centre slot is crowded.
+    const collision = blockers.some(rect =>
+      left < rect.right + 4 && left + w > rect.left - 4 &&
+      top < rect.bottom + 4 && top + h > rect.top - 4);
+    if (collision) continue;
+    const score = Math.abs(left + w / 2 - centerX) * .48 +
+      Math.abs(top - idealY) + Math.max(0, top - height * .72) * .4;
+    if (score < lowest) { lowest = score; best = { left, top }; }
+  }
+  return best;
+}
+
 export function positionActionHint(hint, layout) {
-  if (!hint || hint.hidden || !layout || !(layout.width > 0)) return;
+  if (!hint || hint.hidden || !layout || !(layout.width > 0)) return false;
   const preferredWidth = Math.min(540, layout.width - 28);
-  const top = chooseActionHintTop(layout, {
-    width: Math.min(preferredWidth, hint.offsetWidth || preferredWidth),
-    height: hint.offsetHeight || 60,
+  const width = Math.min(preferredWidth, hint.offsetWidth || preferredWidth);
+  const placement = chooseActionHintPlacement(layout, {
+    width, height: hint.offsetHeight || 60,
   });
-  if (top !== null) hint.style.top = `${Math.round(top)}px`;
+  if (!placement) return false;
+  hint.style.top = `${Math.round(placement.top)}px`;
+  hint.style.setProperty('--grail-hint-center-x',
+    `${Math.round(placement.left + width / 2)}px`);
+  return true;
 }

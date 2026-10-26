@@ -781,10 +781,10 @@ body:has(#arena.choose-character) #roundmenu {
    lane between visible portraits and native action/hand controls. */
 #grail-hud > #grail-phase-hint {
   position: absolute !important;
-  left: 50% !important;
+  left: var(--grail-hint-center-x, 50%) !important;
   right: auto !important;
   bottom: auto !important;
-  /* top stays controlled by positionActionHint() inline geometry. */
+  /* JS controls the horizontal and vertical anchor after collision checks. */
   transform: translateX(-50%) !important;
   display: block !important;
   box-sizing: border-box !important;

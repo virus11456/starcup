@@ -57,13 +57,22 @@ function update() {
   document.documentElement.classList.toggle('grail-match-ended', Boolean(_status.over));
   addRoleLegend(ui.arena);
   updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden && !_status.over);
-  positionActionHint(phaseHint, {
+  const hintHasSafeSlot = positionActionHint(phaseHint, {
     width: window.innerWidth, height: window.innerHeight,
     scoreboard: scoreboardNode?.getBoundingClientRect?.(),
     players: (game.players || []).map(p => p.getBoundingClientRect?.()).filter(Boolean),
     controls: ui.control?.getBoundingClientRect?.() || ui.arena?.querySelector?.('#control')?.getBoundingClientRect?.(),
     hand: ui.me?.getBoundingClientRect?.(),
+    extras: [ui.roundmenu?.getBoundingClientRect?.(),
+      document.querySelector('.grail-motion-piles')?.getBoundingClientRect?.()].filter(Boolean),
   });
+  if (!hintHasSafeSlot && !phaseHint.hidden) {
+    // Never cover a legal target or confirm button. On pathological screens
+    // fall back to the engine's native prompt instead of silently losing it.
+    phaseHint.hidden = true;
+    ui.arena?.querySelectorAll('.dialog.grail-inline-action-hint')?.forEach(
+      dialog => dialog.classList.remove('grail-inline-action-hint'));
+  }
   history.attach(ui.sidebar);
   inspection.update();
   indicators.update();
