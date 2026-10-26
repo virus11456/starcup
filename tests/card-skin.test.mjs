@@ -89,6 +89,18 @@ test('another character drawing the pictured swordmaster cards sees regular bord
   assert.equal(c.dataset.grailOwnSpecial, undefined, 'opponent role cannot borrow a gold border');
 });
 
+test('ordinary playable cards use neutral borders, reserving gold for owned special attacks', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail-polish.css', import.meta.url), 'utf8');
+  const regularPlayable = css.match(/#window #arena \.handcards > \.card\[data-grail-element\]\.selectable\s*\{([^}]*)\}/)?.[1];
+  const ownedSpecial = css.match(/#window #arena \.handcards > \.card\[data-grail-own-special="true"\]\s*\{([^}]*)\}/)?.[1];
+  assert.ok(regularPlayable, 'regular playable rule exists');
+  assert.match(regularPlayable, /outline:\s*2px solid #9abecb/);
+  assert.doesNotMatch(regularPlayable, /#e5c782|#ffda76|#f6d189|#f4b744/i);
+  assert.ok(ownedSpecial, 'innate unique attack rule exists');
+  assert.match(ownedSpecial, /outline:\s*3px solid #ffda76/);
+  assert.ok(css.indexOf('[data-grail-own-special="true"] {') > css.indexOf('[data-grail-element].selectable {'), 'gold rule wins when both are playable');
+});
+
 test('the actual pinned Swordmaster pack recognizes exactly its pictured attack stamps', async () => {
   const source = (await readFile(new URL('../public/engine/character/shiZhouNian.js', import.meta.url), 'utf8'))
     .replace(/^import .*?;\s*$/gm, '');

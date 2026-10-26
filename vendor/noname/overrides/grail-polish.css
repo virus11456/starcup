@@ -13,7 +13,8 @@
 }
 body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #080f1a); }
 
-/* Element tints are separate from the gold selectable / mint selected ring. */
+/* Element tints are separate from the neutral playable / mint selected ring.
+   Only an attack owned by the current character receives a gold border. */
 [data-grail-element="an"] { --grail-card-accent: #c3b4e9; }
 [data-grail-element="shui"] { --grail-card-accent: #91d8f0; }
 [data-grail-element="huo"] { --grail-card-accent: #f3ad98; }
@@ -52,8 +53,8 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
   text-shadow: none;
 }
 #window #arena .handcards > .card[data-grail-element].selectable {
-  outline: 2px solid #e5c782; outline-offset: 1px;
-  box-shadow: 0 4px 14px #0008, 0 0 0 1px #e5c78255;
+  outline: 2px solid #9abecb; outline-offset: 1px;
+  box-shadow: 0 4px 14px #0008, 0 0 0 1px #9abecb55;
 }
 #window #arena .handcards > .card[data-grail-element].selected {
   outline: 3px solid var(--grail-picked); outline-offset: 1px;
