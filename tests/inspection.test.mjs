@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { loadPacks } from '../scripts/engine-catalog.mjs';
 import { createBattleInspection, readInspection, inspectionPlayers, inspectionText } from '../vendor/noname/overrides/grail-inspection.js';
+import { readQuickDetail, createQuickDetailView } from '../vendor/noname/overrides/grail-detail-view.js';
 import { historyHarness } from './helpers/history-harness.mjs';
 
 const root = new URL('../public/engine/', import.meta.url).pathname;
@@ -50,6 +51,66 @@ test('all 68 current roles retain complete translated skill descriptions', () =>
     assert.ok(entries.every(entry => entry.title && entry.sections[0].text), role.id);
     assert.equal(entries[0].sections[0].text, inspectionText(lib.translate[lib.character[role.id][3].find(id => lib.translate[id + '_info'] && !lib.skill[id]?.nopop && !lib.skill[id]?.equipSkill) + '_info']));
   }
+});
+
+test('quick role and own hand readers produce portrait art and full public descriptions', () => {
+  const card = { name: 'anMie', duYou: '', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [card]);
+  c.me.hp = 5; c.me.maxHp = 6;
+  const role = readQuickDetail('role', c.me, c);
+  assert.equal(role.kind, 'role');
+  assert.equal(role.image, 'image/character/fengZhiJianSheng.jpg');
+  assert.match(role.subtitle, /生命 5 \/ 6/);
+  assert.ok(role.sections.some(section => section.title.includes('風怒追擊')));
+  const hand = readQuickDetail('card', card, c);
+  assert.equal(hand.kind, 'card');
+  assert.equal(hand.image, 'image/card/anMie.png');
+  assert.ok(hand.sections[0].text);
+  assert.equal(readQuickDetail('card', { name: 'anMie' }, c), null, 'never inspect another or stale card');
+  assert.equal(readQuickDetail('role', { name: c.me.name }, c), null, 'not a public player node');
+  c.other.isUnseen = () => true;
+  assert.equal(readQuickDetail('role', c.other, c), null, 'unrevealed roles remain hidden');
+});
+
+test('a role tap opens only for non-selectable targets; long pressing our hand opens without playing it', async () => {
+  const card = { name: 'anMie', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [card]);
+  const h = historyHarness();
+  const listeners = new Map();
+  h.doc.addEventListener = (name, handler) => listeners.set(name, handler);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  createQuickDetailView({ hud, context: c, document: h.doc });
+  const overlay = hud.children[0];
+  const picture = overlay.children[0].children[1].children[0];
+  picture.dataset = {};
+  const playerNode = { closest: query => query === '#arena > .player' ? c.me : null };
+  const cardNode = { closest: query => query === '#arena #handcards1 .handcards > .card' ? card : null };
+  c.me.classList = classes('selectable');
+  const event = target => ({ target, prevented: false, stopped: false,
+    preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; } });
+  const selection = event(playerNode);
+  listeners.get('click')(selection);
+  assert.equal(selection.prevented, false, 'native selection still receives click');
+  assert.equal(overlay.hidden, true);
+  c.me.classList = classes();
+  const inspection = event(playerNode);
+  listeners.get('click')(inspection);
+  assert.equal(inspection.prevented, true);
+  assert.equal(overlay.hidden, false);
+  assert.match(overlay.textContent, /風怒追擊/);
+  // Open a new viewer instance to exercise the genuine 580ms long-press path.
+  const hud2 = h.doc.createElement('div');
+  createQuickDetailView({ hud: hud2, context: c, document: h.doc });
+  const overlay2 = hud2.children[0];
+  overlay2.children[0].children[1].children[0].dataset = {};
+  listeners.get('pointerdown')({ target: cardNode, button: 0, isPrimary: true, pointerId: 7, clientX: 20, clientY: 20 });
+  await new Promise(resolve => setTimeout(resolve, 625));
+  assert.equal(overlay2.hidden, false);
+  assert.match(overlay2.textContent, /暗滅/);
+  const release = event(cardNode); release.pointerId = 7;
+  listeners.get('touchend')(release);
+  assert.equal(release.prevented, true, 'a held card must not activate native touchend');
 });
 
 test('public marks show visible counts, limits and related skills without reading hidden card storage', () => {

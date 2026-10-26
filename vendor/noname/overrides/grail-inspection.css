@@ -62,3 +62,130 @@
   #grail-inspection .grail-inspect-note { font-size: 12px; line-height: 1.4; }
   #grail-inspection label { flex-direction: row; align-items: center; white-space: nowrap; }
 }
+
+/* The focused character/card reader is outside the scaled native table. It
+   never clones or moves selectable cards, and can scroll independently. */
+#grail-detail-overlay, #grail-detail-overlay * { box-sizing: border-box; font-family: system-ui, sans-serif; text-shadow: none; }
+#grail-detail-overlay[hidden], #grail-detail-overlay [hidden] { display: none !important; }
+#grail-detail-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: #07141ddc;
+  pointer-events: auto;
+}
+#grail-detail-overlay .grail-detail-sheet {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: min(960px, 100%);
+  max-height: 100%;
+  overflow: hidden;
+  border: 1px solid #d3bd87;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #203940, #101f2b 72%);
+  color: #eff2ed;
+  box-shadow: 0 22px 80px #000d;
+}
+#grail-detail-overlay .grail-detail-header {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 68px;
+  padding: 10px 16px 10px 24px;
+  border-bottom: 1px solid #c7b38355;
+}
+#grail-detail-overlay .grail-detail-header h2 {
+  margin: 0;
+  color: #f6e4b5;
+  font: 750 clamp(21px, 3vw, 27px)/1.35 system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+#grail-detail-overlay .grail-detail-close {
+  flex: 0 0 auto;
+  min-width: 74px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid #dfc48a;
+  border-radius: 9px;
+  color: #fff0c6;
+  background: #29434a;
+  font: 650 16px/1.3 system-ui, sans-serif;
+  cursor: pointer;
+}
+#grail-detail-overlay .grail-detail-close:focus-visible { outline: 3px solid #f9dd83; outline-offset: 2px; }
+#grail-detail-overlay .grail-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 350px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  min-height: 0;
+  padding: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+#grail-detail-overlay .grail-detail-picture {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 5/7;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid #d2bb82;
+  border-radius: 13px;
+  background: #0a1d28;
+  box-shadow: 0 9px 30px #0009;
+}
+#grail-detail-overlay .grail-detail-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#grail-detail-overlay .grail-detail-picture[data-kind="role"] img { object-fit: contain; }
+#grail-detail-overlay .grail-detail-picture[data-own-special="true"] { border: 4px solid #ffd454; box-shadow: 0 0 0 2px #ffe3a5, 0 0 20px #ffd45480; }
+#grail-detail-overlay .grail-detail-picture-title {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  color: #fff4d8;
+  background: #10212bea;
+  font: 750 20px/1.3 system-ui, sans-serif;
+}
+#grail-detail-overlay .grail-detail-art-fallback { padding: 16px; text-align: center; color: #d6cdbb; }
+#grail-detail-overlay .grail-detail-description { min-width: 0; overflow-wrap: anywhere; }
+#grail-detail-overlay .grail-detail-subtitle {
+  margin: 0 0 16px;
+  color: #d6e5de;
+  font-size: 16px;
+  line-height: 1.6;
+}
+#grail-detail-overlay .grail-detail-section { margin: 0 0 22px; padding-bottom: 20px; border-bottom: 1px solid #bac9b63c; }
+#grail-detail-overlay .grail-detail-section h3 { margin: 0 0 8px; color: #f1d9a2; font: 700 20px/1.4 system-ui, sans-serif; }
+#grail-detail-overlay .grail-detail-section p { margin: 0; color: #f0f1e8; font: 400 17px/1.8 system-ui, sans-serif; white-space: pre-line; }
+#grail-detail-overlay .grail-detail-badge { display: inline-block; margin: 0 0 8px; padding: 4px 10px; border-radius: 5px; background: #6f5529; color: #fff2c6; font-size: 14px; }
+@media (max-width: 700px) and (orientation: portrait) {
+  #grail-detail-overlay { padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  #grail-detail-overlay .grail-detail-sheet { border-radius: 12px; }
+  #grail-detail-overlay .grail-detail-header { padding: 8px 12px; min-height: 60px; }
+  #grail-detail-overlay .grail-detail-layout { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 12px; }
+  #grail-detail-overlay .grail-detail-picture { width: min(250px, 70%); max-height: 42vh; aspect-ratio: 5/7; }
+  #grail-detail-overlay .grail-detail-description { align-self: stretch; }
+}
+@media (max-height: 500px) {
+  #grail-detail-overlay { padding: 4px 8px; }
+  #grail-detail-overlay .grail-detail-header { min-height: 50px; padding: 4px 12px; }
+  #grail-detail-overlay .grail-detail-close { min-height: 44px; }
+  #grail-detail-overlay .grail-detail-layout { grid-template-columns: minmax(120px, 190px) minmax(0, 1fr); gap: 12px; padding: 8px 16px; }
+  #grail-detail-overlay .grail-detail-picture { max-height: calc(100dvh - 80px); aspect-ratio: 5/7; }
+}

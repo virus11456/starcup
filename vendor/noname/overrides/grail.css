@@ -444,3 +444,85 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   #window #arena > .player[data-grail-team] > .identity > div { font-size: calc(9px * var(--grail-touch-scale, 1)) !important; }
   .grail-scoreboard-ready #grail-help:not(:has(#grail-help-toggle[aria-expanded="false"])) { top: 98px; bottom: auto; width: 240px; max-height: calc(100vh - 110px) !important; }
 }
+
+/* UI/UX Pro Max: the character draft is a gallery, not a narrow alert box.
+   Keep the native buttons/search and the confirmation row fully operable. */
+@media (min-width: 1050px) {
+  #window #arena.choose-character > .dialog:not(.popped) {
+    box-sizing: border-box;
+    width: min(94%, 1380px) !important;
+    left: 50% !important;
+    top: 48% !important;
+    bottom: auto !important;
+    height: min(80%, 780px) !important;
+    transform: translate(-50%, -50%) !important;
+    overflow: hidden;
+  }
+  #window #arena.choose-character > .dialog > .content-container {
+    height: 100% !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #window #arena.choose-character > .dialog .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    padding: 12px 8px 20px;
+    box-sizing: border-box;
+  }
+  #window #arena.choose-character > .dialog .button.character { margin: 0; }
+}
+@media (min-width: 601px) and (max-width: 1049px) {
+  #window #arena.choose-character > .dialog:not(.popped) {
+    left: 50% !important;
+    width: calc(100% - 20px) !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  #window #arena.choose-character > .dialog .buttons { gap: calc(14px * var(--grail-touch-scale, 1)); }
+}
+
+/* The read-only action caption used to span the centre of the table and hide
+   HP. Choice dialogs with actual buttons/cards retain their native geometry. */
+#window #arena:not(.choose-character) > .dialog:not(.popped):has(.caption, .prompt):not(:has(.buttons > .button, .buttons > .card, .buttons > .tdnode, .buttons > .tdnodes)) {
+  box-sizing: border-box;
+  top: 8px !important;
+  bottom: auto !important;
+  left: clamp(168px, 18%, 252px) !important;
+  width: min(400px, 42%) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 25% !important;
+  overflow-y: auto;
+  border-radius: 10px;
+  background: #132932f5;
+  box-shadow: 0 5px 15px #0008;
+}
+#window #arena:not(.choose-character) > .dialog:not(.popped):has(.caption, .prompt):not(:has(.buttons > .button, .buttons > .card, .buttons > .tdnode, .buttons > .tdnodes)) > .content-container {
+  position: relative;
+  height: auto !important;
+  max-height: none;
+}
+#window #arena:not(.choose-character) > .dialog:not(.popped):has(.caption, .prompt):not(:has(.buttons > .button, .buttons > .card, .buttons > .tdnode, .buttons > .tdnodes)) :is(.caption, .prompt) {
+  font: 600 calc(15px * var(--grail-touch-scale, 1))/1.5 system-ui, sans-serif;
+  margin: 0;
+  padding: 8px 10px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1049px) {
+  #window #arena:not(.choose-character) > .dialog:not(.popped):has(.caption, .prompt):not(:has(.buttons > .button, .buttons > .card, .buttons > .tdnode, .buttons > .tdnodes)) {
+    top: 4px !important;
+    left: calc(146px * var(--grail-touch-scale, 1)) !important;
+    width: min(calc(310px * var(--grail-touch-scale, 1)), calc(100% - 158px * var(--grail-touch-scale, 1))) !important;
+    max-height: 28% !important;
+  }
+}
+@media (max-width: 600px) {
+  #window #arena:not(.choose-character) > .dialog:not(.popped):has(.caption, .prompt):not(:has(.buttons > .button, .buttons > .card, .buttons > .tdnode, .buttons > .tdnodes)) {
+    left: calc(8px * var(--grail-touch-scale, 1)) !important;
+    top: calc(50px * var(--grail-touch-scale, 1)) !important;
+    width: calc(100% - 16px * var(--grail-touch-scale, 1)) !important;
+    max-height: 18% !important;
+  }
+}

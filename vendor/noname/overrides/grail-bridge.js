@@ -8,6 +8,7 @@ import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
 import { createHistorySession } from './grail-history-session.js';
 import { createBattleInspection } from "./grail-inspection.js";
+import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
@@ -28,6 +29,7 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
+const quickDetail = createQuickDetailView({ hud, context: { lib, game, get } });
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
 const handSkin = createHandSkin({ lib, get });
 const text = (value) =>
