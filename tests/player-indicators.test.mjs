@@ -136,7 +136,9 @@ test('hand-number mirror is only switched on when an external badge is safely po
     new URL('../vendor/noname/overrides/grail-player-indicators.js', import.meta.url), 'utf8');
   const active = source.indexOf('active.add(player);');
   const safe = source.indexOf('if (!candidate) {');
-  const mirror = source.indexOf("player.dataset.grailHandCountMirror = String(Boolean(handCount));");
+  const mirror = source.indexOf("player.dataset.grailHandCountMirror = String(");
+  assert.match(source, /Boolean\\(handCount\\) && candidate\\.badges\\.includes\\(handCount\\)/,
+    'only a genuinely visible hand badge may hide the original native count');
   assert.ok(safe !== -1 && safe < active && active < mirror,
     'do not hide original hand count before a collision-free external strip exists');
   assert.match(source, /stop\(\)[\s\S]*?grailHandCountMirror = 'false'/);
