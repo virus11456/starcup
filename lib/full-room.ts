@@ -151,6 +151,12 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
   if (input.started === true && member.id !== '1') roomError('只有房主可以開始牌局。', 403);
   if (input.started === true && room.status === 'waiting') { room.status = 'playing'; changed = true; }
   if (!Array.isArray(input.messages) || input.messages.length > 100) roomError('同步訊息數量無效。');
+  // The original host is the only owner of native turn/skill continuations.
+  // A guest may have submitted an action just as the host disappeared; never
+  // leave that stale choice queued for a host that wakes after its timeout.
+  // Preserve normal waiting-room handshakes and validate every command first.
+  const absentPlayingHost = member.id !== '1' && room.status === 'playing'
+    && (!room.members[0]?.connection || now - room.members[0].seen >= 60_000);
   let size = 0;
   for (const message of input.messages as Outgoing[]) {
     if (!message || typeof message.id !== 'string' || !/^[\w-]{16,64}$/.test(message.id)) roomError('訊息識別無效。');
@@ -168,6 +174,11 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
     const data = validateRelayData(message.data, member);
     size += data.length;
     if (size > 500_000) roomError('同步批次過大。', 413);
+    if (absentPlayingHost) {
+      room.received.push(key);
+      changed = true;
+      continue;
+    }
     room.messages.push({ seq: ++room.sequence, from: member.id, to: recipient.id, connection: recipient.connection, data, at: now });
     room.received.push(key);
     changed = true;
