@@ -12,6 +12,7 @@ import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
+import { updateActionHints } from './grail-action-hints.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -39,6 +40,7 @@ const text = (value) =>
 let last = "";
 function update() {
   addRoleLegend(ui.arena);
+  updateActionHints(ui.arena);
   history.attach(ui.sidebar);
   inspection.update();
   indicators.update();
