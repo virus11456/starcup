@@ -37,3 +37,9 @@ Service Worker 由瀏覽器啟停，不是可常駐的牌局伺服器。原生 G
 - [MDN：Making PWAs installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable)（安裝、manifest、standalone；離線 Service Worker 不是安裝必要條件）
 - [web.dev：Service workers](https://web.dev/learn/pwa/service-workers)（生命週期、快取與背景程序可能終止）
 - [WebKit：Safari 26.0](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/)（iOS 主畫面網頁應用能力；仍需對實際裝置版本驗收）
+
+## 2026-10-27 PWA 安裝可見性與可讀性
+- 先前安裝說明卡位於首頁圖鑑／頁尾之後，用戶很難發現。現在首頁英雄區提供「加入手機主畫面」站內跳轉，安裝說明搬到資料列之後，並加上捲動定位點；已安裝的獨立視窗隱藏快捷連結。
+- 安裝卡標題 20px，說明、列表、展開摘要 16px，按鈕高度至少 48px，有焦點輪廓。iPhone／iPad 使用 Safari 分享選單手動加入，Android／桌面在有 `beforeinstallprompt` 時顯示原生安裝按鈕。
+- 原生事件不同實作可能透過 `prompt()` 回傳或 `userChoice` 回傳接受／取消；缺乏明確結果時顯示中性提示，不會錯誤宣稱用戶取消或已安裝。新增流程與版面規則測試。
+- **仍然不新增 Service Worker 或離線遊戲快取**，不碰已開始牌局、私人登入、Seat token 或任何多人儲存架構。

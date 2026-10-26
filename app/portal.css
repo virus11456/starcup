@@ -137,3 +137,18 @@
   .catalog-result-bar { flex-wrap: wrap; }
   .catalog-view-switch { max-width: 100%; }
 }
+
+/* A compact PWA shortcut in the hero; the full instructions remain in-page. */
+.portal-home .portal-install-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 5px 10px;
+  border: 1px solid #d5bd8870;
+  border-radius: 7px;
+  color: #f0dbaf;
+  font-size: 15px;
+  text-decoration: none;
+}
+.portal-home .portal-install-link:focus-visible { outline: 3px solid #f0dbaf; outline-offset: 2px; }
+@media (display-mode: standalone) { .portal-home .portal-install-link { display: none; } }

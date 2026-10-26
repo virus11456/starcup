@@ -10,17 +10,22 @@
 }
 .card > img { flex: 0 0 48px; border-radius: 12px; }
 .content { min-width: 0; }
-.content h2 { color: #e5d2a7; font-size: 16px; line-height: 1.6; }
-.content p, .content li { color: #aabeb2; font-size: 13px; line-height: 1.9; }
-.content summary { cursor: pointer; color: #e5d2a7; min-height: 44px; padding: 12px 0; }
+.content h2 { color: #e5d2a7; font-size: 20px; line-height: 1.5; margin: 0 0 4px; }
+.content p, .content li { color: #d0ded4; font-size: 16px; line-height: 1.7; }
+.content summary { cursor: pointer; color: #e5d2a7; min-height: 44px; padding: 12px 0; font-size: 16px; line-height: 1.5; }
 .content summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .content ol { padding-left: 22px; margin: 0 0 12px; }
 .content li + li { margin-top: 8px; }
 .content details p + p { margin-top: 8px; }
-.install { min-height: 44px; padding: 10px 16px; border-radius: 8px; background: #d5bd88; color: #182523; margin-top: 8px; }
+.install { min-height: 48px; padding: 10px 16px; border-radius: 8px; background: #d5bd88; color: #182523; margin-top: 8px; font: 700 16px/1.4 system-ui, sans-serif; cursor: pointer; }
 .status:empty { display: none; }
 .status:not(:empty) { margin-top: 10px; }
 @media (max-width: 400px) {
   .card { padding: 16px; gap: 12px; }
   .card > img { width: 36px; height: 36px; flex-basis: 36px; }
 }
+
+/* Accessible focus anchor from the hero: keep copy large on iPhones. */
+.card { scroll-margin-top: 20px; }
+.install:focus-visible { outline: 3px solid #f3d797; outline-offset: 3px; }
+@media (max-width: 400px) { .content p, .content li { font-size: 16px; } }
