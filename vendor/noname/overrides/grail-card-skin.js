@@ -10,7 +10,9 @@ export function isOwnSpecialAttack(card, player, { lib, get } = {}) {
   if (!card || !player || !lib?.character) return false;
   // Use the actual printed attack type; skill modifications during a turn
   // must not affect a purely decorative hand border.
-  const printedType = lib.card?.[card.name]?.type || get?.type?.(card, false) || card.type;
+  // When a card already has an explicit type, respect it; otherwise
+  // use the physical deck definition before asking runtime type modifiers.
+  const printedType = card.type || lib.card?.[card.name]?.type || get?.type?.(card, false);
   if (printedType !== 'gongJi') return false;
   if (typeof card.duYou !== 'string' || !card.duYou) return false;
   const owned = new Set([player.name1, player.name2, player.name]
