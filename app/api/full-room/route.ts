@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from '@/lib/site-access';
 import { GameError } from '@/lib/game';
-import { hash, newToken, roomCode, configured } from '@/lib/store';
+import { hash, newToken, configured } from '@/lib/store';
+import { creationCode } from '@/lib/room-creation';
 import { attachFullRoom, createFullRoom, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '@/lib/full-room';
 import { changeFullRoom, insertFullRoom, listFullRooms } from '@/lib/full-store';
 export const dynamic = 'force-dynamic';
@@ -29,10 +30,10 @@ export async function POST(req: NextRequest) {
     // seats, without exposing any database key or putting credentials in URLs.
     const auth = hash(body.token);
     if (body.type === 'create') {
-      const room = createFullRoom(roomCode(), auth, body.name, body.title, body.capacity);
+      const room = createFullRoom(creationCode(auth, process.env.GRAIL_SERVER_SECRET), auth, body.name, body.title, body.capacity);
       const creator = hash((req.headers.get('x-forwarded-for')?.split(',')[0] || auth) + process.env.GRAIL_SERVER_SECRET);
-      await insertFullRoom(room, creator);
-      return respond({ room: fullView(room, auth) });
+      const created = await insertFullRoom(room, creator);
+      return respond({ room: fullView(created, auth) });
     }
     const result = await changeFullRoom<unknown>(body.code, room => {
       if (body.type === 'join') { joinFullRoom(room, auth, body.name, newToken().slice(0, 16)); return { changed: true, result: { room: fullView(room, auth) } }; }

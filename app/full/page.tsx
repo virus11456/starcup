@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Compendium from "../compendium";
+import SiteBrand from '../site-brand';
 import { matchesCatalog } from "@/lib/catalog-search";
 import "./full.css";
 type Skill = {
@@ -77,9 +78,9 @@ export default function FullGame() {
   return (
     <main className={"full-shell" + (running ? " full-running" : "")}>
       <header className="full-header">
-        <Link href="/" onClick={(event) => {
+        <SiteBrand onClick={(event) => {
           if (running && !confirm("離開會結束目前的本機對局，確定返回大廳？")) event.preventDefault();
-        }}>星杯傳說</Link>
+        }} />
         <span>角色與擴充對戰 · 本機對電腦</span>
         <nav>
           {running && (

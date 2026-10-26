@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHistoryBuffer, observeNativeHistory } from '../vendor/noname/overrides/grail-history.js';
 import { historyHarness } from './helpers/history-harness.mjs';
+import fs from 'node:fs/promises';
+import vm from 'node:vm';
+import ts from 'typescript';
 
 test('history preserves identical repeated actions and bounded searchable chronological records', () => {
   const buffer = createHistoryBuffer(3);
@@ -56,7 +59,7 @@ test('the real history panel keeps the reading position while new events arrive 
   assert.equal(h.list.children.length, 1);
   h.close.emit('click'); assert.equal(h.panel.hidden, true);
   h.history.stop(); h.append('斷開監聽後不再擷取');
-  assert.equal(h.toggle.textContent, '紀錄');
+  assert.equal(h.toggle.textContent, '本場紀錄');
 });
 test('native sidebar seeds oldest-first and records insertions once per node, not per matching text', () => {
   const buffer = createHistoryBuffer(), nodes = ['第三筆', '第二筆', '第一筆'].map(textContent => ({ nodeType: 1, textContent }));
@@ -75,4 +78,44 @@ test('native sidebar seeds oldest-first and records insertions once per node, no
   assert.equal(buffer.search('提煉').length, 2);
   assert.equal(buffer.latest.turn, 4);
   stop(); assert.ok(disconnected);
+});
+
+test('actual native public logs preserve actor, target, card and result in both host and guest history', async () => {
+  const source = await fs.readFile(new URL('../public/engine/noname/game/index.js', import.meta.url), 'utf8');
+  const ast = ts.createSourceFile('game.js', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let native;
+  const visit = node => {
+    if (ts.isMethodDeclaration(node) && node.name.getText(ast) === 'log') native = node.getText(ast).replace(/^log\(/, 'function log(');
+    ts.forEachChild(node, visit);
+  }; visit(ast); assert.ok(native);
+  function client() {
+    const buffer = createHistoryBuffer(); let observe;
+    const sidebar = { children: [], insertBefore(node) { this.children.unshift(node); observe([{ addedNodes: [node] }]); } };
+    class Observer { constructor(callback) { observe = callback; } observe() {} disconnect() {} }
+    observeNativeHistory(sidebar, (text, turn) => buffer.append(text, turn), () => 2, Observer);
+    const context = vm.createContext({
+      lib: { config: { log_highlight: true, show_log: 'off' } }, _status: { video: true },
+      get: { itemtype: value => value?.kind || '', translation: value => typeof value === 'object' ? value.name : String(value) },
+      ui: { sidebar, create: { div: () => ({ nodeType: 1,
+        set innerHTML(html) { this.textContent = html.replace(/<[^>]*>/g, ''); } }) } },
+      game: { addVideo() {}, broadcast() {} },
+    });
+    context.game.log = vm.runInContext('(' + native + ')', context);
+    return { context, buffer };
+  }
+  const host = client(), guest = client();
+  host.context.game.broadcast = (callback, ...args) => {
+    guest.context.args = args;
+    vm.runInContext('(' + callback.toString() + ')(...args)', guest.context);
+  };
+  const actor = { kind: 'player', name: '魔法少女', side: true };
+  const target = { kind: 'player', name: '聖女', side: false };
+  host.context.game.log(actor, '對', target, '使用了', { kind: 'card', name: '魔彈' });
+  host.context.game.log(target, '承受了', 2, '點法術傷害');
+  host.context.game.log('紅隊士氣減少', 1);
+  for (const { buffer } of [host, guest]) {
+    assert.deepEqual(buffer.search().map(row => row.text), ['魔法少女對聖女使用了魔彈', '聖女承受了2點法術傷害', '紅隊士氣減少1']);
+    assert.equal(buffer.search('魔彈').length, 1);
+    assert.ok(buffer.search().every(row => row.turn === 2));
+  }
 });

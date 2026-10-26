@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from '../lib/site-access.ts';
 import { attachFullRoom, createFullRoom, fullSummary, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '../lib/full-room.ts';
 import { RoomStorage } from './room-storage.js';
+import { creationCode, recoverCreation } from '../lib/room-creation.ts';
 import { socketCheckpoint, syncSocketRoom } from './room-checkpoints.js';
 import { roomFailure as failure } from './service-errors.js';
 
@@ -27,6 +28,7 @@ export class GrailDirectory extends DurableObject {
     this.sql = ctx.storage.sql;
     this.sql.exec('CREATE TABLE IF NOT EXISTS entries (code TEXT PRIMARY KEY, data TEXT NOT NULL, seen INTEGER NOT NULL)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS attempts (at INTEGER NOT NULL)');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS reservations (auth TEXT PRIMARY KEY, at INTEGER NOT NULL)');
   }
   list() {
     return this.sql.exec('SELECT data FROM entries WHERE seen > ? ORDER BY seen DESC LIMIT 40', Date.now() - 60_000).toArray().map(row => JSON.parse(row.data));
@@ -36,17 +38,26 @@ export class GrailDirectory extends DurableObject {
     else this.sql.exec('DELETE FROM entries WHERE code = ?', summary.code);
     if (!await this.ctx.storage.getAlarm()) await this.ctx.storage.setAlarm(Date.now() + DAY);
   }
-  async reserve() {
-    this.sql.exec('DELETE FROM attempts WHERE at < ?', Date.now() - 3_600_000);
-    if (this.sql.exec('SELECT COUNT(*) AS n FROM attempts').one().n >= 5) return false;
-    this.sql.exec('INSERT INTO attempts VALUES (?)', Date.now());
+  async reserve(auth) {
+    const allowed = this.ctx.storage.transactionSync(() => {
+      const since = Date.now() - 3_600_000;
+      this.sql.exec('DELETE FROM attempts WHERE at < ?', since);
+      this.sql.exec('DELETE FROM reservations WHERE at < ?', since);
+      if (this.sql.exec('SELECT auth FROM reservations WHERE auth = ?', auth).toArray().length) return true;
+      // Include reservations from the previous deployment until they expire.
+      if (this.sql.exec('SELECT (SELECT COUNT(*) FROM attempts) + (SELECT COUNT(*) FROM reservations) AS n').one().n >= 5) return false;
+      this.sql.exec('INSERT INTO reservations VALUES (?, ?)', auth, Date.now());
+      return true;
+    });
+    if (!allowed) return false;
     if (!await this.ctx.storage.getAlarm()) await this.ctx.storage.setAlarm(Date.now() + DAY);
     return true;
   }
   async alarm() {
     this.sql.exec('DELETE FROM entries WHERE seen < ?', Date.now() - 60_000);
     this.sql.exec('DELETE FROM attempts WHERE at < ?', Date.now() - 3_600_000);
-    const count = this.sql.exec('SELECT (SELECT COUNT(*) FROM entries) + (SELECT COUNT(*) FROM attempts) AS n').one().n;
+    this.sql.exec('DELETE FROM reservations WHERE at < ?', Date.now() - 3_600_000);
+    const count = this.sql.exec('SELECT (SELECT COUNT(*) FROM entries) + (SELECT COUNT(*) FROM attempts) + (SELECT COUNT(*) FROM reservations) AS n').one().n;
     if (count) await this.ctx.storage.setAlarm(Date.now() + DAY);
   }
 }
@@ -57,14 +68,21 @@ export class GrailRoom extends DurableObject {
     this.rooms = new RoomStorage(ctx.storage);
     this.lastListed = 0;
   }
-  async command(auth, body, sender = null) {
+  async command(auth, body, sender = null, creator = null) {
     try {
       let room = this.rooms.load();
       const wasPlaying = room?.status === 'playing';
       let changed = true, data;
       if (body.type === 'create') {
-        if (room) roomError('房間代碼重複，請重試。', 409);
-        room = createFullRoom(body.code, auth, body.name, body.title, body.capacity);
+        const candidate = createFullRoom(body.code, auth, body.name, body.title, body.capacity);
+        if (room) return { status: 200, data: { room: fullView(recoverCreation(room, candidate), auth) } };
+        if (!creator || !await this.env.GRAIL_DIRECTORY.getByName('creator:' + creator).reserve(auth))
+          roomError('每小時最多建立 5 個房間，請稍後再試。', 429);
+        // RPC allows interleaving. Another identical request may have saved
+        // the room while the rate reservation was in flight; never overwrite it.
+        room = this.rooms.load();
+        if (room) return { status: 200, data: { room: fullView(recoverCreation(room, candidate), auth) } };
+        room = candidate;
         data = { room: fullView(room, auth) };
       } else {
         if (!room || Date.now() - room.updated > DAY) roomError('找不到房間，或房間已過期。', 404);
@@ -189,13 +207,12 @@ export default {
       let body;
       try { body = JSON.parse(text); } catch { roomError('請求格式無效。'); }
       const auth = seatToken(body?.token);
+      let creator = null;
       if (body.type === 'create') {
-        const creator = hash((request.headers.get('cf-connecting-ip') || auth) + env.GRAIL_SERVER_SECRET);
-        if (!await env.GRAIL_DIRECTORY.getByName('creator:' + creator).reserve()) roomError('每小時最多建立 5 個房間，請稍後再試。', 429);
-        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        body.code = Array.from(randomBytes(8), n => letters[n % letters.length]).join('');
+        creator = hash((request.headers.get('cf-connecting-ip') || auth) + env.GRAIL_SERVER_SECRET);
+        body.code = creationCode(auth, env.GRAIL_SERVER_SECRET);
       }
-      const result = await env.GRAIL_ROOMS.getByName(codeFor(body.code)).command(auth, body);
+      const result = await env.GRAIL_ROOMS.getByName(codeFor(body.code)).command(auth, body, null, creator);
       return response(result.data, result.status);
     } catch (error) { const f = failure(error); return response({ error: f.error }, f.status); }
   },

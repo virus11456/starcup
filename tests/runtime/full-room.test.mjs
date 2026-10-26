@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { ACCESS_COOKIE, createAccessToken } from '../../lib/site-access.ts';
-import { enterOnlineRoom, seatKey } from '../../lib/online-session.ts';
+import { enterOnlineRoom, seatKey, PENDING_CREATION_KEY } from '../../lib/online-session.ts';
 
 // Use the same workerd/Miniflare toolchain already installed by Wrangler.
 // These bindings and credentials exist only in this in-memory local runtime.
@@ -167,6 +167,55 @@ test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', 
       assert.equal(view.data.room.status, 'playing');
       assert.equal(view.data.room.count, 2, 'retry must not consume another seat');
       assert.equal((await request({ type: 'leave', code, token: hostToken })).status, 200);
+    });
+    await t.test('a lost create reply survives eviction and an IP change, while launched rooms cannot be reset', async () => {
+      const values = new Map();
+      const storage = { getItem: key => values.get(key) ?? null,
+        setItem: (key, value) => { values.set(key, value); }, removeItem: key => { values.delete(key); } };
+      const input = { type: 'create', code: '', name: '重試房主', title: '開房回覆遺失', capacity: 4 };
+      let first, body, replies = 0;
+      const clientRequest = async (_url, init) => {
+        body = JSON.parse(init.body);
+        const result = await request(body, { 'cf-connecting-ip': ++replies === 1 ? '198.51.100.71' : '198.51.100.72' });
+        assert.equal(result.status, 200);
+        if (replies === 1) { first = result.data.room; throw new TypeError('Lost create response'); }
+        assert.equal(result.data.room.count, 2);
+        return Response.json(result.data);
+      };
+      const options = { storage: () => storage, request: clientRequest };
+      await assert.rejects(enterOnlineRoom(input, new AbortController().signal, options), TypeError);
+      const token = JSON.parse(storage.getItem(PENDING_CREATION_KEY)).token;
+      const code = first.code;
+      assert.equal((await request({ type: 'join', code, token: randomBytes(32).toString('hex'), name: '朋友' })).status, 200);
+      await mf.unsafeEvictDurableObject('starcup-local-acceptance', 'GrailRoom', { name: code });
+      const room = await enterOnlineRoom(input, new AbortController().signal, options);
+      assert.equal(room.code, code); assert.equal(storage.getItem(seatKey(code)), token);
+      assert.equal(storage.getItem(PENDING_CREATION_KEY), null);
+      const connection = randomUUID();
+      assert.equal((await request({ type: 'attach', code, token, connection })).status, 200);
+      assert.equal((await request(body)).status, 410);
+      const continuing = await request({ type: 'sync', code, token, connection, ack: 0, messages: [], started: true });
+      assert.equal(continuing.status, 200); assert.equal(continuing.data.room.count, 2);
+      assert.equal(continuing.data.room.status, 'playing');
+      assert.equal((await request(body)).status, 410);
+      assert.equal((await request({ type: 'leave', code, token })).status, 200);
+      assert.equal((await request(body)).status, 410);
+    });
+    await t.test('concurrent create retries share one reservation; distinct rooms still obey the five-room limit', async () => {
+      const headers = { 'cf-connecting-ip': '198.51.100.81' };
+      const body = { type: 'create', token: randomBytes(32).toString('hex'), name: '房主', title: '併發重試', capacity: 4 };
+      for (let i = 0; i < 6; i++) assert.equal((await request({ ...body, capacity: 5 }, headers)).status, 400);
+      const replies = await Promise.all(Array.from({ length: 8 }, () => request(body, headers)));
+      assert.ok(replies.every(reply => reply.status === 200));
+      const codes = new Set(replies.map(reply => reply.data.room.code));
+      assert.equal(codes.size, 1);
+      for (let i = 0; i < 4; i++) {
+        const result = await request({ ...body, token: randomBytes(32).toString('hex') }, headers);
+        assert.equal(result.status, 200); codes.add(result.data.room.code);
+      }
+      assert.equal(codes.size, 5);
+      assert.equal((await request({ ...body, token: randomBytes(32).toString('hex') }, headers)).status, 429);
+      assert.equal((await request(body, headers)).status, 200, 'existing creation recovers even at the rate limit');
     });
   } finally {
     for (const socket of sockets) try { socket.close(); } catch {}

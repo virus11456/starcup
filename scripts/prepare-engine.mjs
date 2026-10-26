@@ -72,6 +72,13 @@ async function patch(file, before, after) {
     throw new Error(`Pinned engine patch no longer matches: ${file}`);
   await writeFile(location, text.replace(before, after));
 }
+// Decorate the native character button, including native form changes. This
+// single path is shared by solo choices and multiplayer free drafting.
+const buttonFile = 'noname/ui/create/index.js';
+await writeFile(path.join(output, buttonFile),
+  'import { decorateRoleButton } from "../../../grail-role-tags.js";\n' + await readFile(path.join(output, buttonFile), 'utf8'));
+await patch(buttonFile, '\t\t\t};\n\t\t\tnode.refresh = func;',
+  '\t\t\t\tdecorateRoleButton(node, item, infoitem);\n\t\t\t};\n\t\t\tnode.refresh = func;');
 await patch(
   "noname/library/index.js",
   'configprefix = "noname_0.9_"',

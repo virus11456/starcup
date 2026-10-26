@@ -1,5 +1,6 @@
 import { roomRest } from './store.ts';
 import { FULL_ENGINE, fullSummary, roomError, type FullRoom } from './full-room.ts';
+import { recoverCreation } from './room-creation.ts';
 type Row = { state: FullRoom; summary: ReturnType<typeof fullSummary>; revision: number; updated_at: string };
 export async function listFullRooms() {
   const since = new Date(Date.now() - 60_000).toISOString();
@@ -7,10 +8,24 @@ export async function listFullRooms() {
   return rows.map(row => row.summary);
 }
 export async function insertFullRoom(room: FullRoom, creator: string) {
+  const existing = async () => (await roomRest<Row>(`code=eq.${room.code}&select=state`))[0]?.state;
+  const previous = await existing();
+  if (previous) return recoverCreation(previous, room);
   const since = new Date(Date.now() - 3600_000).toISOString();
   const rows = await roomRest(`select=code&creator_hash=eq.${creator}&created_at=gte.${encodeURIComponent(since)}&limit=6`);
   if (rows.length >= 5) roomError('每小時最多建立 5 個房間，請稍後再試。', 429);
-  await roomRest('', 'POST', { code: room.code, revision: 0, state: room, summary: fullSummary(room), creator_hash: creator });
+  try {
+    await roomRest('', 'POST', { code: room.code, revision: 0, state: room, summary: fullSummary(room), creator_hash: creator });
+  } catch (error) {
+    // A concurrent duplicate may win the unique-code insert. Read it back,
+    // verify ownership and return it; never upsert over the existing state.
+    if (error instanceof Error && 'status' in error && error.status === 409) {
+      const concurrent = await existing();
+      if (concurrent) return recoverCreation(concurrent, room);
+    }
+    throw error;
+  }
+  return room;
 }
 export async function changeFullRoom<T>(code: unknown, change: (room: FullRoom) => { changed: boolean; result: T }): Promise<T> {
   if (typeof code !== 'string' || !/^[A-Z2-9]{8}$/.test(code)) roomError('邀請碼為 8 位英數字。');

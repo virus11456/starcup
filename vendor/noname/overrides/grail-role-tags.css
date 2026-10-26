@@ -1,0 +1,78 @@
+/* A reserved footer below each portrait; no extra click target or card clone. */
+.grail-role-tag { display: none; pointer-events: none; }
+#window #arena.choose-character .dialog .button.character[data-grail-role] {
+  --grail-role-footer: 25px;
+  height: 133px;
+  box-sizing: border-box;
+  background-size: 100% calc(100% - var(--grail-role-footer)) !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+}
+#window #arena.choose-character .dialog .button.character > .grail-role-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--grail-role-footer);
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  border-top: 1px solid #ddc48a65;
+  border-radius: 0 0 5px 5px;
+  font: 600 11px / 1.2 system-ui, sans-serif;
+  white-space: nowrap;
+  letter-spacing: 0;
+  text-shadow: none;
+  color: #ffe2d6;
+  background: #492b2a;
+  z-index: 3;
+}
+#window #arena.choose-character .dialog [data-grail-role="mage"] > .grail-role-tag { color: #eee4ff; background: #352c50; }
+#window #arena.choose-character .dialog [data-grail-role="support"] > .grail-role-tag { color: #d6f4e9; background: #203f3b; }
+#window #arena.choose-character .dialog .button.character[data-grail-difficulty] {
+  --grail-role-footer: 44px;
+  height: 152px;
+}
+#window #arena.choose-character .dialog .button.character[data-grail-difficulty] > .hp { display: none; }
+#window #arena.choose-character .dialog .grail-role-tag span { position: relative; inset: auto; }
+#window #arena.choose-character .dialog .grail-role-difficulty {
+  display: flex; align-items: center; justify-content: center; gap: 4px; color: #f6daa0;
+  font: 500 10px / 1.2 system-ui, sans-serif;
+}
+#window #arena.choose-character .dialog .grail-role-stars {
+  display: inline-block; color: #85908b; font: 10px / 1 system-ui, sans-serif; letter-spacing: 0;
+}
+#window #arena.choose-character .dialog .grail-role-stars::before {
+  content: '★★★★★'; position: absolute; left: 0; top: 0; width: var(--grail-star-fill);
+  overflow: hidden; white-space: nowrap; color: #ffe09b;
+}
+#window #arena.choose-character .dialog .grail-role-legend {
+  position: relative;
+  display: block;
+  width: auto;
+  margin: 8px 12px;
+  color: #c9d8d3;
+  font: 12px / 1.6 system-ui, sans-serif;
+  white-space: normal;
+  text-align: center;
+}
+@media (max-width: 1049px) {
+  #window #arena.choose-character .dialog .button.character[data-grail-role] {
+    --grail-role-footer: calc(25px * var(--grail-touch-scale, 1));
+    height: calc(131px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character .dialog .button.character > .grail-role-tag {
+    font-size: calc(11px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character .dialog .button.character[data-grail-difficulty] {
+    --grail-role-footer: calc(44px * var(--grail-touch-scale, 1));
+    height: calc(150px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character .dialog .grail-role-difficulty { font-size: calc(10px * var(--grail-touch-scale, 1)); }
+  #window #arena.choose-character .dialog .grail-role-stars { font-size: calc(10px * var(--grail-touch-scale, 1)); }
+  #window #arena.choose-character .dialog .grail-role-legend {
+    font-size: calc(11px * var(--grail-touch-scale, 1));
+  }
+}

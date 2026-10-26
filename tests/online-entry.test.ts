@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { enterOnlineRoom, resumeGuestRoom, roomRequestMessage, seatKey } from '../lib/online-session.ts';
+import { enterOnlineRoom, resumeGuestRoom, roomRequestMessage, seatKey, PENDING_CREATION_KEY } from '../lib/online-session.ts';
 
 const guest = { code: 'ABCDEFGH', name: '朋友的牌局', capacity: 4, nickname: '甲', isHost: false };
 const input = { type: 'join' as const, code: ' abcdefgh ', name: '甲', title: '牌局', capacity: 4 };
@@ -46,13 +46,13 @@ test('blocked or ineffective seat storage stops create/join before a server muta
   assert.equal(calls, 0, 'do not consume a room creation or add an unreachable member');
 });
 
-test('creating a room checks storage first, removes the probe and saves its host seat', async () => {
+test('creating a room persists its pending identity first and clears it only after saving the host seat', async () => {
   const storage = memory();
   storage.setItem('existing-preference', 'keep');
   const host = { ...guest, isHost: true };
   const next = await enterOnlineRoom({ ...input, type: 'create', code: '' }, signal(), {
     storage: () => storage, token: () => token, request: async (_url, init) => {
-      assert.deepEqual([...storage.values], [['existing-preference', 'keep']], 'probe must not remain');
+      assert.equal(JSON.parse(storage.getItem(PENDING_CREATION_KEY)!).token, token);
       assert.equal(JSON.parse(String(init?.body)).token, token);
       return Response.json({ room: { ...host, members: ['not navigation metadata'] } });
     },
@@ -60,6 +60,62 @@ test('creating a room checks storage first, removes the probe and saves its host
   assert.deepEqual(next, host);
   assert.equal(storage.getItem(seatKey(guest.code)), token);
   assert.equal(storage.getItem('existing-preference'), 'keep');
+  assert.equal(storage.getItem(PENDING_CREATION_KEY), null);
+});
+
+test('create retries retain their identity after network, malformed response and host-seat storage failures', async () => {
+  const storage = memory(), create = { ...input, type: 'create' as const, code: '' };
+  const calls: string[] = [];
+  let attempt = 0, failSeat = true;
+  const guarded = { ...storage, setItem(key: string, value: string) {
+    if (key === seatKey(guest.code) && failSeat) throw new Error('Quota');
+    storage.setItem(key, value);
+  } };
+  const request: typeof fetch = async (_url, init) => {
+    calls.push(JSON.parse(String(init?.body)).token);
+    if (++attempt === 1) throw new TypeError('Lost response');
+    if (attempt === 2) return new Response('Bad gateway', { status: 502 });
+    return Response.json({ room: { ...guest, isHost: true } });
+  };
+  for (const expected of [/Lost response/, /回應無法讀取/, /房間已建立/]) {
+    await assert.rejects(enterOnlineRoom(create, signal(), { storage: () => guarded, request, token: () => token }), expected);
+    assert.equal(JSON.parse(storage.getItem(PENDING_CREATION_KEY)!).token, token);
+  }
+  failSeat = false;
+  await enterOnlineRoom(create, signal(), { storage: () => guarded, request, token: () => assert.fail('must reuse token') });
+  assert.deepEqual(calls, Array(4).fill(token));
+  assert.equal(storage.getItem(PENDING_CREATION_KEY), null);
+  assert.equal(storage.getItem(seatKey(guest.code)), token);
+});
+
+test('late create responses retain the pending identity and terminal replies permit a fresh creation', async () => {
+  const storage = memory(), controller = new AbortController(), create = { ...input, type: 'create' as const };
+  await assert.rejects(enterOnlineRoom(create, controller.signal, { storage: () => storage, token: () => token,
+    request: async () => { controller.abort(); return Response.json({ room: { ...guest, isHost: true } }); } }), { name: 'AbortError' });
+  assert.equal(JSON.parse(storage.getItem(PENDING_CREATION_KEY)!).token, token);
+  await assert.rejects(enterOnlineRoom(create, signal(), { storage: () => storage,
+    request: async () => Response.json({ error: '請回原分頁繼續' }, { status: 410 }) }), /請回原分頁/);
+  assert.equal(storage.getItem(PENDING_CREATION_KEY), null);
+  const nextToken = 'cd'.repeat(32);
+  await enterOnlineRoom(create, signal(), { storage: () => storage, token: () => nextToken,
+    request: async (_url, init) => {
+      assert.equal(JSON.parse(String(init?.body)).token, nextToken);
+      return Response.json({ room: { ...guest, isHost: true } });
+    } });
+});
+
+test('changed settings and expired or corrupt pending data cannot reuse a previous creation', async () => {
+  const create = { ...input, type: 'create' as const }, storage = memory();
+  const settings = JSON.stringify([input.name, input.title, input.capacity]);
+  for (const pending of ['invalid-json', JSON.stringify({ settings, token, at: Date.now() - 86_400_001 }),
+    JSON.stringify({ settings: 'different-room', token, at: Date.now() })]) {
+    storage.setItem(PENDING_CREATION_KEY, pending);
+    await enterOnlineRoom(create, signal(), { storage: () => storage, token: () => 'cd'.repeat(32),
+      request: async (_url, init) => {
+        assert.equal(JSON.parse(String(init?.body)).token, 'cd'.repeat(32));
+        return Response.json({ room: { ...guest, isHost: true } });
+      } });
+  }
 });
 
 test('invalid codes and already cancelled entries never allocate credentials or call the service', async () => {

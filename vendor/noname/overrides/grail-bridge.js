@@ -8,6 +8,7 @@ import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
 import { createBattleInspection } from "./grail-inspection.js";
 import { createHandSkin } from "./grail-card-skin.js";
+import { addRoleLegend } from './grail-role-tags.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -28,6 +29,7 @@ const text = (value) =>
     .replace(/<[^>]*>/g, "");
 let last = "";
 function update() {
+  addRoleLegend(ui.arena);
   history.attach(ui.sidebar);
   inspection.update();
   handSkin.update(game.me);
@@ -130,7 +132,7 @@ function update() {
   help.append(p);
   const legend = document.createElement("p");
   legend.className = "grail-selection-legend";
-  legend.textContent = "牌桌金框可選 · 青框已選 · 依畫面按鈕確認。「手牌」可讀完整效果與獨有技；「角色」與「指示物」可切換查看各玩家。戰況圖示：盾牌＝士氣、杯＝星杯、粉色寶石與青色水晶＝隊伍戰績。「紀錄」可查閱玩家動作。";
+  legend.textContent = "牌桌金框可選 · 青框已選 · 依畫面按鈕確認。「手牌」可讀完整效果與獨有技；「角色」與「指示物」可切換查看各玩家。戰況圖示：盾牌＝士氣、杯＝星杯、粉色寶石與青色水晶＝隊伍戰績。「本場紀錄」可查閱玩家動作。";
   help.append(legend);
   for (const [label, values] of [
     ["可用手牌", cards],

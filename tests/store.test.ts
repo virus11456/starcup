@@ -2,7 +2,7 @@ import { test, type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { getRoom, listRooms, saveRoom } from "../lib/store.ts";
 import { createRoom, GameError } from "../lib/game.ts";
-import { changeFullRoom, listFullRooms } from '../lib/full-store.ts';
+import { changeFullRoom, insertFullRoom, listFullRooms } from '../lib/full-store.ts';
 import { createFullRoom, joinFullRoom } from '../lib/full-room.ts';
 
 function configure(t: TestContext) {
@@ -16,6 +16,37 @@ function configure(t: TestContext) {
     t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
   }
 }
+
+test('legacy adapter recovers an existing creation without another insert or rate-limit charge', async t => {
+  configure(t);
+  const room = createFullRoom('ABCDEFGH', 'host', '房主', '重試', 4);
+  joinFullRoom(room, 'guest', '朋友', 'guest');
+  let reads = 0;
+  t.mock.method(globalThis, 'fetch', async (input: string, options: RequestInit) => {
+    assert.equal(options.method, 'GET');
+    assert.equal(new URL(input).searchParams.get('code'), 'eq.ABCDEFGH');
+    reads++;
+    return Response.json([{ state: room }]);
+  });
+  const result = await insertFullRoom(createFullRoom('ABCDEFGH', 'host', '房主', '重試', 4), 'creator');
+  assert.equal(result.members.length, 2);
+  assert.equal(reads, 1);
+});
+
+test('legacy adapter recovers a concurrent unique-code winner without overwriting its guests', async t => {
+  configure(t);
+  const room = createFullRoom('ABCDEFGH', 'host', '房主', '重試', 4);
+  let reads = 0, writes = 0;
+  t.mock.method(globalThis, 'fetch', async (input: string, options: RequestInit) => {
+    assert.notEqual(options.method, 'PATCH');
+    if (options.method === 'POST') { writes++; return Response.json({}, { status: 409 }); }
+    if (!new URL(input).searchParams.has('code') || ++reads === 1) return Response.json([]);
+    const latest = structuredClone(room); joinFullRoom(latest, 'guest', '朋友', 'guest');
+    return Response.json([{ state: latest }]);
+  });
+  assert.equal((await insertFullRoom(room, 'creator')).members.length, 2);
+  assert.equal(writes, 1);
+});
 
 test("database connection failure returns retryable 503 without leaking transport details", async t => {
   configure(t);

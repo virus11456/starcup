@@ -46,7 +46,7 @@ export function createBattleHistory(parent, getTurn) {
     if (tag === 'button') el.type = 'button';
     return el;
   };
-  const toggle = node('button', '紀錄');
+  const toggle = node('button', '本場紀錄');
   toggle.id = 'grail-history-toggle';
   toggle.setAttribute('aria-expanded', 'false');
   toggle.setAttribute('aria-controls', 'grail-history');
@@ -56,7 +56,7 @@ export function createBattleHistory(parent, getTurn) {
   panel.setAttribute('aria-label', '對戰紀錄');
   const header = node('header');
   const close = node('button', '關閉');
-  const title = node('h2', '對戰紀錄');
+  const title = node('h2', '本場紀錄');
   header.append(title, close);
   const search = node('input');
   search.type = 'search';
@@ -75,7 +75,7 @@ export function createBattleHistory(parent, getTurn) {
   let shown = 100, seenId = 0, source, stop = () => {};
   function announce() {
     const unread = Math.max(0, (buffer.latest?.id || 0) - seenId);
-    toggle.textContent = unread ? `紀錄 ${unread > 99 ? '99+' : unread}` : '紀錄';
+    toggle.textContent = unread ? `本場紀錄 ${unread > 99 ? '99+' : unread}` : '本場紀錄';
     toggle.setAttribute('aria-label', `對戰紀錄${unread ? `，${unread} 筆新紀錄` : ''}`);
     toggle.title = buffer.latest?.text || '查看本場玩家動作與結算';
     fresh.hidden = !unread;
