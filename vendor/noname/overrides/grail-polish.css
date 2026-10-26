@@ -111,6 +111,7 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
 #window #control > .control > div + div { box-shadow: -1px 0 0 #d8d1b52b; }
 #window #control > .control > [data-grail-action="confirm"] { color: #142630; background: linear-gradient(135deg, #f0dfb1, #c3a775); font-weight: 750; }
 #window #control > .control > [data-grail-action="cancel"] { color: #c5d6d6; background: #10232b66; }
+#window #control > .control > [data-grail-action="end-turn"] { color: #f3e5c1; background: linear-gradient(135deg, #365052, #263a41); box-shadow: inset 0 0 0 1px #dec68c80; font-weight: 750; white-space: nowrap; }
 #window #control > .control > [data-grail-action="damage"] { color: #ffdcce; background: linear-gradient(135deg, #663e40, #412c38); box-shadow: inset 0 0 0 1px #d59c8877; }
 #window #control > .control > :first-child { border-top-left-radius: 7px; border-bottom-left-radius: 7px; }
 #window #control > .control > :last-child { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }

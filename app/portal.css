@@ -51,3 +51,89 @@
   .portal-empty > div { flex: 1 1 160px; }
   .portal-footer p { overflow-wrap: anywhere; }
 }
+
+/* UI/UX Pro Max readability pass: restore readable text after the original
+   compressed mobile rules and allow content to grow instead of clipping. */
+.portal-mode :is(a, button, input, select):focus-visible,
+.knowledge-shell :is(a, button, input, select, summary):focus-visible {
+  outline: 3px solid #e6cf94;
+  outline-offset: 3px;
+}
+.portal-mode :is(.mode-card, .portal-room, .portal-empty, .portal-practice),
+.knowledge-shell :is(.lesson-panel, .compendium-card) { overflow-wrap: break-word; }
+.portal-mode .portal-copy > p,
+.portal-mode .mode-card p,
+.portal-mode .portal-empty p,
+.portal-mode .portal-practice p,
+.portal-mode .portal-archive p,
+.knowledge-shell :is(.knowledge-heading p, .scope-banner, .compendium-card p, .lesson-panel p, .lesson-panel li),
+.catalog-explanation p { font-size: 16px; line-height: 1.8; }
+.portal-mode :is(.portal-kicker, .hero-footnote, .portal-statbar > span, .portal-statbar small,
+  .portal-section-heading > p, .mode-card small, .mode-chip, .portal-room small,
+  .portal-practice > small, .portal-footer, .portal-footer p, .archive-links p,
+  .portal-empty h3, .portal-room > span:last-child, .portal-notice),
+.knowledge-shell :is(.knowledge-links a, .compendium-card small, .compendium-card summary,
+  .compendium-card h3, .compendium-count, .lesson-number),
+.catalog-explanation :is(a, .catalog-source, .catalog-sources a),
+.catalog-source, .catalog-review-note, .physical-marks span, .physical-card details p {
+  font-size: 14px;
+  line-height: 1.55;
+}
+.portal-mode :is(.site-header nav a, .portal-primary, .portal-secondary,
+  .portal-text-button, .portal-practice button, .portal-statbar > a),
+.knowledge-shell :is(.compendium-tabs button, .lesson-steps button,
+  .compendium-toolbar select, .compendium-toolbar input) { font-size: 15px; }
+.portal-mode :is(.portal-primary, .portal-secondary, .portal-text-button),
+.knowledge-shell :is(.knowledge-links a, .compendium-tabs button, .lesson-steps button) {
+  min-height: 44px;
+}
+.knowledge-shell .physical-table td, .knowledge-shell .physical-table th { font-size: 14px; }
+.knowledge-shell :is(.compendium-toolbar input, .compendium-toolbar select) { min-width: 0; max-width: 100%; }
+.knowledge-shell .compendium-card summary { min-height: 44px; display: list-item; }
+
+@media (max-width: 820px) {
+  .site-header nav { max-width: 100%; justify-content: center; gap: 0 16px; }
+  .site-header nav a { font-size: 15px; min-height: 44px; white-space: normal; }
+  .portal-hero { min-width: 0; }
+  .portal-copy h1 { font-size: clamp(29px, 7.9vw, 42px); line-height: 1.5; }
+  .portal-statbar { gap: 14px 8px; }
+  .portal-statbar small { line-height: 1.45; }
+  .mode-card { min-height: 235px; }
+  .mode-card p { font-size: 16px; }
+  .portal-room-tools { align-items: stretch; }
+  .portal-room-tools input { font-size: 16px; }
+  .lesson-layout { min-width: 0; }
+  .lesson-steps { scrollbar-width: thin; }
+  .lesson-steps button { white-space: normal; text-align: center; }
+}
+@media (max-width: 560px) {
+  .portal-mode > .site-header { padding: 12px 16px 0; }
+  .portal-mode > .main-shell > main, .portal-mode > .portal-content { padding: 0 16px; }
+  .site-header nav { gap: 0 13px; }
+  .site-header nav a { font-size: 14px; }
+  .portal-copy > p { letter-spacing: .02em; }
+  .portal-kicker { letter-spacing: .13em; }
+  .portal-actions { gap: 10px; }
+  .portal-primary, .portal-secondary { flex: 1 1 min(100%,145px); gap: 8px; }
+  .portal-statbar > span { min-width: 0; }
+  .portal-statbar b { font-size: 25px; }
+  .portal-statbar small { overflow-wrap: anywhere; }
+  .mode-card { min-height: 220px; }
+  .mode-card p { padding-right: 22px; }
+  .portal-empty > span { flex-shrink: 0; }
+  .portal-footer { line-height: 1.6; }
+  .knowledge-content { padding: 28px 16px 60px; }
+  .knowledge-heading h1 { font-size: clamp(26px, 8vw, 33px); line-height: 1.5; }
+  .compendium-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%,165px),1fr)); gap: 12px; }
+  .compendium-card { padding: 12px; }
+  .compendium-card img { height: auto; aspect-ratio: 3 / 4; object-fit: contain; }
+  .compendium-card h2 { font-size: 19px; overflow-wrap: anywhere; }
+  .compendium-tabs button { flex: 1 1 110px; font-size: 14px; padding: 10px; }
+  .lesson-panel { padding: 20px 16px; }
+  .lesson-panel h2 { font-size: 24px; }
+  .lesson-controls { flex-wrap: wrap; }
+  .lesson-controls button { flex: 1 1 115px; }
+  .physical-card details p { white-space: pre-line; }
+  .catalog-result-bar { flex-wrap: wrap; }
+  .catalog-view-switch { max-width: 100%; }
+}

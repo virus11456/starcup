@@ -29,3 +29,17 @@
 .online-invite > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .online-invite :focus-visible, .online-resume button:focus-visible { outline: 2px solid #e5d3a8; outline-offset: 2px; }
 @media(max-width: 650px) { .online-forms, .online-player { grid-template-columns: 1fr; } .online-player { gap: 16px; } .online-shell .full-header { gap: 8px; } .online-shell .full-header nav { gap: 4px; } .online-shell .full-header > a { font-size: 17px; } }
+
+/* Multiplayer setup: readable hints and input labels even on 320px phones. */
+.online-shell :is(.online-player p, .online-form-help, .online-invite p,
+  .online-intro p, .online-notice p, .online-resume p) { font-size: 16px; line-height: 1.75; }
+.online-shell :is(.online-forms label, .online-player label, .online-invite label) { font-size: 15px; }
+.online-shell :is(.online-forms, .online-player) > *, .online-shell .online-forms form { min-width: 0; }
+.online-shell :is(.online-forms input, .online-forms select, .online-player input, .online-invite input) { font-size: 16px; }
+.online-shell :is(.online-invite button, .online-resume button) { font-size: 15px; }
+.online-shell .online-invite { overflow-wrap: anywhere; }
+@media (max-width: 650px) {
+  .online-shell .online-forms { gap: 12px; }
+  .online-shell .online-player { gap: 16px; }
+  .online-shell .online-invite { width: min(480px, calc(100% - 20px)); padding: 18px 14px; }
+}

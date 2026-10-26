@@ -458,3 +458,42 @@ html:has(.full-running), body:has(.full-running) {
   .full-character { transition: none; }
   .full-character:hover { transform: none; }
 }
+
+/* Responsive type hierarchy and resilient layouts for the expansion launcher. */
+.full-shell:not(.full-running) { overflow-wrap: break-word; }
+.full-shell:not(.full-running) .full-header { min-height: 78px; height: auto; flex-wrap: wrap; }
+.full-header nav { flex-wrap: wrap; }
+.full-shell :is(.full-intro p:not(.full-kicker), .full-muted, .full-panel li,
+  .full-card-grid p, .full-modal p, .full-flow p) { font-size: 16px; line-height: 1.75; }
+.full-shell :is(.full-panel label, .full-metrics span, .full-filters span,
+  .full-notice, .full-character small, .full-character p,
+  .full-mode-badge, .full-player-options legend, .full-player-options small,
+  .full-flow h3, .full-footer, .full-modal small, .full-modal a,
+  .full-kicker, .full-portrait-fan figcaption small) { font-size: 14px; line-height: 1.55; }
+.full-shell .full-header nav { font-size: 15px; }
+.full-shell .full-header :is(a, button) { min-height: 44px; display: inline-flex; align-items: center; }
+.full-shell .full-filters > * { min-width: 0; }
+.full-shell .full-panel { min-width: 0; }
+.full-shell .full-character h3 { font-size: 17px; }
+.full-shell .full-player-options i { font-size: 14px; }
+.full-shell .full-player-options span { min-width: 0; }
+.full-shell :is(input, select) { min-width: 0; max-width: 100%; }
+.full-shell .full-close { min-width: 44px; min-height: 44px; }
+.full-shell :is(a, button, input, select):focus-visible { outline: 3px solid #e6cf94; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .full-shell:not(.full-running) { padding: 0 16px 30px; }
+  .full-shell:not(.full-running) .full-header { justify-content: space-between; gap: 4px 12px; padding: 10px 0; }
+  .full-shell:not(.full-running) .full-header nav { margin-left: 0; gap: 4px 14px; }
+  .full-shell .full-tabs { gap: 12px; }
+  .full-shell .full-tabs button { font-size: 16px; }
+  .full-shell .full-modal > div { max-width: 100%; padding: 20px 16px; }
+  .full-shell .full-modal img { max-width: 40%; height: auto; margin: 0 14px 8px 0; }
+  .full-shell .full-modal section { min-width: 0; }
+  .full-shell .full-filters input { flex: 1 1 180px; }
+  .full-shell .full-player-options { gap: 8px; }
+  .full-shell .full-player-options span { padding: 14px 5px; }
+}
+@media (max-width: 360px) {
+  .full-shell .full-grid { grid-template-columns: 1fr; }
+  .full-shell .full-player-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

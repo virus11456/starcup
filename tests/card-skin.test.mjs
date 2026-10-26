@@ -152,3 +152,51 @@ test('Magic Burst only marks the optional damage-or-discard choice as taking dam
   updateResponseCancelLabel(control, { ...event, forced: true }, '取消');
   assert.equal(cancel.dataset.grailAction, 'cancel'); assert.equal(cancel.textContent, '取消');
 });
+
+test('the last optional character action offers 回合結束 without changing the engine cancel link', () => {
+  const control = controls(), cancel = control.childNodes[1];
+  const player = { storage: { gongJiOrFaShu: 1, faShu: 0, gongJi: 0, extraXingDong: [] } };
+  const event = { name: 'gongJiOrFaShu', action: true, player };
+  updateResponseCancelLabel(control, event, '取消');
+  assert.equal(cancel.textContent, '回合結束');
+  assert.equal(cancel.dataset.grailAction, 'end-turn');
+  assert.equal(cancel.link, 'cancel', 'only the label changes; the native action is untouched');
+  assert.ok(control.childNodes.every(button => button.onclick === control.callback));
+  for (const name of ['gongJi', 'faShu']) {
+    player.storage = { gongJiOrFaShu: 0, faShu: 0, gongJi: 0, extraXingDong: [], [name]: 1 };
+    updateResponseCancelLabel(control, { ...event, name }, '取消');
+    assert.equal(cancel.textContent, '回合結束');
+  }
+  player.storage = { gongJiOrFaShu: 0, faShu: 0, gongJi: 0, extraXingDong: [] };
+  updateResponseCancelLabel(control, { ...event, name: 'faShu' }, '取消');
+  assert.equal(cancel.textContent, '回合結束', 'the last already-dequeued extra action can also finish the turn');
+});
+
+test('remaining actions and nested skill selection retain their original cancel or back meaning', () => {
+  const control = controls(), cancel = control.childNodes[1];
+  const player = { storage: { gongJiOrFaShu: 1, faShu: 1, gongJi: 0, extraXingDong: [] } };
+  const event = { name: 'gongJiOrFaShu', action: true, player };
+  for (const storage of [
+    { ...player.storage },
+    { ...player.storage, faShu: 0, extraXingDong: [{ xingDong: 'faShu' }] },
+  ]) {
+    player.storage = storage;
+    updateResponseCancelLabel(control, event, '取消');
+    assert.equal(cancel.textContent, '取消');
+    assert.equal(cancel.dataset.grailAction, 'cancel');
+  }
+  player.storage = { gongJiOrFaShu: 1, faShu: 0, gongJi: 0, extraXingDong: [] };
+  for (const blocked of [
+    { ...event, skill: 'some-skill' },
+    { ...event, _backup: { name: 'skill-picker' } },
+    { ...event, forced: true },
+    { ...event, custom: { replace: { confirm() {} } } },
+    { ...event, action: false },
+    { ...event, name: 'chooseToUse' },
+    { ...event, player: { storage: {} } },
+  ]) {
+    updateResponseCancelLabel(control, blocked, '返回');
+    assert.equal(cancel.textContent, '返回');
+    assert.equal(cancel.dataset.grailAction, 'cancel');
+  }
+});

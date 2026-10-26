@@ -1,4 +1,20 @@
 /* GPL-3.0: clarify native response choices without changing their results. */
+function isFinalOptionalTurnAction(event) {
+  // xingDong consumes one action after each chooseToUse result, including a
+  // cancelled one. The active action is normally still counted; the last
+  // extra action is already popped from its queue when the picker opens.
+  // A selected skill's cancel button instead returns to action selection.
+  if (!event?.action || !['gongJiOrFaShu', 'gongJi', 'faShu'].includes(event.name)
+    || event.forced || event.skill || event._backup || event.custom?.replace?.confirm) return false;
+  const actions = event.player?.storage;
+  if (!actions || !Array.isArray(actions.extraXingDong)
+    || !['gongJiOrFaShu', 'gongJi', 'faShu'].every(key => Number.isFinite(Number(actions[key])))) return false;
+  const pending = ['gongJiOrFaShu', 'gongJi', 'faShu']
+    .reduce((count, key) => count + Math.max(0, Number(actions[key]) || 0), 0);
+  const extras = Array.isArray(actions.extraXingDong) ? actions.extraXingDong.length : 0;
+  return pending <= 1 && extras === 0;
+}
+
 export function updateResponseCancelLabel(control, event, fallback) {
   if (!control) return;
   // Cancelling a selected skill restores the response picker; it does not
@@ -10,13 +26,15 @@ export function updateResponseCancelLabel(control, event, fallback) {
   const acceptsDamage = (['yingZhan', 'moDan'].includes(event?.name) || magicBurstDamage)
     && (!event.skill || event.norestore)
     && !event.custom?.replace?.confirm;
+  const endsTurn = !acceptsDamage && isFinalOptionalTurnAction(event);
   for (const button of control.childNodes) {
     if (button.dataset) {
-      const action = button.link === 'ok' ? 'confirm' : button.link === 'cancel' ? acceptsDamage ? 'damage' : 'cancel' : '';
+      const action = button.link === 'ok' ? 'confirm' : button.link === 'cancel'
+        ? acceptsDamage ? 'damage' : endsTurn ? 'end-turn' : 'cancel' : '';
       if (action) button.dataset.grailAction = action;
       else delete button.dataset.grailAction;
     }
     if (button.link !== 'cancel') continue;
-    button.textContent = acceptsDamage ? '承受傷害' : fallback;
+    button.textContent = acceptsDamage ? '承受傷害' : endsTurn ? '回合結束' : fallback;
   }
 }

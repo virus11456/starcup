@@ -33,7 +33,7 @@
   min-width: calc(44px * var(--grail-touch-scale, 1));
   margin: 0;
   padding: 0 calc(6px * var(--grail-touch-scale, 1));
-  font: calc(12px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  font: calc(13px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
   pointer-events: auto;
   overflow: visible;
 }
@@ -62,7 +62,8 @@
   min-height: calc(44px * var(--grail-touch-scale, 1));
   padding: 0 calc(12px * var(--grail-touch-scale, 1));
   margin: 0;
-  font: calc(14px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  font: calc(16px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  white-space: nowrap;
 }
 .grail-phone-layout #window .menu-container > .menu.main:not(.center) {
   top: calc(60px * var(--grail-touch-scale, 1)) !important;
