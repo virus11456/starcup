@@ -131,3 +131,41 @@ test('portrait and landscape use scoreboard hint instead of floating overlay', a
   assert.match(css, /orientation:\s*portrait/);
   assert.match(css, /orientation:\s*landscape/);
 });
+
+test('dedicated action status chooses lower-middle safe space away from score, portraits, buttons and hand', async () => {
+  const { chooseActionHintTop } = await import('../vendor/noname/overrides/grail-action-hints.js');
+  const viewport = { width: 390, height: 850,
+    scoreboard: { left: 0, right: 390, top: 160, bottom: 230 },
+    players: [{ left: 155, right: 232, top: 260, bottom: 370 }],
+    controls: { left: 160, right: 275, top: 630, bottom: 680 },
+    hand: { left: 90, right: 390, top: 710, bottom: 830 } };
+  const top = chooseActionHintTop(viewport, { width: 350, height: 68 });
+  assert.ok(top >= 242 && top + 68 <= 618, 'hint avoids score and native buttons');
+  assert.ok(top >= 376 || top + 68 <= 254, 'hint avoids central opponent portrait');
+  const landscape = chooseActionHintTop({ width: 844, height: 390,
+    scoreboard: { bottom: 120 },
+    players: [{ left: 370, right: 450, top: 130, bottom: 215 }],
+    controls: { left: 390, right: 540, top: 330, bottom: 370 },
+    hand: { left: 30, right: 630, top: 345, bottom: 390 } }, { width: 400, height: 52 });
+  assert.ok(landscape >= 132 && landscape + 52 <= 318);
+});
+
+test('character draft hides floating roundmenu and shows unwrapped horizontally scrollable category filters', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(css, /#arena\.choose-character > #roundmenu,[\s\S]*?display:\s*none !important/);
+  assert.match(css, /\.dialog \.caption\.pointerspan > div[\s\S]*?flex-wrap:\s*nowrap !important/);
+  assert.match(css, /\.dialog \.caption\.pointerspan > div[\s\S]*?overflow-x:\s*auto !important/);
+  assert.match(css, /\.dialog \.caption\.pointerspan > div > \.tdnode[\s\S]*?white-space:\s*nowrap !important/);
+  assert.match(css, /#grail-hud > #grail-phase-hint[\s\S]*?pointer-events:\s*none !important/);
+  const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(bridge, /hud\.append\(phaseHint\)/);
+  assert.doesNotMatch(bridge, /insertBefore\(\s*phaseHint,/);
+});
+
+test('native hidden secondary draft filter remains hidden until user taps 篩選', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(css, /caption\.pointerspan > div\[style\*="display: none"\][\s\S]*?display:\s*none !important/);
+  const positionCSS = css.slice(css.indexOf('#grail-hud > #grail-phase-hint {'), css.indexOf('#grail-hud > #grail-phase-hint[hidden]'));
+  assert.doesNotMatch(positionCSS, /top:\s*auto\s*!important/, 'runtime geometry must be able to set the top position');
+  assert.match(positionCSS, /position:\s*absolute !important/);
+});

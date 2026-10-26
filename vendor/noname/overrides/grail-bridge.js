@@ -12,23 +12,21 @@ import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
-import { updateActionHints } from './grail-action-hints.js';
+import { updateActionHints, positionActionHint } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
-// A passive native instruction belongs in the scoreboard heading, not over
-// a player's portrait. The native dialog remains owned by noname.
+// The passive instruction belongs BELOW the battle, not over the scoreboard
+// or its morale counters. Reuse the already inverse-scaled, pointer-free HUD.
 const scoreboardNode = hud.querySelector('#grail-scoreboard');
 const phaseHint = document.createElement('span');
 phaseHint.id = 'grail-phase-hint';
 phaseHint.setAttribute('role', 'status');
 phaseHint.hidden = true;
-scoreboardNode?.querySelector('.grail-score-heading')?.insertBefore(
-  phaseHint, scoreboardNode.querySelector('.grail-score-round'),
-);
+hud.append(phaseHint);
 const history = createBattleHistory(hud, () => game.phaseNumber || 0, {
   journal: createHistorySession(new URLSearchParams(location.search).get('online')),
 });
@@ -58,7 +56,14 @@ function update() {
   // the game-over result dialog. Hide its visual surface only once over=true.
   document.documentElement.classList.toggle('grail-match-ended', Boolean(_status.over));
   addRoleLegend(ui.arena);
-  updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden);
+  updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden && !_status.over);
+  positionActionHint(phaseHint, {
+    width: window.innerWidth, height: window.innerHeight,
+    scoreboard: scoreboardNode?.getBoundingClientRect?.(),
+    players: (game.players || []).map(p => p.getBoundingClientRect?.()).filter(Boolean),
+    controls: ui.control?.getBoundingClientRect?.() || ui.arena?.querySelector?.('#control')?.getBoundingClientRect?.(),
+    hand: ui.me?.getBoundingClientRect?.(),
+  });
   history.attach(ui.sidebar);
   inspection.update();
   indicators.update();
