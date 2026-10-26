@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { selectedCardTargetPreview, cardToTargetLine } from '../vendor/noname/overrides/grail-target-preview.js';
+import { selectedCardTargetPreview, cardToTargetLine, createTargetPreview } from '../vendor/noname/overrides/grail-target-preview.js';
 
 const cls = (...active) => ({ contains: key => active.includes(key) });
 function gameFixture(type = 'gongJi') {
@@ -73,4 +73,71 @@ test('battle end clears an otherwise selected attack or spell target line', asyn
   assert.ok(selectedCardTargetPreview(context), 'normal combat selection still works');
   const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
   assert.match(bridge, /isOver:\s*\(\) => _status\.over/);
+});
+
+test('inspector and backgrounded Safari tab hide target lines without changing native selections', () => {
+  const { context, card, target } = gameFixture();
+  assert.equal(selectedCardTargetPreview({ ...context, modalOpen: true }), null);
+  assert.equal(selectedCardTargetPreview({ ...context, documentHidden: true }), null);
+  assert.deepEqual(context.ui.selected.cards, [card]);
+  assert.deepEqual(context.ui.selected.targets, [target]);
+  assert.ok(selectedCardTargetPreview(context));
+});
+
+test('rotation, scrolling hand and Safari visual viewport resize realign existing selection', () => {
+  const { context, card, target } = gameFixture('faShu');
+  let from = { left: 100, top: 620, width: 95, height: 120 };
+  let to = { left: 300, top: 210, width: 72, height: 100 };
+  card.getBoundingClientRect = () => from;
+  target.getBoundingClientRect = () => to;
+  function emitter() {
+    const listeners = new Map();
+    return { listeners, addEventListener(k,v) { listeners.set(k,v); },
+      removeEventListener(k,v) { if (listeners.get(k) === v) listeners.delete(k); },
+      fire(k) { listeners.get(k)?.(); } };
+  }
+  const docEvents = emitter(), winEvents = emitter(), vpEvents = emitter();
+  const elements = [];
+  function element() {
+    const attrs = new Map();
+    const el = { children: [], dataset: {}, hidden: false, removed: false,
+      setAttribute(k,v) { attrs.set(k,v); }, getAttribute(k) { return attrs.get(k); },
+      append(...children) { this.children.push(...children); }, remove() { this.removed = true; } };
+    elements.push(el); return el;
+  }
+  let modal = { hidden: true }, visibility = 'visible';
+  const doc = { ...docEvents, get visibilityState() { return visibility; },
+    createElementNS: () => element(), getElementById: () => modal };
+  const frames = [];
+  const win = { ...winEvents, visualViewport: vpEvents, innerWidth: 390, innerHeight: 844,
+    requestAnimationFrame: fn => frames.push(fn) };
+  const hud = { children: [], append(el) { this.children.push(el); } };
+  const controller = createTargetPreview({ hud, ...context, event: () => context.event,
+    isOver: () => false, doc, win });
+  const svg = hud.children[0];
+  assert.equal(svg.hidden, false);
+  assert.equal(svg.getAttribute('viewBox'), '0 0 390 844');
+  const beam = svg.children[0].children[1], oldX = beam.getAttribute('x1');
+  from = { left: 10, top: 280, width: 100, height: 80 };
+  to = { left: 690, top: 90, width: 70, height: 90 };
+  win.innerWidth = 844; win.innerHeight = 390;
+  vpEvents.fire('resize'); vpEvents.fire('scroll'); winEvents.fire('orientationchange');
+  assert.equal(frames.length, 1, 'repeated mobile resize events are coalesced');
+  frames.shift()();
+  assert.equal(svg.getAttribute('viewBox'), '0 0 844 390');
+  assert.notEqual(beam.getAttribute('x1'), oldX);
+  docEvents.fire('scroll'); frames.shift()();
+  modal.hidden = false;
+  docEvents.fire('visibilitychange'); frames.shift()();
+  assert.equal(svg.hidden, true);
+  modal.hidden = true; visibility = 'hidden';
+  docEvents.fire('visibilitychange'); frames.shift()();
+  assert.equal(svg.hidden, true);
+  visibility = 'visible'; winEvents.fire('pageshow'); frames.shift()();
+  assert.equal(svg.hidden, false, 'returning to foreground recomputes original native target');
+  controller.stop();
+  assert.ok(svg.removed);
+  assert.equal(docEvents.listeners.size, 0);
+  assert.equal(winEvents.listeners.size, 0);
+  assert.equal(vpEvents.listeners.size, 0);
 });

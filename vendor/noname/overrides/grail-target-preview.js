@@ -2,8 +2,10 @@
  * NATIVE selected targets. No click handling, selection changes or rule calls.
  * The SVG floats in the existing viewport-aligned HUD, not in scaled #arena. */
 
-export function selectedCardTargetPreview({ ui, game, event, get, lib, over = false } = {}) {
-  if (over || !ui?.arena || ui.arena.classList?.contains('choose-character') ||
+export function selectedCardTargetPreview({
+  ui, game, event, get, lib, over = false, modalOpen = false, documentHidden = false,
+} = {}) {
+  if (over || modalOpen || documentHidden || !ui?.arena || ui.arena.classList?.contains('choose-character') ||
       !event || !game?.me || event.player !== game.me ||
       typeof event.filterTarget !== 'function') return null;
   const cards = ui.selected?.cards;
@@ -59,6 +61,8 @@ export function createTargetPreview({ hud, ui, game, get, lib, event, isOver,
     if (stopped) return;
     const current = selectedCardTargetPreview({
       ui, game, get, lib, event: event?.(), over: Boolean(isOver?.()),
+      modalOpen: doc.getElementById?.('grail-detail-overlay')?.hidden === false,
+      documentHidden: doc.visibilityState === 'hidden',
     });
     const visible = new Set();
     const width = win.innerWidth, height = win.innerHeight;
@@ -106,14 +110,24 @@ export function createTargetPreview({ hud, ui, game, get, lib, event, isOver,
     queued = true;
     win.requestAnimationFrame(() => { queued = false; update(); });
   }
-  for (const type of ['click', 'pointerup', 'touchend']) doc.addEventListener(type, refreshAfterInput, true);
-  win.addEventListener('resize', refreshAfterInput);
+  // Safari can resize its visual viewport or scroll handcards without a
+  // window resize. Coalesce those events into one selected-target redraw.
+  for (const type of ['click', 'pointerup', 'touchend', 'scroll', 'visibilitychange'])
+    doc.addEventListener(type, refreshAfterInput, true);
+  for (const type of ['resize', 'orientationchange', 'pageshow'])
+    win.addEventListener(type, refreshAfterInput);
+  for (const type of ['resize', 'scroll'])
+    win.visualViewport?.addEventListener?.(type, refreshAfterInput);
   update();
   return { update, stop() {
     if (stopped) return;
     stopped = true;
-    for (const type of ['click', 'pointerup', 'touchend']) doc.removeEventListener(type, refreshAfterInput, true);
-    win.removeEventListener('resize', refreshAfterInput);
+    for (const type of ['click', 'pointerup', 'touchend', 'scroll', 'visibilitychange'])
+      doc.removeEventListener(type, refreshAfterInput, true);
+    for (const type of ['resize', 'orientationchange', 'pageshow'])
+      win.removeEventListener(type, refreshAfterInput);
+    for (const type of ['resize', 'scroll'])
+      win.visualViewport?.removeEventListener?.(type, refreshAfterInput);
     nodes.clear();
     svg.remove();
   } };
