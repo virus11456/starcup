@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, resumeWaitingHost, enterOnlineRoom, roomRequestMessage, type OnlineRoom as Room } from '@/lib/online-session';
+import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, resumeWaitingHost, enterOnlineRoom, roomRequestMessage, trustedHostPresence, replacementRoomSettings, type OnlineRoom as Room } from '@/lib/online-session';
 import { createRoomRequests } from '@/lib/room-request';
 import '../full/full.css';
 import './online.css';
@@ -20,10 +20,13 @@ export default function OnlineGame() {
   const [resume, setResume] = useState<Room | null>(null);
   const [invite, setInvite] = useState('');
   const [shareMessage, setShareMessage] = useState('');
+  const [hostAbsent, setHostAbsent] = useState(false);
+  const frameRef = useRef<HTMLIFrameElement>(null);
   const inviteDialog = useRef<HTMLDialogElement>(null);
   const inviteInput = useRef<HTMLInputElement>(null);
   const [requests] = useState(() => createRoomRequests());
   function openRoom(next: Room, recoverWaiting = false) {
+    setHostAbsent(false);
     sessionStorage.setItem(ACTIVE_ROOM_KEY, JSON.stringify(next));
     const url = new URL(location.href);
     url.searchParams.set('room', next.code);
@@ -51,6 +54,28 @@ export default function OnlineGame() {
     } catch { setError('瀏覽器無法保存座位，請允許此網站使用儲存空間後再試。'); }
     return () => requests.cancel();
   }, []);
+  useEffect(() => {
+    if (!room || room.isHost) return;
+    const onPresence = (event: MessageEvent) => {
+      const presence = trustedHostPresence(event, location.origin, frameRef.current?.contentWindow || null, room.code);
+      if (presence !== null) setHostAbsent(presence === 'absent');
+    };
+    window.addEventListener('message', onPresence);
+    return () => window.removeEventListener('message', onPresence);
+  }, [room?.code, room?.isHost]);
+  async function createAfterLostHost() {
+    if (!room || room.isHost || busy || !hostAbsent) return;
+    if (!confirm('這會建立另一個全新房間，沿用房間人數及你的暱稱，但無法保留舊局的角色、手牌、牌庫、回合或其他玩家座位。舊房間不會自動刪除，朋友需要新的邀請碼。確定重新開局？')) return;
+    const original = room;
+    const operation = requests.begin();
+    if (!operation) return;
+    setBusy(true); setError('');
+    try {
+      const next = await enterOnlineRoom(replacementRoomSettings(original), operation.signal);
+      if (operation.current()) openRoom(next);
+    } catch (error) { if (operation.current()) setError(roomRequestMessage(error, operation.signal)); }
+    finally { if (operation.finish()) setBusy(false); }
+  }
   useEffect(() => {
     if (!room?.isHost) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
@@ -97,7 +122,7 @@ export default function OnlineGame() {
     requests.cancel();
     const operation = requests.begin()!;
     // A service outage must not trap the player inside a retrying iframe.
-    setRoom(null); setLaunch(''); setError(''); setResume(null); setCode(''); setBusy(true);
+    setRoom(null); setLaunch(''); setError(''); setResume(null); setCode(''); setHostAbsent(false); setBusy(true);
     try {
       const url = new URL(location.href); url.searchParams.delete('room');
       history.replaceState(history.state, '', url.pathname + url.search);
@@ -125,7 +150,15 @@ export default function OnlineGame() {
       <nav>{room ? <><button onClick={() => inviteDialog.current?.showModal()}>邀請朋友</button><button onClick={() => void leave()}>離開</button></> : <Link href="/">返回大廳</Link>}</nav>
     </header>
     {error && <p role="alert" className="full-notice online-error">{error}</p>}
-    {room ? <><iframe src={launch} className="full-frame" title="星杯傳說多人完整角色對戰" allow="fullscreen" />
+    {room ? <>
+      {hostAbsent && !room.isHost && <section className="online-host-absent" aria-live="polite" aria-label="房主離線後的安全選項">
+        <strong>房主已失聯，原局暫停</strong>
+        <p>如果房主只是斷網，請等他回到原分頁。若分頁永久關閉，目前無法無損接手舊局。</p>
+        <button type="button" disabled={busy} onClick={() => void createAfterLostHost()}>
+          {busy ? '正在建立新房間…' : '另開新房間（從頭開始）'}
+        </button>
+      </section>}
+      <iframe ref={frameRef} src={launch} className="full-frame" title="星杯傳說多人完整角色對戰" allow="fullscreen" />
       <dialog ref={inviteDialog} className="online-invite" aria-labelledby="online-invite-title">
         <h2 id="online-invite-title">邀請朋友加入</h2><p>{room.name} · 房間碼 <strong>{room.code}</strong></p>
         <p>朋友開啟連結後，先輸入網站密碼，再填暱稱並按「加入房間」。請在開局前邀請入座。</p>

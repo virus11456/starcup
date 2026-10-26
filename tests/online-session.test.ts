@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTIVE_ROOM_KEY, normalizeRoomCode, roomInvite, savedRoom, seatKey, shouldResumeRoom, resumeGuestRoom, resumeWaitingHost } from '../lib/online-session.ts';
+import { ACTIVE_ROOM_KEY, normalizeRoomCode, roomInvite, savedRoom, seatKey, shouldResumeRoom, resumeGuestRoom, resumeWaitingHost, trustedHostPresence, replacementRoomSettings } from '../lib/online-session.ts';
 import { safeAccessNext } from '../lib/site-access.ts';
 
 const guest = { code: 'ABCDEFGH', name: '朋友的牌局', capacity: 4, nickname: '甲', isHost: false };
@@ -84,4 +84,25 @@ test('a cancelled host preflight never launches a replacement lobby', async () =
   controller.abort();
   deliver(Response.json({ room: { ...guest, isHost: true, status: 'waiting' } }));
   await assert.rejects(pending, { name: 'AbortError' });
+});
+
+test('host absence notices are accepted only from the active same-origin engine frame and same room', () => {
+  const frame = {} as MessageEventSource;
+  const make = (source: MessageEventSource | null, origin: string, code: string, state: string) => ({
+    source, origin, data: { type: 'grail-host-presence', code, state },
+  });
+  assert.equal(trustedHostPresence(make(frame, 'https://star.test', guest.code, 'absent'), 'https://star.test', frame, guest.code), 'absent');
+  assert.equal(trustedHostPresence(make(frame, 'https://star.test', guest.code, 'present'), 'https://star.test', frame, guest.code), 'present');
+  assert.equal(trustedHostPresence(make(frame, 'https://attacker.test', guest.code, 'absent'), 'https://star.test', frame, guest.code), null);
+  assert.equal(trustedHostPresence(make({} as MessageEventSource, 'https://star.test', guest.code, 'absent'), 'https://star.test', frame, guest.code), null);
+  assert.equal(trustedHostPresence(make(frame, 'https://star.test', 'ZZZZZZZZ', 'absent'), 'https://star.test', frame, guest.code), null);
+  assert.equal(trustedHostPresence(make(frame, 'https://star.test', guest.code, 'takeover'), 'https://star.test', frame, guest.code), null);
+});
+test('lost-host fallback is explicitly a new match and cannot silently promote the old seat', () => {
+  assert.deepEqual(replacementRoomSettings(guest), { type: 'create', code: '', name: '甲',
+    title: '朋友的牌局・重新開局', capacity: 4 });
+  for (const capacity of [4, 6, 8]) assert.equal(replacementRoomSettings({ ...guest, capacity }).capacity, capacity);
+  assert.throws(() => replacementRoomSettings({ ...guest, isHost: true }), /其他玩家/);
+  assert.throws(() => replacementRoomSettings({ ...guest, code: 'bad' }), /其他玩家/);
+  assert.ok(replacementRoomSettings({ ...guest, name: '極長房間名稱極長房間名稱極長房間名稱極長房間名稱' }).title.length <= 24);
 });

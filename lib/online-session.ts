@@ -2,6 +2,26 @@
 // existing per-tab seat key, never in an invitation URL or localStorage.
 export type OnlineRoom = { code: string; name: string; capacity: number; isHost: boolean; nickname: string };
 export const ACTIVE_ROOM_KEY = 'grail-full-active-v1';
+// Iframe events carry only public room identity and presence, never seat
+// credentials or native private game state. Source + origin must both match.
+export type HostPresenceNotice = { type: 'grail-host-presence'; code: string; state: 'absent' | 'present' };
+export function trustedHostPresence(
+  event: Pick<MessageEvent, 'origin' | 'source' | 'data'>,
+  expectedOrigin: string, expectedSource: MessageEventSource | null, code: string,
+): HostPresenceNotice['state'] | null {
+  const data = event.data;
+  return expectedSource && event.origin === expectedOrigin && event.source === expectedSource &&
+    data?.type === 'grail-host-presence' && data.code === code &&
+    (data.state === 'absent' || data.state === 'present') ? data.state : null;
+}
+export function replacementRoomSettings(room: OnlineRoom) {
+  if (room.isHost || !normalizeRoomCode(room.code) || ![4, 6, 8].includes(room.capacity))
+    throw new Error('只有仍在原房間的其他玩家才能另開替代房間。');
+  return { type: 'create' as const, code: '', name: room.nickname,
+    title: (room.name.trim().slice(0, 20) + '・重新開局').slice(0, 24),
+    capacity: room.capacity };
+}
+
 export const PENDING_CREATION_KEY = 'grail-full-pending-create-v1';
 export const seatKey = (code: string) => 'grail-full-seat-' + code;
 export function normalizeRoomCode(value: string) {

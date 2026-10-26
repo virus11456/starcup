@@ -88,6 +88,14 @@ export async function startRelay() {
     useSocket = attached.transport === 'websocket';
     if (useSocket) socket = createRelaySocket(code, token, connection, () => wake(40));
     const room = attached.room;
+    let lastHostNotice = 'present';
+    function announceHostPresence(state) {
+      if (room.isHost || state === lastHostNotice) return;
+      lastHostNotice = state;
+      try {
+        window.parent?.postMessage({ type: 'grail-host-presence', code, state }, location.origin);
+      } catch { /* The outer frame may already be closing. */ }
+    }
     if (room.status === 'closed') throw Object.assign(new Error('房主已離開牌局。請返回大廳建立新房間。'), { status: 410 });
     ack = attached.sequence;
     // A guest view cannot safely replay an inbox after a long suspension:
@@ -205,6 +213,7 @@ export async function startRelay() {
           status.classList.toggle('recovering', true);
           tell(data.hostAlive ? '連線已恢復，正在重新取得本場牌局…'
             : '正在等待房主原分頁恢復連線。若房主已關閉分頁，本局目前無法接手；可使用上方「離開」返回大廳。');
+          announceHostPresence(data.hostAlive ? 'present' : 'absent');
           if (data.hostAlive) {
             closeRelay();
             _status.reloading = true; // native confirm_exit exempts intentional reconnects
