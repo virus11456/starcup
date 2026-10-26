@@ -16,6 +16,25 @@ export function readQuickDetail(kind, subject, context) {
     return entry && { ...entry, image: artPath('card', subject.name), kind: 'card',
       ownSpecial: isOwnSpecialAttack(subject, game.me, { lib, get }) };
   }
+  if (kind === 'draft-role') {
+    // Character draft entries are public choices, not player seats. Reading
+    // their printed skills must never call the live player's private getters.
+    if (!subject?.closest?.('#arena.choose-character') ||
+        !subject.classList?.contains('character') || subject.classList?.contains('hidden')) return null;
+    const id = typeof subject.link === 'string' ? subject.link : '';
+    const character = lib.character?.[id];
+    if (!character || !Array.isArray(character[3])) return null;
+    const title = inspectionText(get.translation(id));
+    const intro = inspectionText(lib.characterIntro?.[id]);
+    const sections = [
+      ...(intro ? [{ title: '角色介紹', text: intro }] : []),
+      ...character[3].filter(skill => lib.translate?.[skill + '_info'] && !lib.skill?.[skill]?.nopop)
+        .map(skill => ({ title: inspectionText(get.translation(skill)),
+          text: inspectionText(lib.translate[skill + '_info']) })),
+    ];
+    return { kind: 'role', title, image: artPath('character', id),
+      subtitle: '選角預覽 · 一般點擊選取角色', sections };
+  }
   if (kind !== 'role' || !inspectionPlayers(context).some(({ player }) => player === subject)) return null;
   const id = subject.name1 || subject.name;
   const title = inspectionText(get.translation(id));
@@ -123,9 +142,10 @@ export function createQuickDetailView({ hud, context, document: doc = document }
 
   const playerAt = target => target?.closest?.('#arena > .player');
   const cardAt = target => target?.closest?.('#arena #handcards1 .handcards > .card');
+  const draftAt = target => target?.closest?.('#arena.choose-character .dialog .button.character');
   function onClick(event) {
     const card = cardAt(event.target);
-    if (card && Date.now() < ignoreClickUntil) {
+    if ((card || playerAt(event.target) || draftAt(event.target)) && Date.now() < ignoreClickUntil) {
       event.preventDefault(); event.stopImmediatePropagation(); return;
     }
     if (!overlay.hidden) return;
@@ -139,17 +159,18 @@ export function createQuickDetailView({ hud, context, document: doc = document }
     if (!overlay.hidden || event.button !== 0 || event.isPrimary === false) return;
     const player = playerAt(event.target);
     const card = cardAt(event.target);
-    if (!card && !player) return;
-    // Long press remains available while a player is a native legal target.
+    const draft = draftAt(event.target);
+    if (!card && !player && !draft) return;
+    // The draft's normal click still selects. Only a genuine long press opens
+    // a read-only role preview and suppresses the subsequent native click.
     clearPress();
-    const subject = card || player;
+    const subject = card || player || draft;
+    const kind = card ? 'card' : player ? 'role' : 'draft-role';
     movedSubject = null;
-    press = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, subject,
-      kind: card ? 'card' : 'role', timer: null };
+    press = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, subject, kind, timer: null };
     press.timer = setTimeout(() => {
       if (!press || press.subject !== subject || !overlay.hidden) return;
-      ignoreClickUntil = Date.now() + 850;
-      open(card ? 'card' : 'role', subject, subject);
+      if (open(kind, subject, subject)) ignoreClickUntil = Date.now() + 850;
     }, 580);
   }
   function onPointerMove(event) {
@@ -162,7 +183,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   function onPointerEnd(event) {
     if (press?.pointerId === event.pointerId) clearPress();
     // A long press must not subsequently play or select the touched card.
-    if (Date.now() < ignoreClickUntil && (cardAt(event.target) || playerAt(event.target))) {
+    if (Date.now() < ignoreClickUntil && (cardAt(event.target) || playerAt(event.target) || draftAt(event.target))) {
       event.preventDefault(); event.stopImmediatePropagation();
       return;
     }
@@ -177,7 +198,8 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   function onContextMenu(event) {
     if (!overlay.hidden) return;
     const card = cardAt(event.target);
-    if (card && open('card', card, card)) {
+    const draft = draftAt(event.target);
+    if ((card && open('card', card, card)) || (draft && open('draft-role', draft, draft))) {
       event.preventDefault(); event.stopImmediatePropagation();
     }
   }

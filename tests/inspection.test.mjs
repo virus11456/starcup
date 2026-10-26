@@ -85,6 +85,42 @@ test('enlarged hand matches the same own-role attack-only gold rule as the table
   assert.equal(readQuickDetail('card', thunder, c).ownSpecial, false, 'another role sees an ordinary card');
 });
 
+test('character draft supports public full-size previews without hijacking ordinary selection', async () => {
+  const c = context('fengZhiJianSheng');
+  const draft = { link: 'fengZhiJianSheng', classList: classes('button', 'character'),
+    closest: selector => selector === '#arena.choose-character' ? {} : null };
+  const detail = readQuickDetail('draft-role', draft, c);
+  assert.equal(detail.kind, 'role');
+  assert.equal(detail.image, 'image/character/fengZhiJianSheng.jpg');
+  assert.match(detail.sections.map(section => section.title + section.text).join(' '), /風怒追擊/);
+  assert.equal(readQuickDetail('draft-role', { ...draft, link: 'invalid_role' }, c), null);
+  assert.equal(readQuickDetail('draft-role', { ...draft, closest: () => null }, c), null);
+  const h = historyHarness(), listeners = new Map();
+  h.doc.addEventListener = (name, fn) => listeners.set(name, fn);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  const view = createQuickDetailView({ hud, context: c, document: h.doc });
+  const overlay = hud.children[0];
+  overlay.children[0].children[1].children[0].dataset = {};
+  const target = { closest: query => query === '#arena.choose-character .dialog .button.character' ? draft : null };
+  const event = () => ({ target, prevented: false, stopped: false, button: 0, isPrimary: true,
+    pointerId: 42, clientX: 8, clientY: 8,
+    preventDefault() { this.prevented = true; },
+    stopImmediatePropagation() { this.stopped = true; } });
+  const ordinaryClick = event();
+  listeners.get('click')(ordinaryClick);
+  assert.equal(ordinaryClick.prevented, false, 'normal click remains the native choice');
+  assert.equal(overlay.hidden, true);
+  listeners.get('pointerdown')(event());
+  await new Promise(resolve => setTimeout(resolve, 625));
+  assert.equal(overlay.hidden, false, 'hold shows the enlarged public character');
+  assert.match(overlay.textContent, /風怒追擊/);
+  const released = event();
+  listeners.get('touchend')(released);
+  assert.equal(released.prevented, true, 'long-press release cannot select the draft character');
+  view.stop();
+});
+
 test('a role tap opens only for non-selectable targets; long pressing our hand opens without playing it', async () => {
   const card = { name: 'anMie', classList: classes('selectable') };
   const c = context('fengZhiJianSheng', [card]);
