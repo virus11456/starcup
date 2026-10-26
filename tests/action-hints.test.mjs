@@ -47,6 +47,28 @@ test('native interactive dialogs and character draft cannot be changed by action
   updateActionHints(arena([hint], true));
   assert.equal(hint.classList.contains('grail-action-hint'), true, 'choose-character pass does not alter native dialog');
 });
+test('native div-based skill controls cannot be mistaken for decorative action hints', async () => {
+  const source = await readFile(new URL('../vendor/noname/overrides/grail-action-hints.js', import.meta.url), 'utf8');
+  for (const cls of ['.buttons', '.button', '.card', '.pointerdiv', '.pointerspan', '.clickable', '.popup']) {
+    assert.ok(source.includes("'" + cls + "'"), cls + ' must block passive-hint classification');
+  }
+  for (const control of ['[role="button"]', 'a[href]', 'input', 'select', 'textarea', '[contenteditable="true"]']) {
+    assert.ok(source.includes("'" + control + "'"), control + ' must preserve native UI interaction');
+  }
+  const labels = ['攻擊行動或者法術行動'];
+  let nativeChoiceAppeared = false;
+  const choice = dialog(labels);
+  choice.querySelector = () => nativeChoiceAppeared ? {} : null;
+  const table = arena([choice]);
+  updateActionHints(table);
+  assert.equal(choice.classList.contains('grail-action-hint'), true);
+  nativeChoiceAppeared = true; // native skill dialog reused its existing container
+  updateActionHints(table);
+  assert.equal(choice.classList.contains('grail-action-hint'), false,
+    'an actionable choice must immediately restore its native dialog geometry');
+  assert.equal(choice.classList.contains('grail-empty-action-hint'), false);
+});
+
 test('iOS fallback color and in-card faction label are explicitly provided', async () => {
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const role = await readFile(new URL('../vendor/noname/overrides/grail-role-tags.css', import.meta.url), 'utf8');
