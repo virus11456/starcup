@@ -137,3 +137,23 @@
     height: calc(44px * var(--grail-touch-scale, 1));
   }
 }
+
+/* A 390px landscape browser leaves roughly 334px inside the game frame.
+   Keep distinct target/action/hand rows at that height; cards stay 5:7 and
+   larger than the minimum touch target instead of covering a player. */
+@media (min-width: 601px) and (max-width: 1049px) and (max-height: 380px) {
+  :root {
+    --grail-hand-card-width: calc(60px * var(--grail-touch-scale, 1));
+    --grail-hand-card-height: calc(84px * var(--grail-touch-scale, 1));
+    --grail-hand-height: calc(108px * var(--grail-touch-scale, 1));
+    --grail-hand-bottom: calc(-112px * var(--grail-touch-scale, 1));
+    --grail-hand-control-bottom: calc(-6px * var(--grail-touch-scale, 1));
+  }
+  .grail-scoreboard-ready #window #arena:not(.chess) {
+    height: calc(100% - 222px * var(--grail-touch-scale, 1));
+  }
+  .grail-scoreboard-ready #window #arena:not(.chess) > .player:not([data-position="0"]) {
+    height: calc(60px * var(--grail-touch-scale, 1)) !important;
+    width: calc(46px * var(--grail-touch-scale, 1));
+  }
+}
