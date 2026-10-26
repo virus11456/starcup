@@ -203,6 +203,7 @@ window.addEventListener(
     history.stop();
     document.removeEventListener('visibilitychange', flushHistory);
     inspection.stop();
+    quickDetail.stop();
     handSkin.stop();
     hud.remove();
   },

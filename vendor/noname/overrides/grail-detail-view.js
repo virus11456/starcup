@@ -1,6 +1,7 @@
 /* Read-only focus viewer for a public role or one of our own physical cards.
    Do not touch the native hand/character elements, selection or private data. */
 import { inspectionPlayers, inspectionText, readInspection } from './grail-inspection.js';
+import { isOwnSpecialAttack } from './grail-card-skin.js';
 
 const artPath = (kind, id) => typeof id === 'string' && /^[a-zA-Z0-9_]+$/.test(id)
   ? `image/${kind}/${id}.${kind === 'character' ? 'jpg' : 'png'}` : '';
@@ -10,9 +11,10 @@ export function readQuickDetail(kind, subject, context) {
   if (kind === 'card') {
     const hand = game.me?.getCards?.('h') || [];
     const index = hand.indexOf(subject);
-    if (index < 0) return null;
+    if (index < 0 || subject.classList?.contains('infohidden')) return null;
     const entry = readInspection('hand', game.me, context)[index];
-    return entry && { ...entry, image: artPath('card', subject.name), kind: 'card' };
+    return entry && { ...entry, image: artPath('card', subject.name), kind: 'card',
+      ownSpecial: isOwnSpecialAttack(subject, game.me, { lib, get }) };
   }
   if (kind !== 'role' || !inspectionPlayers(context).some(({ player }) => player === subject)) return null;
   const id = subject.name1 || subject.name;
@@ -85,7 +87,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
     openedFrom = trigger;
     title.textContent = entry.title;
     picture.dataset.kind = entry.kind;
-    picture.dataset.ownSpecial = String(entry.kind === 'card' && entry.sections.some(section => section.matching));
+    picture.dataset.ownSpecial = String(entry.kind === 'card' && entry.ownSpecial === true);
     artTitle.textContent = entry.kind === 'card' ? entry.title : '';
     imageFallback.hidden = true;
     image.hidden = !entry.image;

@@ -21,7 +21,8 @@ function context(role = 'fengZhiJianSheng', cards = []) {
     getCards() { throw new Error('Opponent cards must remain private'); },
     get storage() { throw new Error('Do not read private mark storage'); } };
   const game = { me, players: [me, other] };
-  const get = { translation: id => lib.translate[id] || id, skillInfoTranslation: id => lib.translate[id + '_info'] };
+  const get = { translation: id => lib.translate[id] || id, skillInfoTranslation: id => lib.translate[id + '_info'],
+    type: card => card.type || lib.card[card.name]?.type };
   return { lib, game, get, me, other };
 }
 
@@ -70,6 +71,18 @@ test('quick role and own hand readers produce portrait art and full public descr
   assert.equal(readQuickDetail('role', { name: c.me.name }, c), null, 'not a public player node');
   c.other.isUnseen = () => true;
   assert.equal(readQuickDetail('role', c.other, c), null, 'unrevealed roles remain hidden');
+});
+
+test('enlarged hand matches the same own-role attack-only gold rule as the table and hides facedown cards', () => {
+  const thunder = { name: 'leiGuangZhan', type: 'gongJi', duYou: 'jiFengJi|jingZhunSheJi', classList: classes('selectable') };
+  const spell = { name: 'anMie', type: 'faShu', duYou: 'jiFengJi', classList: classes('selectable') };
+  const hidden = { name: 'leiGuangZhan', type: 'gongJi', duYou: 'jiFengJi', classList: classes('infohidden') };
+  const c = context('fengZhiJianSheng', [thunder, spell, hidden]);
+  assert.equal(readQuickDetail('card', thunder, c).ownSpecial, true, 'native special attack is gold in the enlarged viewer');
+  assert.equal(readQuickDetail('card', spell, c).ownSpecial, false, 'a spell does not borrow the special-attack gold frame');
+  assert.equal(readQuickDetail('card', hidden, c), null, 'hidden cards cannot be magnified');
+  c.me.name = 'shengNv';
+  assert.equal(readQuickDetail('card', thunder, c).ownSpecial, false, 'another role sees an ordinary card');
 });
 
 test('a role tap opens only for non-selectable targets; long pressing our hand opens without playing it', async () => {
