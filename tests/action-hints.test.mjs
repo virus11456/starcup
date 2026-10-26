@@ -10,7 +10,7 @@ function classes() {
 function dialog(texts, hasChoices = false) {
   const d = { classList: classes(),
     querySelectorAll(selector) {
-      assert.equal(selector, '.caption, .prompt');
+      assert.equal(selector, '.caption, .prompt, .content > .text');
       return texts.map(textContent => ({ textContent }));
     },
     querySelector(selector) {
@@ -35,6 +35,20 @@ test('empty native action prompts do not leave a blank bar while text comes back
   assert.equal(d.classList.contains('grail-action-hint'), true);
   assert.equal(d.classList.contains('grail-empty-action-hint'), true);
   labels[0] = '攻擊行動或者法術行動';
+  updateActionHints(a);
+  assert.equal(d.classList.contains('grail-empty-action-hint'), false);
+});
+test('noname Dialog.addText native .content > .text is treated as a visible or empty hint', () => {
+  const d = dialog(['\u00a0']);
+  const a = arena([d]);
+  updateActionHints(a);
+  assert.equal(d.classList.contains('grail-action-hint'), true);
+  assert.equal(d.classList.contains('grail-empty-action-hint'), true);
+  // In the real noname dialog this changes when the next phase sets a new .text.
+  d.querySelectorAll = selector => {
+    assert.equal(selector, '.caption, .prompt, .content > .text');
+    return [{ textContent: '攻擊行動或者法術行動' }];
+  };
   updateActionHints(a);
   assert.equal(d.classList.contains('grail-empty-action-hint'), false);
 });
@@ -73,7 +87,7 @@ test('iOS fallback color and in-card faction label are explicitly provided', asy
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const role = await readFile(new URL('../vendor/noname/overrides/grail-role-tags.css', import.meta.url), 'utf8');
   assert.match(css, /grail-empty-action-hint\s*\{\s*display:\s*none\s*!important/);
-  assert.match(css, /grail-action-hint :is\(\.caption, \.prompt\)[\s\S]*?-webkit-text-fill-color:\s*#fff4d5/);
+  assert.match(css, /grail-action-hint :is\(\.caption, \.prompt, \.content > \.text\)[\s\S]*?-webkit-text-fill-color:\s*#fff4d5/);
   assert.doesNotMatch(css, /:has\(\.caption, \.prompt\):not\(:has/);
   assert.match(role, /\.button\.character > \.identity[\s\S]*?inset:\s*5px 5px auto auto !important/);
   assert.match(role, /\.button\.character > \.identity > div[\s\S]*?writing-mode:\s*horizontal-tb !important/);

@@ -522,7 +522,7 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   opacity: 1 !important;
   visibility: visible !important;
 }
-#window #arena:not(.choose-character) > .dialog.grail-action-hint :is(.caption, .prompt) {
+#window #arena:not(.choose-character) > .dialog.grail-action-hint :is(.caption, .prompt, .content > .text) {
   position: static !important;
   display: block !important;
   box-sizing: border-box;

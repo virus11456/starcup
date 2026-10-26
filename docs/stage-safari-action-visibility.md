@@ -14,3 +14,6 @@
 ## 驗收狀態及界線
 程式回歸測試交由 Cloudflare 原本 CI 進行；不需開啟正式多人房間或修改正式 DO 資料。本機／CI 程式測試不能代替使用者實體 iPad 和 iPhone Safari 顯示檢查。真機請測 iPhone 直向，iPad 1024×768 橫向及 768×1024 直向，桌面 1440×900，並確認行動提示在有字／無字／技能選擇三個情況都正確。
 Cloudflare 服務仍僅使用現有免費方案相容的 Worker、Static Assets 與 SQLite Durable Objects；未授權升級付費或刪除 Vercel。
+
+## 2026-10-27 補強：實際原生純文字節點
+檢查釘選引擎 `noname/library/element/dialog.js`：`Dialog.addText()` 會透過 `this.add('<div class="text center">...')` 產生 `.content > .text`；不能只根據 `.caption`／`.prompt` 判定純文字提示。此次加入這類節點的空白識別與 Safari 字色，並將圖片、客製互動列排除於小提示之外。加入回歸測試，避免只剩空框、並確保新文字會重新顯示。

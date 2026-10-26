@@ -8,6 +8,7 @@ const readable = value => String(value ?? '').replace(/[\u200b-\u200d\ufeff\u00a
 const activeChoices = [
   '.buttons', '.button', '.card', '.tdnode', '.tdnodes',
   '.pointerdiv', '.pointerspan', '.clickable', '.popup',
+  '.row-container', '.item-container', 'img', 'video', 'canvas', 'svg',
   '[role="button"]', '[role="link"]', 'a[href]', 'label[for]',
   '[tabindex]:not([tabindex="-1"])',
   'button', 'input', 'textarea', 'select', 'details', 'summary',
@@ -16,7 +17,10 @@ const activeChoices = [
 export function updateActionHints(arena) {
   if (!arena || arena.classList?.contains('choose-character')) return;
   for (const dialog of arena.querySelectorAll(':scope > .dialog:not(.popped)')) {
-    const labels = [...dialog.querySelectorAll('.caption, .prompt')];
+    // The pinned noname Dialog.addText() writes <div class="text center">
+    // directly inside .content rather than creating a .caption. Include
+    // this actual native text shape or Safari can still show a blank bar.
+    const labels = [...dialog.querySelectorAll('.caption, .prompt, .content > .text')];
     // Never restyle a dialog that owns a native skill/target/card choice.
     const isHint = labels.length > 0 && !dialog.querySelector(activeChoices);
     dialog.classList.toggle('grail-action-hint', isHint);
