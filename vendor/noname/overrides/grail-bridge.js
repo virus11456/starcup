@@ -13,6 +13,7 @@ import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints } from './grail-action-hints.js';
+import { createTargetPreview } from './grail-target-preview.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -43,6 +44,7 @@ const inspection = createBattleInspection({ panel: document.getElementById('grai
 const quickDetail = createQuickDetailView({ hud, context: { lib, game, get } });
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
 const handSkin = createHandSkin({ lib, get });
+const targetPreview = createTargetPreview({ hud, ui, game, get, lib, event: () => _status.event });
 const text = (value) =>
   String(value || "")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -55,6 +57,7 @@ function update() {
   inspection.update();
   indicators.update();
   handSkin.update(game.me);
+  targetPreview.update();
   // Preserve the native deck button and click handler; CSS-only finish.
   ui.cardPileButton?.classList?.add('grail-top-pile-tool');
   if (ui.arena) document.getElementById("grail-loading")?.remove();
@@ -212,6 +215,7 @@ window.addEventListener(
     clearInterval(ready);
     stop();
     stopMotion();
+    targetPreview.stop();
     stopHud();
     indicators.stop();
     history.stop();

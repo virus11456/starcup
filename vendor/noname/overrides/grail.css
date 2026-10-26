@@ -657,3 +657,52 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
     right: auto !important;
   }
 }
+
+/* Only when a user selects an attack or spell card AND native target.
+   Overlay is aligned by grail-hud, never intercepts selection or buttons. */
+#grail-target-preview {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 18;
+  overflow: visible;
+  pointer-events: none !important;
+  opacity: 1;
+}
+#grail-target-preview[hidden] { display: none !important; }
+#grail-target-preview .grail-target-line-halo {
+  stroke: #091824;
+  stroke-width: 9px;
+  stroke-linecap: round;
+  opacity: .88;
+}
+#grail-target-preview .grail-target-line-core {
+  stroke: #ffde69;
+  stroke-width: 4px;
+  stroke-dasharray: 11 7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px #ffbd45);
+  animation: grail-target-flow 1.2s linear infinite;
+}
+#grail-target-preview .grail-target-line-end {
+  fill: #ffe18c;
+  stroke: #55380d;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 6px #ffd34f);
+}
+#grail-target-preview[data-kind="spell"] .grail-target-line-core {
+  stroke: #84e2ff;
+  filter: drop-shadow(0 0 4px #63d5ff);
+}
+#grail-target-preview[data-kind="spell"] .grail-target-line-end {
+  fill: #c3f4ff;
+  stroke: #175368;
+}
+@keyframes grail-target-flow { to { stroke-dashoffset: -36; } }
+@media (prefers-reduced-motion: reduce) {
+  #grail-target-preview .grail-target-line-core {
+    animation: none !important;
+    stroke-dasharray: none !important;
+  }
+}
