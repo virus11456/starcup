@@ -105,3 +105,29 @@ test('top system/history/help/deck buttons have consistent 44px touch dimensions
   assert.match(css, /#grail-history-toggle,[\s\S]*?#grail-help:has\(#grail-help-toggle\[aria-expanded="false"\]\)[\s\S]*?height:\s*44px !important/);
   assert.match(css, /#window \.grail-top-pile-tool[\s\S]*?min-height:\s*calc\(44px \* var\(--grail-touch-scale, 1\)\) !important/);
 });
+
+test('passive native action text moves into visible scoreboard heading but never moves interactive choice', () => {
+  const label = { hidden: true, textContent: '' };
+  const textOnly = dialog(['[攻擊行動]或者[法術行動]']);
+  const interactive = dialog(['請選擇目標'], true);
+  const root = arena([textOnly, interactive]);
+  updateActionHints(root, label, true);
+  assert.equal(label.hidden, false);
+  assert.match(label.textContent, /攻擊行動/);
+  assert.equal(textOnly.classList.contains('grail-inline-action-hint'), true);
+  assert.equal(interactive.classList.contains('grail-inline-action-hint'), false);
+  const blank = dialog([' ']);
+  updateActionHints(arena([blank]), label, true);
+  assert.equal(label.hidden, true);
+  assert.equal(blank.classList.contains('grail-inline-action-hint'), false);
+  updateActionHints(root, label, false);
+  assert.equal(label.hidden, true);
+  assert.equal(textOnly.classList.contains('grail-inline-action-hint'), false);
+});
+test('portrait and landscape use scoreboard hint instead of floating overlay', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(css, /#grail-phase-hint\[hidden\]\s*\{\s*display:\s*none !important/);
+  assert.match(css, /\.dialog\.grail-inline-action-hint:not\(\.popped\)\s*\{\s*display:\s*none !important/);
+  assert.match(css, /orientation:\s*portrait/);
+  assert.match(css, /orientation:\s*landscape/);
+});

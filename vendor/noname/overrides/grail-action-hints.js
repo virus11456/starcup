@@ -14,8 +14,12 @@ const activeChoices = [
   'button', 'input', 'textarea', 'select', 'details', 'summary',
   '[contenteditable="true"]',
 ].join(', ');
-export function updateActionHints(arena) {
-  if (!arena || arena.classList?.contains('choose-character')) return;
+export function updateActionHints(arena, hudLabel = null, scoreboardVisible = false) {
+  if (!arena || arena.classList?.contains('choose-character')) {
+    if (hudLabel) { hudLabel.hidden = true; hudLabel.textContent = ''; }
+    return;
+  }
+  let phaseText = '';
   for (const dialog of arena.querySelectorAll(':scope > .dialog:not(.popped)')) {
     // The pinned noname Dialog.addText() writes <div class="text center">
     // directly inside .content rather than creating a .caption. Include
@@ -24,7 +28,16 @@ export function updateActionHints(arena) {
     // Never restyle a dialog that owns a native skill/target/card choice.
     const isHint = labels.length > 0 && !dialog.querySelector(activeChoices);
     dialog.classList.toggle('grail-action-hint', isHint);
-    dialog.classList.toggle('grail-empty-action-hint',
-      isHint && !labels.some(label => readable(label.textContent)));
+    const visible = labels.map(label => readable(label.textContent)).filter(Boolean);
+    dialog.classList.toggle('grail-empty-action-hint', isHint && visible.length === 0);
+    // Do not move the engine's live DOM into our HUD. Mirror ONLY passive
+    // printed text, never private values, event handlers or selectable nodes.
+    const inline = isHint && visible.length > 0 && scoreboardVisible && !!hudLabel;
+    dialog.classList.toggle('grail-inline-action-hint', inline);
+    if (inline) phaseText = visible.join(' ').slice(0, 100);
+  }
+  if (hudLabel) {
+    if (hudLabel.textContent !== phaseText) hudLabel.textContent = phaseText;
+    hudLabel.hidden = !phaseText;
   }
 }

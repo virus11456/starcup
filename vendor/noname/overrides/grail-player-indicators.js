@@ -41,6 +41,29 @@ export function publicPlayerIndicators(player, context) {
   return badges;
 }
 
+
+// Pure viewport geometry: a strip can never extend beyond the visible screen.
+// Prefer directly below the portrait, then above it. Already placed strips
+// are avoided when there is room, so multiple marks don't stack on a neighbor.
+export function placeIndicatorStrip(rect, viewport, size, occupied = []) {
+  const margin = 8, gap = 8;
+  const width = Math.min(Math.max(1, size.width), Math.max(1, viewport.width - margin * 2));
+  const height = Math.min(Math.max(1, size.height), Math.max(1, viewport.height - margin * 2));
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const center = rect.left + rect.width / 2;
+  const left = clamp(
+    center >= viewport.width * .7 ? rect.right - width
+      : center <= viewport.width * .3 ? rect.left
+        : center - width / 2,
+    margin, Math.max(margin, viewport.width - width - margin));
+  const below = { left, top: clamp(rect.bottom + gap, margin, Math.max(margin, viewport.height - height - margin)), width, height, placement: 'below' };
+  const above = { left, top: clamp(rect.top - height - gap, margin, Math.max(margin, viewport.height - height - margin)), width, height, placement: 'above' };
+  const clashes = (a,b) => a.left < b.left + b.width + 4 && a.left + a.width + 4 > b.left
+    && a.top < b.top + b.height + 4 && a.top + a.height + 4 > b.top;
+  const preferred = rect.bottom + height + gap <= viewport.height - margin ? [below, above] : [above, below];
+  return preferred.find(item => !occupied.some(used => clashes(item, used))) || preferred[0];
+}
+
 export function createPlayerIndicators(parent, context, doc = document) {
   const layer = doc.createElement('section');
   layer.id = 'grail-player-indicators';
@@ -52,6 +75,7 @@ export function createPlayerIndicators(parent, context, doc = document) {
       const visible = !context.ui?.arena?.classList.contains('choose-character');
       const players = visible ? inspectionPlayers(context).map(entry => entry.player) : [];
       const active = new Set();
+      const occupied = [];
       for (const player of players) {
         const badges = publicPlayerIndicators(player, context);
         const rect = player.getBoundingClientRect?.();
@@ -86,12 +110,18 @@ export function createPlayerIndicators(parent, context, doc = document) {
         // the portrait retain their existing click / touch handlers.
         const width = doc.defaultView?.innerWidth ?? innerWidth;
         const height = doc.defaultView?.innerHeight ?? innerHeight;
-        const center = Math.max(12, Math.min(width - 12, rect.left + rect.width / 2));
-        const needed = Math.max(26, strip.offsetHeight || 26) + 6;
-        const above = height - rect.bottom < needed && rect.top > height - rect.bottom;
-        strip.style.left = `${center}px`;
-        strip.style.top = `${above ? Math.max(4, rect.top - needed) : Math.min(height - needed, rect.bottom + 5)}px`;
-        strip.dataset.placement = above ? 'above' : 'below';
+        const portrait = height > width;
+        const maxWidth = portrait && width <= 600 ? Math.min(158, width * .44)
+          : width <= 1049 ? Math.min(210, width * .30) : Math.min(240, width * .22);
+        strip.style.maxWidth = `${maxWidth}px`;
+        const panelWidth = Math.min(maxWidth, strip.offsetWidth || maxWidth);
+        const panelHeight = Math.max(27, strip.offsetHeight || Math.ceil(badges.length / (portrait ? 1 : 2)) * 29);
+        const position = placeIndicatorStrip(rect, { width, height }, { width: panelWidth, height: panelHeight }, occupied);
+        strip.style.transform = 'none';
+        strip.style.left = `${position.left}px`;
+        strip.style.top = `${position.top}px`;
+        strip.dataset.placement = position.placement;
+        occupied.push(position);
       }
       for (const [player, strip] of strips) {
         if (active.has(player)) continue;

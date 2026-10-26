@@ -619,3 +619,41 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
     font: 650 calc(13px * var(--grail-touch-scale, 1))/1.2 system-ui, sans-serif !important;
   }
 }
+
+/* Portrait AND landscape: render passive text inside the existing public
+   scoreboard heading. Never cover a player or change native skill choices. */
+#grail-phase-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 8px;
+  padding: 2px 6px;
+  color: #fff0c9;
+  -webkit-text-fill-color: #fff0c9;
+  font: 700 12px/1.35 system-ui, sans-serif;
+  text-align: center;
+  border-radius: 5px;
+  border: 1px solid #ddc88c77;
+  background: #20333aec;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+#grail-phase-hint[hidden] { display: none !important; }
+/* Original DOM stays intact for the native engine; only its non-interactive
+   visual copy is hidden while the inline scoreboard status is displayed. */
+#window #arena:not(.choose-character) > .dialog.grail-inline-action-hint:not(.popped) {
+  display: none !important;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-phase-hint { font-size: 11px; line-height: 1.2; margin: 0 4px; padding: 1px 3px; }
+  #grail-scoreboard .grail-score-heading { min-height: 25px; gap: 3px; }
+  #grail-scoreboard .grail-score-round { flex: 0 0 auto; }
+}
+@media (min-width: 601px) and (max-height: 500px) and (orientation: landscape) {
+  #grail-phase-hint { font-size: 11px; max-width: 36vw; }
+  #grail-scoreboard .grail-score-heading { flex: 1 1 auto; min-width: 0; }
+  /* Keep all four seats inside the arena, even for extreme short landscape. */
+  .grail-scoreboard-ready #window #arena:not(.chess) > .player:not([data-position="0"]) {
+    left: clamp(0px, calc((100% - 60px * var(--grail-touch-scale, 1)) * var(--grail-seat-fraction, .5)), calc(100% - 60px * var(--grail-touch-scale, 1))) !important;
+    right: auto !important;
+  }
+}

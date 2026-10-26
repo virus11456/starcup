@@ -18,6 +18,16 @@ hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
+// A passive native instruction belongs in the scoreboard heading, not over
+// a player's portrait. The native dialog remains owned by noname.
+const scoreboardNode = hud.querySelector('#grail-scoreboard');
+const phaseHint = document.createElement('span');
+phaseHint.id = 'grail-phase-hint';
+phaseHint.setAttribute('role', 'status');
+phaseHint.hidden = true;
+scoreboardNode?.querySelector('.grail-score-heading')?.insertBefore(
+  phaseHint, scoreboardNode.querySelector('.grail-score-round'),
+);
 const history = createBattleHistory(hud, () => game.phaseNumber || 0, {
   journal: createHistorySession(new URLSearchParams(location.search).get('online')),
 });
@@ -40,7 +50,7 @@ const text = (value) =>
 let last = "";
 function update() {
   addRoleLegend(ui.arena);
-  updateActionHints(ui.arena);
+  updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden);
   history.attach(ui.sidebar);
   inspection.update();
   indicators.update();

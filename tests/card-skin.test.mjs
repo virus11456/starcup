@@ -249,3 +249,11 @@ test('printed special attack is marked before native dynamic type resolves', () 
   assert.equal(unique.dataset.grailOwnSpecial, 'true');
   skin.stop(); assert.equal(unique.dataset.grailOwnSpecial, undefined);
 });
+
+test('gold unique attacks have a gentle always-visible animation and a reduced-motion fallback', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail-polish.css', import.meta.url), 'utf8');
+  assert.match(css, /@keyframes grail-special-gold-breathe/);
+  assert.match(css, /grail-special-gold-breathe 2\.6s ease-in-out infinite !important/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?grail-special-gold-breathe[\s\S]*?animation: none !important/);
+  assert.match(css, /#window #arena #handcards1 \.handcards > \.card\[data-grail-own-special="true"\]::after/);
+});
