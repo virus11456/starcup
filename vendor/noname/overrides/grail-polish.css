@@ -63,6 +63,19 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
   background: #103a39f5; box-shadow: inset 3px 0 0 var(--grail-picked); color: #f3fff9;
 }
 
+/* Only cards bearing an innate special attack of the CURRENT character get
+   gold. Keep the native selected state legible with an outer mint halo. */
+#window #arena .handcards > .card[data-grail-own-special="true"] {
+  outline: 3px solid #ffda76;
+  outline-offset: -2px;
+  box-shadow: 0 0 0 1px #f6d189, 0 0 13px #f4b7448c, 0 5px 14px #000a;
+}
+#window #arena .handcards > .card[data-grail-own-special="true"].selected {
+  outline: 3px solid #ffda76;
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px var(--grail-picked), 0 0 15px #edba63ac, 0 6px 18px #0009;
+}
+
 /* Character portraits retain their original crop and seat locations. */
 #window #arena > .player { border-color: #a8b7ac77; background-color: #13242f; box-shadow: 0 6px 18px #0008, 0 1px 0 #ecdfb820 inset; }
 #window #arena > .player[data-grail-team="red"] { border-color: #d396898c; }

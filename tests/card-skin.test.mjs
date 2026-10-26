@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cardElement, createHandSkin } from '../vendor/noname/overrides/grail-card-skin.js';
+import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
+import { cardElement, createHandSkin, isOwnSpecialAttack } from '../vendor/noname/overrides/grail-card-skin.js';
 import { updateResponseCancelLabel } from '../vendor/noname/overrides/grail-response-labels.js';
 
 const card = xiBie => ({ xiBie, dataset: { existing: 'native' }, classList: { contains: () => false } });
@@ -30,6 +32,77 @@ test('hidden, moved and unsupported cards lose color tags, including leaving the
   hand = []; skin.update(me); assert.equal(c.dataset.grailElement, undefined);
   hand = [c]; skin.update(me); skin.update(null);
   assert.equal(c.dataset.grailElement, undefined);
+});
+
+test('only the current character gets a gold border on its own unique attack stamps', () => {
+  const context = {
+    lib: {
+      natureSeparator: '|',
+      character: {
+        fengZhiJianSheng: ['風之劍聖', 'jiGroup', 3, ['fengNuZhuiJi', 'lieFengJi', 'jiFengJi']],
+        shenJianShou: ['神箭手', 'jiGroup', 3, ['jingZhunSheJi']],
+      },
+      skill: {
+        lieFengJi: { duYou: 'lieFengJi' },
+        jiFengJi: { duYou: 'jiFengJi' },
+        jingZhunSheJi: { duYou: 'jingZhunSheJi' },
+      },
+    },
+    get: { type: c => c.type },
+  };
+  const quake = { ...card('di'), type: 'gongJi', duYou: 'lieFengJi|jingZhunSheJi' };
+  const wave = { ...card('shui'), type: 'gongJi', duYou: 'jiFengJi|shanGuangXianJing' };
+  const other = { ...card('lei'), type: 'gongJi', duYou: 'jingZhunSheJi' };
+  const spell = { ...card('di'), type: 'faShu', duYou: 'lieFengJi' };
+  const hand = [quake, wave, other, spell];
+  const player = { name1: 'fengZhiJianSheng', getCards: () => hand };
+  const skin = createHandSkin(context);
+  skin.update(player);
+  assert.equal(quake.dataset.grailOwnSpecial, 'true');
+  assert.equal(wave.dataset.grailOwnSpecial, 'true');
+  assert.equal(other.dataset.grailOwnSpecial, undefined);
+  assert.equal(spell.dataset.grailOwnSpecial, undefined);
+  assert.equal(isOwnSpecialAttack(quake, { name1: 'shenJianShou' }, context), true);
+  player.name1 = 'shenJianShou';
+  skin.update(player);
+  assert.equal(quake.dataset.grailOwnSpecial, 'true', 'same physical card matches the new character for a different skill');
+  assert.equal(wave.dataset.grailOwnSpecial, undefined);
+  assert.equal(other.dataset.grailOwnSpecial, 'true');
+  player.name1 = 'fengZhiJianSheng';
+  wave.classList.contains = name => name === 'infohidden';
+  skin.update(player);
+  assert.equal(wave.dataset.grailOwnSpecial, undefined);
+  skin.stop();
+  assert.ok(hand.every(c => c.dataset.grailOwnSpecial === undefined));
+});
+
+test('another character drawing the pictured swordmaster cards sees regular borders', () => {
+  const c = { ...card('di'), type: 'gongJi', duYou: 'lieFengJi|jingZhunSheJi' };
+  const context = {
+    lib: { natureSeparator: '|', character: { shengNv: ['聖女', 'shengGroup', 3, ['zhiLiaoShu']] },
+      skill: { lieFengJi: { duYou: 'lieFengJi' }, jingZhunSheJi: { duYou: 'jingZhunSheJi' } } },
+    get: { type: item => item.type },
+  };
+  const skin = createHandSkin(context);
+  skin.update({ name1: 'shengNv', getCards: () => [c] });
+  assert.equal(c.dataset.grailElement, 'di', 'ordinary element styling remains');
+  assert.equal(c.dataset.grailOwnSpecial, undefined, 'opponent role cannot borrow a gold border');
+});
+
+test('the actual pinned Swordmaster pack recognizes exactly its pictured attack stamps', async () => {
+  const source = (await readFile(new URL('../public/engine/character/shiZhouNian.js', import.meta.url), 'utf8'))
+    .replace(/^import .*?;\s*$/gm, '');
+  let pack;
+  const game = { import: (_type, factory) => { pack = factory({}, game, {}, {}, {}, {}); } };
+  vm.runInNewContext(source, { game, lib: {}, get: {}, ui: {}, ai: {}, _status: {} });
+  const context = { lib: { natureSeparator: '|', character: pack.character, skill: pack.skill },
+    get: { type: c => c.type } };
+  const swordmaster = { name1: 'fengZhiJianSheng' };
+  const cleric = { name1: 'shenGuan' };
+  assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'lieFengJi|jingZhunSheJi' }, swordmaster, context), true);
+  assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'jiFengJi|shanGuangXianJing' }, swordmaster, context), true);
+  assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'jingZhunSheJi' }, swordmaster, context), false);
+  assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'lieFengJi' }, cleric, context), false);
 });
 
 function controls() {

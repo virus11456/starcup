@@ -29,7 +29,7 @@ const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
-const handSkin = createHandSkin();
+const handSkin = createHandSkin({ lib, get });
 const text = (value) =>
   String(value || "")
     .replace(/<br\s*\/?>/gi, "\n")
