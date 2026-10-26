@@ -174,7 +174,9 @@
 #grail-detail-overlay .grail-detail-section h3 { margin: 0 0 8px; color: #f1d9a2; font: 700 20px/1.4 system-ui, sans-serif; }
 #grail-detail-overlay .grail-detail-section p { margin: 0; color: #f0f1e8; font: 400 17px/1.8 system-ui, sans-serif; white-space: pre-line; }
 #grail-detail-overlay .grail-detail-badge { display: inline-block; margin: 0 0 8px; padding: 4px 10px; border-radius: 5px; background: #6f5529; color: #fff2c6; font-size: 14px; }
-@media (max-width: 700px) and (orientation: portrait) {
+/* Portrait iPads (768/820px CSS width) need a full-width description below
+   the card; reserve the side-by-side viewer for landscape and desktop. */
+@media (max-width: 900px) and (orientation: portrait) {
   #grail-detail-overlay { padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
   #grail-detail-overlay .grail-detail-sheet { border-radius: 12px; }
   #grail-detail-overlay .grail-detail-header { padding: 8px 12px; min-height: 60px; }

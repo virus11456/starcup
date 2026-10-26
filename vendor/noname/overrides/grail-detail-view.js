@@ -88,7 +88,16 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   let openedFrom = null;
   let press = null;
   let ignoreClickUntil = 0;
+  let suppressedSubject = null;
   let movedSubject = null;
+  // Safari may synthesize touchend/contextmenu/click for the same long press.
+  // Fence ONLY that original target; blocking unrelated cards or players for
+  // 850ms makes quick combat choices appear unresponsive.
+  const pressedAt = target => target?.closest?.('#arena #handcards1 .handcards > .card')
+    || target?.closest?.('#arena > .player')
+    || target?.closest?.('#arena.choose-character .dialog .button.character');
+  const suppresses = target => suppressedSubject !== null && Date.now() < ignoreClickUntil
+    && pressedAt(target) === suppressedSubject;
   const clearPress = () => { if (press?.timer) clearTimeout(press.timer); press = null; };
   const stop = event => { event.stopPropagation(); };
   function close() {
@@ -144,8 +153,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   const cardAt = target => target?.closest?.('#arena #handcards1 .handcards > .card');
   const draftAt = target => target?.closest?.('#arena.choose-character .dialog .button.character');
   function onClick(event) {
-    const card = cardAt(event.target);
-    if ((card || playerAt(event.target) || draftAt(event.target)) && Date.now() < ignoreClickUntil) {
+    if (suppresses(event.target)) {
       event.preventDefault(); event.stopImmediatePropagation(); return;
     }
     if (!overlay.hidden) return;
@@ -170,7 +178,10 @@ export function createQuickDetailView({ hud, context, document: doc = document }
     press = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, subject, kind, timer: null };
     press.timer = setTimeout(() => {
       if (!press || press.subject !== subject || !overlay.hidden) return;
-      if (open(kind, subject, subject)) ignoreClickUntil = Date.now() + 850;
+      if (open(kind, subject, subject)) {
+        suppressedSubject = subject;
+        ignoreClickUntil = Date.now() + 850;
+      }
     }, 580);
   }
   function onPointerMove(event) {
@@ -183,7 +194,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   function onPointerEnd(event) {
     if (press?.pointerId === event.pointerId) clearPress();
     // A long press must not subsequently play or select the touched card.
-    if (Date.now() < ignoreClickUntil && (cardAt(event.target) || playerAt(event.target) || draftAt(event.target))) {
+    if (suppresses(event.target)) {
       event.preventDefault(); event.stopImmediatePropagation();
       return;
     }
@@ -196,6 +207,11 @@ export function createQuickDetailView({ hud, context, document: doc = document }
     }
   }
   function onContextMenu(event) {
+    // Prevent Safari's native long-press context menu from covering our
+    // existing enlarged viewer, without disabling context menus elsewhere.
+    if (suppresses(event.target)) {
+      event.preventDefault(); event.stopImmediatePropagation(); return;
+    }
     if (!overlay.hidden) return;
     const card = cardAt(event.target);
     const draft = draftAt(event.target);
@@ -211,7 +227,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   doc.addEventListener('pointercancel', clearPress, true);
   doc.addEventListener('touchend', onPointerEnd, true);
   return { close, open, stop() {
-    close(); clearPress(); overlay.remove();
+    close(); clearPress(); suppressedSubject = null; ignoreClickUntil = 0; overlay.remove();
     doc.removeEventListener('click', onClick, true);
     doc.removeEventListener('contextmenu', onContextMenu, true);
     doc.removeEventListener('pointerdown', onPointerDown, true);

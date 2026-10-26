@@ -163,6 +163,52 @@ test('a role tap opens only for non-selectable targets; long pressing our hand o
   assert.equal(release.prevented, true, 'a held card must not activate native touchend');
 });
 
+test('long-press blocks only its own hand card, not another card or selectable player', async () => {
+  const pressedCard = { name: 'anMie', type: 'gongJi', classList: classes('selectable') };
+  const otherCard = { name: 'huoYanZhan', type: 'gongJi', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [pressedCard, otherCard]);
+  const h = historyHarness(), listeners = new Map();
+  h.doc.addEventListener = (name, handler) => listeners.set(name, handler);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  const view = createQuickDetailView({ hud, context: c, document: h.doc });
+  const overlay = hud.children[0];
+  overlay.children[0].children[1].children[0].dataset = {};
+  const cardTarget = card => ({
+    closest: selector => selector === '#arena #handcards1 .handcards > .card' ? card : null,
+  });
+  const myTarget = cardTarget(pressedCard), otherTarget = cardTarget(otherCard);
+  const player = { closest: selector => selector === '#arena > .player' ? c.me : null };
+  const event = target => ({ target, pointerId: 17, button: 0, isPrimary: true,
+    clientX: 4, clientY: 9, prevented: false, stopped: false,
+    preventDefault() { this.prevented = true; },
+    stopImmediatePropagation() { this.stopped = true; },
+  });
+  listeners.get('pointerdown')(event(myTarget));
+  await new Promise(resolve => setTimeout(resolve, 625));
+  assert.equal(overlay.hidden, false);
+  for (const type of ['pointerup', 'touchend', 'click', 'contextmenu']) {
+    const held = event(myTarget);
+    listeners.get(type)(held);
+    assert.equal(held.prevented, true, type + ' should suppress the held-card native event');
+    const unrelated = event(otherTarget);
+    listeners.get(type)(unrelated);
+    assert.equal(unrelated.prevented, false, type + ' must not suppress another hand card');
+    const anotherPlayer = event(player);
+    listeners.get(type)(anotherPlayer);
+    assert.equal(anotherPlayer.prevented, false, type + ' must not suppress a player target');
+  }
+  view.stop();
+  assert.equal(listeners.size, 0, 'viewer teardown must remove all document handlers');
+});
+
+test('portrait iPad details stack their large card over full-width skill text', async () => {
+  const styles = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css', import.meta.url), 'utf8');
+  assert.match(styles, /@media\s*\(max-width:\s*900px\)\s*and\s*\(orientation:\s*portrait\)/);
+  assert.match(styles, /grail-detail-layout\s*\{\s*display:\s*flex;\s*flex-direction:\s*column/);
+  assert.match(styles, /grail-detail-description\s*\{\s*align-self:\s*stretch/);
+});
+
 test('public marks show visible counts, limits and related skills without reading hidden card storage', () => {
   const c = context('moDaoShi');
   const marker = { skill: 'yuanSu', info: lib.skill.yuanSu.intro, classList: classes('mark'), markcount: { textContent: '2' } };
