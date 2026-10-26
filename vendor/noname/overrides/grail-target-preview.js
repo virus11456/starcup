@@ -2,8 +2,8 @@
  * NATIVE selected targets. No click handling, selection changes or rule calls.
  * The SVG floats in the existing viewport-aligned HUD, not in scaled #arena. */
 
-export function selectedCardTargetPreview({ ui, game, event, get, lib } = {}) {
-  if (!ui?.arena || ui.arena.classList?.contains('choose-character') ||
+export function selectedCardTargetPreview({ ui, game, event, get, lib, over = false } = {}) {
+  if (over || !ui?.arena || ui.arena.classList?.contains('choose-character') ||
       !event || !game?.me || event.player !== game.me ||
       typeof event.filterTarget !== 'function') return null;
   const cards = ui.selected?.cards;
@@ -45,7 +45,7 @@ export function cardToTargetLine(cardRect, targetRect) {
   return { from, to };
 }
 
-export function createTargetPreview({ hud, ui, game, get, lib, event,
+export function createTargetPreview({ hud, ui, game, get, lib, event, isOver,
   doc = document, win = window } = {}) {
   const xmlns = 'http://www.w3.org/2000/svg';
   const svg = doc.createElementNS(xmlns, 'svg');
@@ -57,7 +57,9 @@ export function createTargetPreview({ hud, ui, game, get, lib, event,
   let stopped = false, queued = false;
   function update() {
     if (stopped) return;
-    const current = selectedCardTargetPreview({ ui, game, get, lib, event: event?.() });
+    const current = selectedCardTargetPreview({
+      ui, game, get, lib, event: event?.(), over: Boolean(isOver?.()),
+    });
     const visible = new Set();
     const width = win.innerWidth, height = win.innerHeight;
     if (current && width > 0 && height > 0) {

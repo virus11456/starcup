@@ -45,7 +45,10 @@ const quickDetail = createQuickDetailView({
 });
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
 const handSkin = createHandSkin({ lib, get });
-const targetPreview = createTargetPreview({ hud, ui, game, get, lib, event: () => _status.event });
+const targetPreview = createTargetPreview({
+  hud, ui, game, get, lib, event: () => _status.event,
+  isOver: () => _status.over,
+});
 const text = (value) =>
   String(value || "")
     .replace(/<br\s*\/?>/gi, "\n")

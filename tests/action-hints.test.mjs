@@ -214,3 +214,32 @@ test('portrait HUD placement avoids the selected portrait and native hand while 
   const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
   assert.match(bridge, /if \(!hintHasSafeSlot && !phaseHint.hidden\)[\s\S]*?grail-inline-action-hint/);
 });
+
+test('hidden or unfocused old noname dialogs never replace the active HUD text', async () => {
+  const { isActionDialogVisible } = await import('../vendor/noname/overrides/grail-action-hints.js');
+  const label = { textContent: '', hidden: true };
+  const old = dialog(['前一階段的舊提示']);
+  const active = dialog(['請選擇攻擊或法術']);
+  const a = arena([old, active]);
+  for (const nativeState of ['hidden', 'removing', 'unfocus']) {
+    old.classList.toggle(nativeState, true);
+    updateActionHints(a, label, true);
+    assert.equal(isActionDialogVisible(old), false, nativeState);
+    assert.equal(label.textContent, '請選擇攻擊或法術');
+    assert.equal(old.classList.contains('grail-inline-action-hint'), false,
+      'hidden source cannot keep stale visual-hide state');
+    old.classList.toggle(nativeState, false);
+  }
+  old.style = { display: 'none' };
+  updateActionHints(a, label, true);
+  assert.equal(label.textContent, '請選擇攻擊或法術');
+  assert.equal(isActionDialogVisible(old), false);
+  old.style.display = '';
+  old.hidden = true;
+  updateActionHints(a, label, true);
+  assert.equal(label.textContent, '請選擇攻擊或法術');
+  old.hidden = false;
+  old.getAttribute = key => key === 'aria-hidden' ? 'true' : null;
+  updateActionHints(a, label, true);
+  assert.equal(label.textContent, '請選擇攻擊或法術');
+});

@@ -14,6 +14,17 @@ const activeChoices = [
   'button', 'input', 'textarea', 'select', 'details', 'summary',
   '[contenteditable="true"]',
 ].join(', ');
+// The native engine reuses dialogs, hiding older phases with .hide() and
+// refocusing them later. Hidden dialogs still match querySelectorAll; never
+// copy their previous instructions into the current status HUD.
+export function isActionDialogVisible(dialog) {
+  const cls = dialog?.classList;
+  return !!dialog && dialog.hidden !== true &&
+    !['hidden', 'removing', 'unfocus'].some(name => cls?.contains?.(name)) &&
+    dialog.style?.display !== 'none' &&
+    dialog.style?.visibility !== 'hidden' &&
+    dialog.getAttribute?.('aria-hidden') !== 'true';
+}
 export function updateActionHints(arena, hudLabel = null, scoreboardVisible = false) {
   if (!arena || arena.classList?.contains('choose-character')) {
     if (hudLabel) { hudLabel.hidden = true; hudLabel.textContent = ''; }
@@ -21,6 +32,14 @@ export function updateActionHints(arena, hudLabel = null, scoreboardVisible = fa
   }
   let phaseText = '';
   for (const dialog of arena.querySelectorAll(':scope > .dialog:not(.popped)')) {
+    if (!isActionDialogVisible(dialog)) {
+      // Prevent old hidden native dialogs inheriting an outdated inline HUD
+      // class when the user returns to the previous game phase.
+      dialog.classList.toggle('grail-action-hint', false);
+      dialog.classList.toggle('grail-empty-action-hint', false);
+      dialog.classList.toggle('grail-inline-action-hint', false);
+      continue;
+    }
     // The pinned noname Dialog.addText() writes <div class="text center">
     // directly inside .content rather than creating a .caption. Include
     // this actual native text shape or Safari can still show a blank bar.

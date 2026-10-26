@@ -63,3 +63,14 @@ test('preview overlay is click-through, respects reduced motion, and shows attac
   assert.match(css, /data-kind="spell"/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
+
+test('battle end clears an otherwise selected attack or spell target line', async () => {
+  const { context, target, card } = gameFixture('gongJi');
+  assert.deepEqual(selectedCardTargetPreview(context), { card, targets: [target], kind: 'attack' });
+  context.over = true;
+  assert.equal(selectedCardTargetPreview(context), null, 'game-over must not keep battle target beams');
+  context.over = false;
+  assert.ok(selectedCardTargetPreview(context), 'normal combat selection still works');
+  const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(bridge, /isOver:\s*\(\) => _status\.over/);
+});
