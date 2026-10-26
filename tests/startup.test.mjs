@@ -58,6 +58,8 @@ for (const device of [
     assert.equal(classes.has("grail-phone-layout"), config.phonelayout);
     assert.equal(context.window.config.touchscreen, device.coarse);
     assert.equal(config.auto_popped_config, false);
+    assert.equal(config.cardshape, "oblong");
+    assert.equal(context.window.config.cardshape, "oblong");
     assert.equal(context.window.config.auto_popped_config, false);
     assert.equal(config.versus_mode_mode_config_xingBei, "three");
   }

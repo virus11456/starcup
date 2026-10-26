@@ -428,7 +428,7 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   #grail-scoreboard .grail-score-teams { flex: 1; gap: 16px; }
   #grail-scoreboard .grail-score-team { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   #grail-scoreboard .grail-score-mine { display: none; }
-  .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(98px * var(--grail-touch-scale, 1)); height: calc(100% - 210px * var(--grail-touch-scale, 1)); }
+  .grail-scoreboard-ready #window #arena:not(.chess) { top: calc(98px * var(--grail-touch-scale, 1)); height: calc(100% - 246px * var(--grail-touch-scale, 1)); }
   .grail-scoreboard-ready #window #arena:not(.chess) > .player {
     width: calc(60px * var(--grail-touch-scale, 1));
     height: calc(78px * var(--grail-touch-scale, 1)) !important;
@@ -437,7 +437,7 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
     left: calc((100% - 60px * var(--grail-touch-scale, 1)) * var(--grail-seat-fraction, .5));
     right: auto;
   }
-  .grail-scoreboard-ready #window #arena:not(.chess) > .player[data-position="0"] { left: 0; top: auto; bottom: calc(-100px * var(--grail-touch-scale, 1)); }
+  .grail-scoreboard-ready #window #arena:not(.chess) > .player[data-position="0"] { left: 0; top: auto; bottom: var(--grail-hand-bottom); }
   .grail-scoreboard-ready #window #arena > .player > .avatar { width: 100%; height: 100%; top: 0; left: 0; }
   #window #arena > .player > .name { font-size: calc(10px * var(--grail-touch-scale, 1)); line-height: 1.1; }
   #window #arena > .player[data-grail-team] > .identity { padding: calc(2px * var(--grail-touch-scale, 1)); top: 0; right: 0; }

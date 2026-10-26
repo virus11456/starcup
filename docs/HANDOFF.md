@@ -1,6 +1,6 @@
 # 星杯傳說接手狀態
 
-> 2026-10-26 最新狀態請讀 [長離線重連與紀錄接手](guest-rejoin-history-handoff.md) 及 [整合階段](stage-room-entry-and-role-tags.md)。目前立即開發、完整階段集中發布；以下為歷史紀錄，不是目前部署狀態。
+> 2026-10-26 最新本機批次為 [直式卡牌](stage-portrait-cards.md)，220 項測試與 64 項 HTTP 通過，僅備份到 `fix/relay-recovery-20261026`。Cloudflare 已發布 `89d66af` 與完成 M07 自然局，詳見 [階段發布紀錄](release-20261026-stage2.md)。單人 10/10、多人 7/10；房主關頁接手未完成，Vercel 保留。以下為歷史紀錄。
 
 更新：2026-10-25（UTC 2026-10-24）。這是最新狀態，取代先前未同步 GitHub 的舊交接。
 

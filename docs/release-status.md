@@ -1,6 +1,6 @@
 # 目前部署狀態
 
-> 2026-10-26 最新接手與發布狀態見 [長離線重連與紀錄接手](guest-rejoin-history-handoff.md)。正式 Cloudflare 分支仍為 `43c101b2ba900880d41072f427ffbcd1cc6bc26f`，本輪 218 項測試及 64 項 HTTP 檢查通過的修改尚未部署，Vercel 保留。以下為歷史紀錄。
+> 2026-10-26 最新正式版為 Cloudflare `89d66af`，已驗多人 M07 自然結算，累計單人 10/10、多人 7/10，詳見 [階段發布紀錄](release-20261026-stage2.md)。最新 [直式卡牌](stage-portrait-cards.md) 通過 220 項測試與 64 項 HTTP，僅本機／GitHub 備份，待下一階段集中發布。房主關頁接手未完成，Vercel 保留。以下為歷史紀錄。
 
 更新日期：2026-10-25（UTC 2026-10-24）。歷史十局紀錄另見 game-test-report-2026-10-25.md；先前功能驗證見 [完整擴充實玩報告](qa-mobile-zh-hant-2026-10-25.md)。
 

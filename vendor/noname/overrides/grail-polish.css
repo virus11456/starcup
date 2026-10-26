@@ -1,5 +1,5 @@
-/* GPL-3.0: shared visual finish for solo and multiplayer. Keep all native
-   dimensions, transforms, visibility rules and pointer targets intact. */
+/* GPL-3.0: shared visual finish for solo and multiplayer. Card geometry lives
+   in grail-handcards.css; retain native nodes, visibility and selection. */
 :root {
   --grail-ink: #0b1822;
   --grail-panel: #142a33;

@@ -61,6 +61,7 @@ test('interleaved online, solo and catalog launchers retain their own native mod
       assert.equal(config.touchscreen, expected.coarse);
       assert.equal(config.phonelayout, expected.coarse);
       assert.equal(config.totouched, true);
+      assert.equal(config.cardshape, 'oblong');
     }
   }
 });

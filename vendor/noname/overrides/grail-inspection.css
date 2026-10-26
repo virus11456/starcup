@@ -29,7 +29,7 @@
 #grail-inspection article { margin: 0 0 12px; padding: 14px; border: 1px solid #92afa34d; border-radius: 10px; background: #172e34; overflow-wrap: anywhere; }
 #grail-inspection article header { display: flex; align-items: center; gap: 12px; }
 #grail-inspection article header > div { min-width: 0; flex: 1; }
-#grail-inspection article header img { width: 72px; height: 72px; object-fit: contain; border-radius: 6px; background: #0d2027; flex-shrink: 0; }
+#grail-inspection article header img { width: 72px; height: 100px; object-fit: contain; border-radius: 6px; background: #0d2027; flex-shrink: 0; }
 #grail-inspection h3 { font-size: 20px; line-height: 1.5; margin: 0; color: #f2dfb2; }
 #grail-inspection article header p { font-size: 13px; line-height: 1.6; color: #bacec9; margin: 4px 0 0; }
 #grail-inspection article section { padding-top: 12px; margin-top: 12px; border-top: 1px solid #9bb2a533; }

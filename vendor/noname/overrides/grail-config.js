@@ -22,11 +22,11 @@
     : /iphone|ipad|ipod|android/i.test(window.navigator?.userAgent || "");
   // QA may load the actual phone stylesheet while keeping mouse input usable.
   const phonelayout = touchscreen || query.get("phone-layout") === "1";
-  const input = { totouched: true, touchscreen, phonelayout, fold_mode: false };
+  const input = { totouched: true, touchscreen, phonelayout, fold_mode: false, cardshape: "oblong" };
   // The upstream touch handler only allows horizontal swipes when its hand
   // container has scrollh. Disabling its fan on small screens preserves that
   // native scrolling path for our larger, full-width card row.
-  if (window.matchMedia?.("(max-width: 600px)").matches) input.fold_card = false;
+  if (window.matchMedia?.("(max-width: 600px), (min-width: 601px) and (max-width: 1049px) and (max-height: 500px)").matches) input.fold_card = false;
   document.documentElement.classList.toggle("grail-phone-layout", phonelayout);
   // A separate localStorage namespace avoids modifying existing core matches.
   window.nodb = true;

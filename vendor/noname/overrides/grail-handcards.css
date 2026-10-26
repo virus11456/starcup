@@ -1,10 +1,60 @@
-/* GPL-3.0: larger phone hand, using the existing card nodes and listeners.
-   Keep the engine's body scale; dimensions below are viewport pixels. */
+/* GPL-3.0: portrait cards, using the existing nodes and listeners. Keep the
+   native card width/fan on desktop and native body/input scaling everywhere.
+   Markers, attached effects and equipment deliberately retain their sizes. */
+:root {
+  --grail-hand-card-width: 104px;
+  --grail-hand-card-height: 144px;
+  --grail-hand-height: 188px;
+  --grail-hand-bottom: 30px;
+  --grail-hand-control-bottom: 226px;
+}
+#window #arena:not(.chess) .handcards > .card,
+#window #arena:not(.chess) > .card {
+  width: var(--grail-hand-card-width);
+  height: var(--grail-hand-card-height);
+}
+#window .dialog .buttons > .card {
+  width: 90px;
+  height: 126px;
+}
+/* The native desktop selection lifts a card 20px. Keep that space inside
+   scrollh, plus room beneath the card for a horizontal scrollbar. */
+#window #arena:not(.chess) .handcards > .card { margin-top: 24px; }
+#window #arena:not(.chess) .handcards > .card > .image,
+#window #arena:not(.chess) > .card > .image,
+#window .dialog .buttons > .card > .image {
+  top: 0;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  border-radius: inherit;
+}
+#window #arena:not(.chess) > #me {
+  top: auto;
+  bottom: var(--grail-hand-bottom) !important;
+  height: var(--grail-hand-height);
+}
+#window #arena:not(.chess) #me #handcards1,
+#window #arena:not(.chess) #me #handcards1 > .handcards {
+  top: 0;
+  height: 100%;
+}
+#window #arena:not(.chess):not(.choose-character) > #control {
+  top: auto;
+  bottom: var(--grail-hand-control-bottom);
+}
+
+/* Phone dimensions are viewport pixels, compensated for native body scale. */
 @media (max-width: 600px), (min-width: 601px) and (max-width: 1049px) and (max-height: 500px) {
+  :root {
+    --grail-hand-card-width: calc(76px * var(--grail-touch-scale, 1));
+    --grail-hand-card-height: calc(108px * var(--grail-touch-scale, 1));
+    --grail-hand-height: calc(132px * var(--grail-touch-scale, 1));
+    --grail-hand-bottom: calc(12px * var(--grail-touch-scale, 1));
+    --grail-hand-control-bottom: calc(152px * var(--grail-touch-scale, 1));
+  }
   #window #arena:not(.chess) > #me {
-    top: auto;
-    bottom: calc(12px * var(--grail-touch-scale, 1));
-    height: calc(96px * var(--grail-touch-scale, 1));
+    bottom: var(--grail-hand-bottom);
   }
   #window #arena:not(.chess) #me #handcards1 {
     top: 0;
@@ -38,8 +88,8 @@
     flex: 0 0 auto;
     left: auto;
     top: auto;
-    width: calc(72px * var(--grail-touch-scale, 1));
-    height: calc(72px * var(--grail-touch-scale, 1));
+    width: var(--grail-hand-card-width);
+    height: var(--grail-hand-card-height);
     margin: 0;
     transform: none !important;
     border-radius: calc(6px * var(--grail-touch-scale, 1));
@@ -68,19 +118,22 @@
     line-height: 1.2;
   }
   #window #arena:not(.chess):not(.choose-character) > #control {
-    top: auto;
-    bottom: calc(116px * var(--grail-touch-scale, 1));
+    bottom: var(--grail-hand-control-bottom);
   }
 }
 
 @media (min-width: 601px) and (max-width: 1049px) and (max-height: 500px) {
+  :root {
+    --grail-hand-bottom: calc(-136px * var(--grail-touch-scale, 1));
+    --grail-hand-control-bottom: calc(-12px * var(--grail-touch-scale, 1));
+  }
   #window #arena:not(.chess) > #me {
-    bottom: calc(-100px * var(--grail-touch-scale, 1)) !important;
+    bottom: var(--grail-hand-bottom) !important;
     width: 100% !important;
     left: 0 !important;
   }
   #window #arena:not(.chess):not(.choose-character) > #control {
-    bottom: calc(-12px * var(--grail-touch-scale, 1));
+    bottom: var(--grail-hand-control-bottom);
     height: calc(44px * var(--grail-touch-scale, 1));
   }
 }
