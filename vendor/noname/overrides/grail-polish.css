@@ -67,14 +67,25 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
 /* Only cards bearing an innate special attack of the CURRENT character get
    gold. Keep the native selected state legible with an outer mint halo. */
 #window #arena .handcards > .card[data-grail-own-special="true"] {
-  outline: 3px solid #ffda76;
-  outline-offset: -2px;
-  box-shadow: 0 0 0 1px #f6d189, 0 0 13px #f4b7448c, 0 5px 14px #000a;
+  /* The inner ring stays visible inside the clipped, scrolling phone hand. */
+  outline: 4px solid #ffd454;
+  outline-offset: -1px;
+  box-shadow: inset 0 0 0 3px #fff1a3, 0 0 0 2px #ffd454, 0 0 18px 4px #ffc145b0, 0 5px 14px #000a;
 }
 #window #arena .handcards > .card[data-grail-own-special="true"].selected {
-  outline: 3px solid #ffda76;
-  outline-offset: -2px;
-  box-shadow: 0 0 0 3px var(--grail-picked), 0 0 15px #edba63ac, 0 6px 18px #0009;
+  outline: 4px solid #ffd454;
+  outline-offset: -1px;
+  box-shadow: inset 0 0 0 3px #fff1a3, 0 0 0 4px var(--grail-picked), 0 0 18px 4px #ffc145b0, 0 6px 18px #0009;
+}
+#window #arena .handcards > .card[data-grail-own-special="true"] > .name {
+  color: #fff2ce;
+  background: #513618ed;
+  box-shadow: inset 4px 0 0 #ffd454, 0 1px 5px #0008;
+}
+#window #arena .handcards > .card[data-grail-own-special="true"] > .info {
+  color: #fff1b8;
+  background: #573811ef;
+  box-shadow: 0 0 0 2px #ffd454, 0 2px 8px #0009;
 }
 
 /* Character portraits retain their original crop and seat locations. */

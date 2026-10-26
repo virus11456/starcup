@@ -103,3 +103,21 @@ test('a guest leaving during broadcast does not disconnect the remaining table',
   assert.equal(room.messages.length, 1);
   assert.equal(relayView(room, 'bob-secret').messages.length, 1);
 });
+
+test('guest actions are fenced after the playing host expires, even if the old picker sends a last packet', () => {
+  const room = ready(); room.status = 'playing';
+  const first = { connection, ack: 0, messages: [{ id: 'stale-result-12345678', to: '1', data: '["result",{"bool":true}]' }] };
+  syncFullRoom(room, 'alice-secret', first, 61_000);
+  assert.equal(relayView(room, 'alice-secret', 61_000).hostAlive, false);
+  assert.equal(room.sequence, 0, 'the expired host never receives a stale choice');
+  assert.equal(room.messages.length, 0);
+  assert.ok(room.received.includes('alice:stale-result-12345678'), 'retry deduplication remains durable');
+  syncFullRoom(room, 'alice-secret', first, 61_001);
+  assert.equal(room.received.length, 1, 'lost reply retries do not accumulate writes');
+  assert.throws(() => syncFullRoom(room, 'alice-secret', {
+    connection, ack: 0, messages: [{ id: 'illegal-result-12345678', to: '1', data: '["exec","bad"]' }],
+  }, 61_002), /不允許/, 'offline packets must still be validated');
+  room.members[0].seen = 61_003;
+  syncFullRoom(room, 'alice-secret', { connection, ack: 0, messages: [{ id: 'fresh-result-12345678', to: '1', data: '["result",{"bool":false}]' }] }, 61_003);
+  assert.equal(room.sequence, 1, 'fresh native input is accepted after the original host returns');
+});

@@ -245,3 +245,25 @@ test('other seats heartbeat activity cannot make a disconnected host appear onli
   assert.ok(rooms.load().members[1].seen >= now + 60_000);
   db.close();
 });
+
+test('hibernating WebSocket relay durably deduplicates the last guest choice while its playing host is absent', () => {
+  const { db, rooms, room } = fixture();
+  const now = room.updated;
+  room.status = 'playing';
+  for (const member of room.members) member.seen = now;
+  rooms.save(room);
+  const body = { connection: room.members[1].connection, ack: 0,
+    messages: [{ id: 'offline-choice-12345678', to: '1', data: '["result",{"bool":true}]' }] };
+  const stale = rooms.load();
+  assert.equal(syncSocketRoom(stale, 'guest', body, [], now + 60_001), true);
+  assert.equal(stale.sequence, 0);
+  stale.updated = now + 60_001;
+  rooms.save(stale);
+  const stored = rooms.load();
+  assert.equal(relayView(stored, 'guest', now + 60_001).hostAlive, false);
+  assert.equal(stored.messages.length, 0);
+  assert.equal(stored.received.length, 1);
+  assert.equal(syncSocketRoom(stored, 'guest', body, [socketCheckpoint(stored, 'guest')], now + 60_002), false);
+  assert.equal(stored.received.length, 1);
+  db.close();
+});

@@ -41,6 +41,7 @@ test('only the current character gets a gold border on its own unique attack sta
       character: {
         fengZhiJianSheng: ['風之劍聖', 'jiGroup', 3, ['fengNuZhuiJi', 'lieFengJi', 'jiFengJi']],
         shenJianShou: ['神箭手', 'jiGroup', 3, ['jingZhunSheJi']],
+        shengNv: ['聖女', 'shengGroup', 3, ['zhiLiaoShu']],
       },
       skill: {
         lieFengJi: { duYou: 'lieFengJi' },
@@ -52,14 +53,16 @@ test('only the current character gets a gold border on its own unique attack sta
   };
   const quake = { ...card('di'), type: 'gongJi', duYou: 'lieFengJi|jingZhunSheJi' };
   const wave = { ...card('shui'), type: 'gongJi', duYou: 'jiFengJi|shanGuangXianJing' };
+  const screenshotThunder = { ...card('lei'), type: 'gongJi', name: 'leiGuangZhan', duYou: 'jiFengJi|jingZhunSheJi' };
   const other = { ...card('lei'), type: 'gongJi', duYou: 'jingZhunSheJi' };
   const spell = { ...card('di'), type: 'faShu', duYou: 'lieFengJi' };
-  const hand = [quake, wave, other, spell];
+  const hand = [quake, wave, screenshotThunder, other, spell];
   const player = { name1: 'fengZhiJianSheng', getCards: () => hand };
   const skin = createHandSkin(context);
   skin.update(player);
   assert.equal(quake.dataset.grailOwnSpecial, 'true');
   assert.equal(wave.dataset.grailOwnSpecial, 'true');
+  assert.equal(screenshotThunder.dataset.grailOwnSpecial, 'true', 'Swordmaster thunder attack printed with 疾風技 must be highlighted');
   assert.equal(other.dataset.grailOwnSpecial, undefined);
   assert.equal(spell.dataset.grailOwnSpecial, undefined);
   assert.equal(isOwnSpecialAttack(quake, { name1: 'shenJianShou' }, context), true);
@@ -67,7 +70,11 @@ test('only the current character gets a gold border on its own unique attack sta
   skin.update(player);
   assert.equal(quake.dataset.grailOwnSpecial, 'true', 'same physical card matches the new character for a different skill');
   assert.equal(wave.dataset.grailOwnSpecial, undefined);
+  assert.equal(screenshotThunder.dataset.grailOwnSpecial, 'true', 'a shooter independently owns the second printed 精準射擊 skill');
   assert.equal(other.dataset.grailOwnSpecial, 'true');
+  player.name1 = 'shengNv';
+  skin.update(player);
+  assert.equal(screenshotThunder.dataset.grailOwnSpecial, undefined, 'a character owning neither printed skill sees the ordinary border');
   player.name1 = 'fengZhiJianSheng';
   wave.classList.contains = name => name === 'infohidden';
   skin.update(player);
@@ -89,6 +96,19 @@ test('another character drawing the pictured swordmaster cards sees regular bord
   assert.equal(c.dataset.grailOwnSpecial, undefined, 'opponent role cannot borrow a gold border');
 });
 
+test('printed 疾風技 stays gold for Swordmaster before skill wrappers are registered', () => {
+  const c = { ...card('lei'), name: 'leiGuangZhan', type: 'gongJi', duYou: 'jiFengJi|jingZhunSheJi' };
+  const context = { lib: { natureSeparator: '|', character: {
+    fengZhiJianSheng: ['風之劍聖', 'jiGroup', 3, ['jiFengJi']],
+    shengNv: ['聖女', 'shengGroup', 3, ['zhiLiaoShu']],
+  }, skill: {} }, get: { type: item => item.type } };
+  const skin = createHandSkin(context);
+  skin.update({ name1: 'fengZhiJianSheng', getCards: () => [c] });
+  assert.equal(c.dataset.grailOwnSpecial, 'true', 'printed unique abilities do not depend on runtime skill metadata');
+  skin.update({ name1: 'shengNv', getCards: () => [c] });
+  assert.equal(c.dataset.grailOwnSpecial, undefined, 'a different character still cannot claim the same stamp');
+});
+
 test('ordinary playable cards use neutral borders, reserving gold for owned special attacks', async () => {
   const css = await readFile(new URL('../vendor/noname/overrides/grail-polish.css', import.meta.url), 'utf8');
   const regularPlayable = css.match(/#window #arena \.handcards > \.card\[data-grail-element\]\.selectable\s*\{([^}]*)\}/)?.[1];
@@ -97,7 +117,10 @@ test('ordinary playable cards use neutral borders, reserving gold for owned spec
   assert.match(regularPlayable, /outline:\s*2px solid #9abecb/);
   assert.doesNotMatch(regularPlayable, /#e5c782|#ffda76|#f6d189|#f4b744/i);
   assert.ok(ownedSpecial, 'innate unique attack rule exists');
-  assert.match(ownedSpecial, /outline:\s*3px solid #ffda76/);
+  assert.match(ownedSpecial, /outline:\s*4px solid #ffd454/);
+  assert.match(ownedSpecial, /inset 0 0 0 3px #fff1a3/, 'gold ring remains visible when the mobile hand clips outer glows');
+  assert.match(css, /\.card\[data-grail-own-special="true"\] > \.info\s*\{[^}]*background:\s*#573811ef/s,
+    'own special attack skill text has a distinct gold-backed marker');
   assert.ok(css.indexOf('[data-grail-own-special="true"] {') > css.indexOf('[data-grail-element].selectable {'), 'gold rule wins when both are playable');
 });
 
@@ -113,6 +136,7 @@ test('the actual pinned Swordmaster pack recognizes exactly its pictured attack 
   const cleric = { name1: 'shenGuan' };
   assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'lieFengJi|jingZhunSheJi' }, swordmaster, context), true);
   assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'jiFengJi|shanGuangXianJing' }, swordmaster, context), true);
+  assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'jiFengJi|jingZhunSheJi' }, swordmaster, context), true);
   assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'jingZhunSheJi' }, swordmaster, context), false);
   assert.equal(isOwnSpecialAttack({ type: 'gongJi', duYou: 'lieFengJi' }, cleric, context), false);
 });

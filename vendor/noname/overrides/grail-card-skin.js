@@ -7,12 +7,15 @@ export function cardElement(card) {
 // A printed unique-attack stamp matters only to the character who actually
 // owns that skill. It must not turn gold in another character's hand.
 export function isOwnSpecialAttack(card, player, { lib, get } = {}) {
-  if (!card || !player || !lib?.character || !lib?.skill || !get?.type || get.type(card) !== 'gongJi') return false;
+  if (!card || !player || !lib?.character || !get?.type || get.type(card) !== 'gongJi') return false;
   if (typeof card.duYou !== 'string' || !card.duYou) return false;
   const owned = new Set([player.name1, player.name2, player.name]
     .flatMap(name => lib.character[name]?.[3] || []));
-  return card.duYou.split(lib.natureSeparator || '|').some(id =>
-    owned.has(id) && lib.skill[id]?.duYou === id);
+  // The printed card stamp plus the character's innate skill list is enough.
+  // `lib.skill[id].duYou` can be missing during native pack initialization or
+  // replaced by a runtime wrapper even though the printed ability is still
+  // that character's. Never depend on it for a presentation-only highlight.
+  return card.duYou.split(lib.natureSeparator || '|').some(id => owned.has(id));
 }
 export function createHandSkin(context) {
   let previous = new Set();
