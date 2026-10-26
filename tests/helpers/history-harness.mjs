@@ -28,6 +28,14 @@ export function historyHarness(options = {}) {
     get textContent() { return this.ownText + this.children.map(child => child.textContent).join(''); }
     setAttribute(key, value) { this.attributes.set(key, value); }
     getAttribute(key) { return this.attributes.get(key); }
+    removeAttribute(key) { this.attributes.delete(key); }
+    remove() {
+      if (!this.parentElement) return;
+      const children = this.parentElement.children;
+      const index = children.indexOf(this);
+      if (index >= 0) children.splice(index, 1);
+      this.parentElement = null;
+    }
     append(...nodes) { for (const node of nodes) { node.parentElement = this; this.children.push(node); } }
     replaceChildren(...nodes) { this.children = []; this.ownText = ''; this.append(...nodes); }
     focus() { doc.activeElement = this; }

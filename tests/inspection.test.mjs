@@ -119,6 +119,7 @@ test('character draft supports public full-size previews without hijacking ordin
   listeners.get('touchend')(released);
   assert.equal(released.prevented, true, 'long-press release cannot select the draft character');
   view.stop();
+  assert.equal(listeners.size, 0, 'all document-level preview listeners are removed on teardown');
 });
 
 test('a role tap opens only for non-selectable targets; long pressing our hand opens without playing it', async () => {
