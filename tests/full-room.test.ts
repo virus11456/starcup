@@ -55,17 +55,18 @@ test('reconnect rotates connection epoch, discards stale choices, rejects old pa
   assert.throws(() => syncFullRoom(room, 'alice-secret', { connection, ack: 0, messages: [] }), /另一個頁面/);
   assert.equal(fullView(room, 'alice-secret').me, 'alice');
 });
-test('host reload closes a match instead of silently replacing its event stack', () => {
+test('a duplicate host page cannot close or replace the surviving native event stack', () => {
   const room = ready();
   attachFullRoom(room, 'host-secret', connection, 1100);
   assert.equal(room.status, 'waiting');
-  attachFullRoom(room, 'host-secret', 'new-connection-123456789', 1200);
-  assert.equal(room.status, 'closed');
-  assert.throws(() => syncFullRoom(room, 'alice-secret', { connection, ack: 0, messages: [] }), /已結束/);
+  const before = JSON.stringify(room);
+  assert.throws(() => attachFullRoom(room, 'host-secret', 'new-connection-123456789', 1200), /原分頁/);
+  assert.equal(JSON.stringify(room), before);
+  assert.doesNotThrow(() => syncFullRoom(room, 'host-secret', { connection, ack: 0, messages: [] }, 1200));
 });
 test('closed rooms reject former seats at join instead of launching a broken iframe', () => {
   const room = ready();
-  attachFullRoom(room, 'host-secret', 'new-connection-123456789', 1200);
+  room.status = 'closed';
   const before = JSON.stringify(room);
   for (const auth of ['host-secret', 'alice-secret', 'new-player']) {
     assert.throws(() => joinFullRoom(room, auth, '測試', 'other'),

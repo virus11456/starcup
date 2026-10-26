@@ -2,7 +2,7 @@ import site from 'vinext/server/fetch-handler';
 import { DurableObject } from 'cloudflare:workers';
 import { createHash, randomBytes } from 'node:crypto';
 import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from '../lib/site-access.ts';
-import { attachFullRoom, createFullRoom, fullSummary, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '../lib/full-room.ts';
+import { attachFullRoom, checkWaitingHostRecovery, startFullRoom, createFullRoom, fullSummary, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '../lib/full-room.ts';
 import { RoomStorage } from './room-storage.js';
 import { creationCode, recoverCreation } from '../lib/room-creation.ts';
 import { socketCheckpoint, syncSocketRoom } from './room-checkpoints.js';
@@ -90,8 +90,15 @@ export class GrailRoom extends DurableObject {
           joinFullRoom(room, auth, body.name, randomBytes(8).toString('hex'));
           data = { room: fullView(room, auth) };
         } else if (body.type === 'attach') {
-          attachFullRoom(room, auth, body.connection);
+          attachFullRoom(room, auth, body.connection, Date.now(), body);
           data = { ...relayView(room, auth), transport: 'websocket' };
+        } else if (body.type === 'recover-check') {
+          checkWaitingHostRecovery(room, auth);
+          changed = false;
+          data = { room: fullView(room, auth) };
+        } else if (body.type === 'start') {
+          changed = startFullRoom(room, auth, body.connection);
+          data = { room: fullView(room, auth) };
         } else if (body.type === 'sync') {
           changed = sender
             ? syncSocketRoom(room, auth, body, this.ctx.getWebSockets().map(ws => ws.deserializeAttachment()))
@@ -111,13 +118,13 @@ export class GrailRoom extends DurableObject {
       }
       if (sender) sender.serializeAttachment(socketCheckpoint(room, auth));
       // Notify only for gameplay/membership changes, not heartbeat/ack traffic.
-      if (body.type !== 'sync' || body.messages?.length || body.started && room.status === 'playing' && !wasPlaying) {
+      if (body.type !== 'recover-check' && (body.type !== 'sync' || body.messages?.length || body.started && room.status === 'playing' && !wasPlaying)) {
         for (const ws of this.ctx.getWebSockets()) if (ws !== sender && ws.deserializeAttachment()?.auth) {
           try { ws.send('{"wake":true}'); } catch { /* reconnect uses durable inbox */ }
         }
       }
       if (body.type === 'create') await this.ctx.storage.setAlarm(Date.now() + DAY);
-      if (body.type !== 'sync' || Date.now() - this.lastListed > 30_000) {
+      if (body.type !== 'recover-check' && (body.type !== 'sync' || Date.now() - this.lastListed > 30_000)) {
         this.lastListed = Date.now();
         // Directory availability must not roll back an already persisted action.
         this.ctx.waitUntil(this.env.GRAIL_DIRECTORY.getByName('lobby').update(fullSummary(room)).catch(() => { this.lastListed = 0; }));

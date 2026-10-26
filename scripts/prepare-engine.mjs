@@ -75,6 +75,14 @@ async function patch(file, before, after) {
 // Decorate the native character button, including native form changes. This
 // single path is shared by solo choices and multiplayer free drafting.
 const buttonFile = 'noname/ui/create/index.js';
+// The native lobby must wait for a durable start acknowledgement before
+// resuming the game. Solo and upstream-only modes retain their own path.
+await patch(buttonFile,
+  'game.online ? "退出联机" : "开始游戏", ui.window, function () {\n\t\t\tif (button.clicked) return;',
+  'game.online ? "退出联机" : "开始游戏", ui.window, async function () {\n\t\t\tif (button.clicked || button.grailStarting) return;');
+await patch(buttonFile,
+  '\t\t\t\tgame.resume();\n\t\t\t}\n\t\t\tbutton.delete();\n\t\t\tbar.delete();',
+  '\t\t\t\tif (game.grailRequestStart) {\n\t\t\t\t\tbutton.grailStarting = true;\n\t\t\t\t\ttry { if (!await game.grailRequestStart()) return; }\n\t\t\t\t\tfinally { button.grailStarting = false; }\n\t\t\t\t}\n\t\t\t\tgame.resume();\n\t\t\t}\n\t\t\tbutton.delete();\n\t\t\tbar.delete();');
 await writeFile(path.join(output, buttonFile),
   'import { decorateRoleButton } from "../../../grail-role-tags.js";\n' + await readFile(path.join(output, buttonFile), 'utf8'));
 await patch(buttonFile, '\t\t\t};\n\t\t\tnode.refresh = func;',
@@ -301,6 +309,7 @@ for (const [file, marker] of [
   ['noname/library/element/client.js', '!game.grailDraftPending?.(this.id)'],
   ['character/teDian.js', 'return installOfficialGlutton({'],
   ['noname/ui/create/index.js', 'updateResponseCancelLabel(ui.confirm, _status.event'],
+  ['noname/ui/create/index.js', 'if (!await game.grailRequestStart()) return;'],
   ['noname/game/index.js', 'if (!game.grailEmbeddedRoom) setTimeout(game.reload, 15000);'],
 ]) {
   if (!(await readFile(path.join(output, file), 'utf8')).includes(marker)) {

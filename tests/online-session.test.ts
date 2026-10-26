@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTIVE_ROOM_KEY, normalizeRoomCode, roomInvite, savedRoom, seatKey, shouldResumeRoom, resumeGuestRoom } from '../lib/online-session.ts';
+import { ACTIVE_ROOM_KEY, normalizeRoomCode, roomInvite, savedRoom, seatKey, shouldResumeRoom, resumeGuestRoom, resumeWaitingHost } from '../lib/online-session.ts';
 import { safeAccessNext } from '../lib/site-access.ts';
 
 const guest = { code: 'ABCDEFGH', name: '朋友的牌局', capacity: 4, nickname: '甲', isHost: false };
@@ -57,5 +57,31 @@ test('a response arriving after cancellation cannot restore a guest even if the 
   const pending = resumeGuestRoom(guest, token, controller.signal, () => response);
   controller.abort();
   deliver(Response.json({ room: guest }));
+  await assert.rejects(pending, { name: 'AbortError' });
+});
+test('host recovery checks the server without attaching, leaving or recreating the room', async () => {
+  const host = { ...guest, isHost: true };
+  let calls = 0;
+  const request: typeof fetch = async (_url, init) => {
+    calls++;
+    assert.deepEqual(JSON.parse(String(init?.body)), { type: 'recover-check', code: guest.code, token });
+    return Response.json({ room: { ...host, status: 'waiting' } });
+  };
+  assert.deepEqual(await resumeWaitingHost(host, token, undefined, request), host);
+  await assert.rejects(resumeWaitingHost(guest, token, undefined, request));
+  await assert.rejects(resumeWaitingHost(host, '', undefined, request));
+  assert.equal(calls, 1);
+  for (const status of ['playing', 'closed', undefined]) await assert.rejects(resumeWaitingHost(host, token, undefined,
+    async () => Response.json({ room: { ...host, status } })), /不能重建/);
+  await assert.rejects(resumeWaitingHost(host, token, undefined,
+    async () => Response.json({ error: '原分頁仍在線上' }, { status: 409 })), /仍在線上/);
+});
+test('a cancelled host preflight never launches a replacement lobby', async () => {
+  const controller = new AbortController();
+  let deliver!: (value: Response) => void;
+  const reply = new Promise<Response>(resolve => { deliver = resolve; });
+  const pending = resumeWaitingHost({ ...guest, isHost: true }, token, controller.signal, () => reply);
+  controller.abort();
+  deliver(Response.json({ room: { ...guest, isHost: true, status: 'waiting' } }));
   await assert.rejects(pending, { name: 'AbortError' });
 });

@@ -67,7 +67,7 @@ export function socketHarness(time = clock()) {
 
 // Execute the real browser adapter with a minimal native-engine boundary. No
 // production credentials, network calls, deck manipulation or simulated wins.
-export async function onlineHarness({ transport = 'websocket', isHost = false } = {}) {
+export async function onlineHarness({ transport = 'websocket', isHost = false, roomStatus = 'playing' } = {}) {
   const time = clock(), surface = page(), wire = socketHarness(time);
   const calls = [], received = [], warnings = [];
   const status = { setAttribute() {}, classList: { toggle() {} } };
@@ -89,9 +89,9 @@ export async function onlineHarness({ transport = 'websocket', isHost = false } 
     createRelayLifecycle: options => createRelayLifecycle({ ...options, window: surface.win, document: doc, setTimer: time.setTimer, clearTimer: time.clearTimer }),
     fetch: async (url, options) => {
       const body = JSON.parse(options.body), pending = deferred();
-      calls.push({ body, signal: options.signal, resolve: data => pending.resolve({ ok: true, json: async () => data }) });
+      calls.push({ body, signal: options.signal, resolve: (data, status = 200) => pending.resolve({ ok: status < 400, status, json: async () => data }) });
       if (body.type === 'attach') return { ok: true, json: async () => ({ transport, sequence: 0,
-        room: { code: body.code, me: isHost ? '1' : '2', nickname: '本機測試', isHost, status: 'playing', capacity: 4 } }) };
+        room: { code: body.code, me: isHost ? '1' : '2', nickname: '本機測試', isHost, status: roomStatus, capacity: 4 } }) };
       options.signal.addEventListener('abort', () => pending.reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })), { once: true });
       return pending.promise;
     },

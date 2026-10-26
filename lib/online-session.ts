@@ -126,3 +126,18 @@ export async function resumeGuestRoom(room: OnlineRoom, token: string, signal?: 
   if (next.isHost) throw new Error('請回到房主原本的分頁繼續牌局。');
   return next;
 }
+export async function resumeWaitingHost(room: OnlineRoom, token: string, signal?: AbortSignal,
+  request: typeof fetch = fetch): Promise<OnlineRoom> {
+  if (!room.isHost) throw new Error('請使用玩家的重新連接牌局功能。');
+  if (!validToken(token)) throw new Error('找不到原房主的座位識別，請使用原分頁。');
+  signal?.throwIfAborted();
+  // Read-only preflight: never close or replace an active host on this page.
+  // The engine attach repeats the checks atomically before rebuilding a lobby.
+  const response = await request('/api/full-room', { method: 'POST', cache: 'no-store', signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'recover-check', code: room.code, token }) });
+  const data = await roomResponse(response, signal);
+  const next = onlineRoom(data.room, room.code);
+  if (!next.isHost || (data.room as { status?: string }).status !== 'waiting') throw new Error('牌局已開始，請回到房主原分頁；不能重建進行中的牌局。');
+  return next;
+}

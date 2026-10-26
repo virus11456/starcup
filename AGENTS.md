@@ -10,6 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Local development and consolidated deployment
 
+- Latest local work: `docs/stage-host-lobby-recovery.md` records duplicate-host attach protection, explicit recovery of expired unstarted lobbies and a durable acknowledgement before native start. 231 local tests plus 64 built-Worker HTTP checks pass. This stage is not deployed; back up only `fix/relay-recovery-20261026`, then consolidate further work before release. In-progress host-close takeover is still unfinished. This local stage adds no natural-game completions or production SQL traffic.
+
 - Read `docs/stage-portrait-cards.md` for the deployed portrait-card stage (`e639f6a`), short-landscape visual fix, manual refinement/synthesis verification and M08–M10 natural completion (solo 10/10, multiplayer 10/10). `docs/release-20261026-stage2.md` records the earlier launcher isolation fix and M07. Backup branch is `fix/relay-recovery-20261026`, not the remote branch sharing the local checkout's name. Documentation-only updates must not trigger deployments. Older handoffs contain historical deployment and scheduling instructions. Host-close takeover remains unfinished.
 
 - Latest instruction supersedes the old schedule: continue development now, finish local implementation and verification, then deploy one consolidated Cloudflare release. The 08:00 automation was disabled on 2026-10-26. Do not wait for or recreate it. Notify the user when Vercel retirement is safe; do not delete it before migration acceptance.

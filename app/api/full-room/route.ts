@@ -3,7 +3,7 @@ import { ACCESS_COOKIE, PRIVATE_CACHE, validAccessToken } from '@/lib/site-acces
 import { GameError } from '@/lib/game';
 import { hash, newToken, configured } from '@/lib/store';
 import { creationCode } from '@/lib/room-creation';
-import { attachFullRoom, createFullRoom, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '@/lib/full-room';
+import { attachFullRoom, checkWaitingHostRecovery, startFullRoom, createFullRoom, fullView, joinFullRoom, memberFor, relayView, roomError, syncFullRoom } from '@/lib/full-room';
 import { changeFullRoom, insertFullRoom, listFullRooms } from '@/lib/full-store';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
     }
     const result = await changeFullRoom<unknown>(body.code, room => {
       if (body.type === 'join') { joinFullRoom(room, auth, body.name, newToken().slice(0, 16)); return { changed: true, result: { room: fullView(room, auth) } }; }
-      if (body.type === 'attach') { attachFullRoom(room, auth, body.connection); return { changed: true, result: relayView(room, auth) }; }
+      if (body.type === 'attach') { attachFullRoom(room, auth, body.connection, Date.now(), body); return { changed: true, result: relayView(room, auth) }; }
+      if (body.type === 'recover-check') { checkWaitingHostRecovery(room, auth); return { changed: false, result: { room: fullView(room, auth) } }; }
+      if (body.type === 'start') { const changed = startFullRoom(room, auth, body.connection); return { changed, result: { room: fullView(room, auth) } }; }
       if (body.type === 'sync') { const changed = syncFullRoom(room, auth, body); return { changed, result: relayView(room, auth) }; }
       if (body.type === 'leave') {
         const member = memberFor(room, auth);

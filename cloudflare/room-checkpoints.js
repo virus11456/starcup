@@ -5,7 +5,8 @@ import { memberFor, syncFullRoom } from '../lib/full-room.ts';
 // Losing a closed socket's checkpoint only replays already delivered messages;
 // clients filter sequence numbers, and a new epoch uses native reinitialization.
 export function syncSocketRoom(room, auth, input, attachments, now = Date.now()) {
-  memberFor(room, auth);
+  const caller = memberFor(room, auth);
+  if ((caller.hostGeneration || 0) !== (room.hostGeneration || 0)) return syncFullRoom(room, auth, input, now);
   const persistedAt = room.updated;
   const previousStatus = room.status;
   const previousSequence = room.sequence;
@@ -13,7 +14,7 @@ export function syncSocketRoom(room, auth, input, attachments, now = Date.now())
   for (const checkpoint of attachments) {
     if (!checkpoint) continue;
     const member = room.members.find(m => m.auth === checkpoint.auth && m.connection && m.connection === checkpoint.connection);
-    if (!member) continue;
+    if (!member || (member.hostGeneration || 0) !== (room.hostGeneration || 0)) continue;
     if (Number.isSafeInteger(checkpoint.ack) && checkpoint.ack >= 0 && checkpoint.ack <= room.sequence) {
       member.ack = Math.max(member.ack, checkpoint.ack);
     }

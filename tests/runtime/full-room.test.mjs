@@ -13,7 +13,7 @@ const { Miniflare, convertV4MiniflareOptions } = wranglerRequire('miniflare');
 const { build } = wranglerRequire('esbuild');
 const root = new URL('../../', import.meta.url).pathname;
 
-test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', { timeout: 60_000 }, async t => {
+test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', { timeout: 120_000 }, async t => {
   const bundle = await build({
     absWorkingDir: root, entryPoints: ['cloudflare/worker.js'], bundle: true,
     write: false, format: 'esm', platform: 'node', target: 'es2022',
@@ -153,6 +153,50 @@ test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', 
       assert.equal((await request({ type: 'leave', code, token: host.token })).status, 200);
       assert.equal((await sync(guest.socket, code, guest)).status, 410);
       assert.equal((await request({ type: 'join', code, token: guest.token, name: guest.name })).status, 410);
+    });
+    await t.test('a waiting host recovers only after expiry; SQLite survives eviction and guests rejoin the same room', async () => {
+      const host = { token: randomBytes(32).toString('hex'), connection: randomUUID() };
+      const guest = { token: randomBytes(32).toString('hex'), connection: randomUUID() };
+      const created = await request({ type: 'create', token: host.token, name: '房主', title: '等待室恢復', capacity: 4 });
+      const code = created.data.room.code;
+      const joined = await request({ type: 'join', code, token: guest.token, name: '原玩家' });
+      const seatId = joined.data.room.me;
+      assert.equal((await request({ type: 'attach', code, ...host, protocol: 2 })).status, 200);
+      assert.equal((await request({ type: 'attach', code, ...guest, protocol: 2 })).status, 200);
+      guest.socket = await openSocket(code, guest);
+      const replacement = { token: host.token, connection: randomUUID() };
+      assert.equal((await request({ type: 'attach', code, ...replacement })).status, 409);
+      assert.equal((await request({ type: 'recover-check', code, token: host.token })).status, 409);
+      assert.equal((await request({ type: 'recover-check', code, token: guest.token })).status, 403);
+      assert.equal((await request({ type: 'sync', code, ...host, ack: 0, messages: [] })).data.room.status, 'waiting');
+      // Real local expiry, with no production traffic or injected match state.
+      // Split the wait so individual waits remain under one minute.
+      await new Promise(resolve => setTimeout(resolve, 30_500));
+      await new Promise(resolve => setTimeout(resolve, 30_500));
+      // The idle object may already have hibernated on its own. Wake it with
+      // a read-only check before explicitly exercising another eviction.
+      assert.equal((await request({ type: 'recover-check', code, token: host.token })).status, 200);
+      await mf.unsafeEvictDurableObject('starcup-local-acceptance', 'GrailRoom', { name: code, webSockets: 'hibernate' });
+      assert.equal((await request({ type: 'recover-check', code, token: host.token })).status, 200);
+      const restored = await request({ type: 'attach', code, ...replacement, protocol: 2, recover: true });
+      assert.equal(restored.status, 200);
+      assert.equal(restored.data.room.code, code); assert.equal(restored.data.room.count, 2);
+      assert.equal(restored.data.peers.length, 0);
+      const stale = await sync(guest.socket, code, guest, { messages: [{ id: randomUUID(), to: '1', data: '["result",{"old":true}]' }] });
+      assert.equal(stale.status, 200); assert.equal(stale.data.rejoinLobby, true);
+      assert.equal(stale.data.sequence, 0, 'old choices were not forwarded');
+      guest.connection = randomUUID();
+      const rejoined = await request({ type: 'attach', code, token: guest.token, connection: guest.connection, protocol: 2 });
+      assert.equal(rejoined.data.room.me, seatId); assert.equal(rejoined.data.rejoinLobby, false);
+      assert.equal((await request({ type: 'start', code, ...host })).status, 409);
+      assert.equal((await request({ type: 'start', code, token: guest.token, connection: guest.connection })).status, 403);
+      assert.equal((await request({ type: 'start', code, ...replacement })).status, 200);
+      await mf.unsafeEvictDurableObject('starcup-local-acceptance', 'GrailRoom', { name: code, webSockets: 'hibernate' });
+      assert.equal((await request({ type: 'start', code, ...replacement })).data.room.status, 'playing', 'lost reply retries retain started boundary');
+      assert.equal((await request({ type: 'attach', code, token: host.token, connection: randomUUID(), protocol: 2, recover: true })).status, 409);
+      assert.equal((await request({ type: 'recover-check', code, token: host.token })).status, 409);
+      assert.equal((await request({ type: 'sync', code, ...replacement, ack: 0, messages: [] })).data.room.status, 'playing');
+      assert.equal((await request({ type: 'leave', code, token: host.token })).status, 200);
     });
     await t.test('a lost join reply can be retried after start without consuming a second seat', async () => {
       const hostToken = randomBytes(32).toString('hex');

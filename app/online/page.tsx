@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, enterOnlineRoom, roomRequestMessage, type OnlineRoom as Room } from '@/lib/online-session';
+import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, resumeWaitingHost, enterOnlineRoom, roomRequestMessage, type OnlineRoom as Room } from '@/lib/online-session';
 import { createRoomRequests } from '@/lib/room-request';
 import '../full/full.css';
 import './online.css';
@@ -23,13 +23,13 @@ export default function OnlineGame() {
   const inviteDialog = useRef<HTMLDialogElement>(null);
   const inviteInput = useRef<HTMLInputElement>(null);
   const [requests] = useState(() => createRoomRequests());
-  function openRoom(next: Room) {
+  function openRoom(next: Room, recoverWaiting = false) {
     sessionStorage.setItem(ACTIVE_ROOM_KEY, JSON.stringify(next));
     const url = new URL(location.href);
     url.searchParams.set('room', next.code);
     history.replaceState(history.state, '', url.pathname + url.search);
     const phone = url.searchParams.get('phone-layout') === '1';
-    setLaunch('/engine/index.html?online=' + next.code + (phone ? '&phone-layout=1' : ''));
+    setLaunch('/engine/index.html?online=' + next.code + (phone ? '&phone-layout=1' : '') + (recoverWaiting ? '&recover=lobby' : ''));
     setInvite(roomInvite(location.origin, next.code));
     setRoom(next); setResume(null); setCopied(false); setShareMessage('');
   }
@@ -63,8 +63,9 @@ export default function OnlineGame() {
     if (!operation) return;
     setBusy(true); setError('');
     try {
-      const next = await resumeGuestRoom(previous, sessionStorage.getItem(seatKey(previous.code)) || '', operation.signal);
-      if (operation.current()) openRoom(next);
+      const restore = previous.isHost ? resumeWaitingHost : resumeGuestRoom;
+      const next = await restore(previous, sessionStorage.getItem(seatKey(previous.code)) || '', operation.signal);
+      if (operation.current()) openRoom(next, previous.isHost);
     }
     catch (error) { if (operation.current()) setError(roomRequestMessage(error, operation.signal)); }
     finally { if (operation.finish()) setBusy(false); }
@@ -85,7 +86,7 @@ export default function OnlineGame() {
       try { localStorage.setItem('grail-name-v1', name.trim()); } catch { /* The seat credential is already saved in sessionStorage. */ }
       if (type === 'join' && next.isHost) {
         setResume(next);
-        throw new Error('這是你主持的房間，請回到原本的分頁。房主重新整理後尚無法恢復牌局；可結束舊房間後重新開房。');
+        throw new Error('這是你主持的房間，請回到原本的分頁；若尚未開局，可使用「恢復等待房間」。');
       }
       openRoom(next);
     } catch (error) { if (operation.current()) setError(roomRequestMessage(error, operation.signal)); }
@@ -134,9 +135,9 @@ export default function OnlineGame() {
       </dialog></> : <>
       <section className="online-intro"><p className="full-kicker">星杯之約 · 與夥伴共寫戰局</p><h1>多人角色對戰</h1><p>與單機使用相同的角色技能、牌庫與戰鬥畫面。建立房間，再將邀請碼分享給朋友。</p></section>
       {resume && <section className="full-panel online-resume" aria-label="原房間連線">
-        <h2>{resume.isHost ? '房主牌局需要原分頁' : '回到原本的牌局'}</h2><p>{resume.name} · {resume.code}</p>
-        <p>{resume.isHost ? '暫時切換分頁後，請回到原分頁繼續。若已重新整理或關閉分頁，目前無法恢復房主的牌局狀態。' : '保留你原本的座位與角色；房主仍在線上時可以重新連接。'}</p>
-        {!resume.isHost && <button disabled={busy} onClick={() => void reconnect()}>{busy ? '正在恢復連線…' : '重新連接牌局'}</button>}
+        <h2>{resume.isHost ? '回到你主持的房間' : '回到原本的牌局'}</h2><p>{resume.name} · {resume.code}</p>
+        <p>{resume.isHost ? '原分頁還在時請回原分頁。若尚未開始選角，原分頁離線滿 60 秒後可恢復等待房間，保留房間碼與已加入的玩家。已開始選角或對戰的牌局，仍需原房主分頁。' : '保留你原本的座位與角色；房主仍在線上時可以重新連接。'}</p>
+        <button disabled={busy} onClick={() => void reconnect()}>{busy ? '正在恢復連線…' : resume.isHost ? '恢復等待房間' : '重新連接牌局'}</button>
         <button disabled={busy} onClick={() => void leave(resume)}>{resume.isHost ? '結束舊房間' : '離開原房間'}</button>
       </section>}
       <section className="full-panel online-player" aria-labelledby="online-player-heading">

@@ -26,7 +26,8 @@ export async function startRelay() {
   Object.assign(game, freeDraftMethods, {
     grailCharacterFamily: characterFamily, grailAvailableCharacters: availableCharacters,
   });
-  const code = new URLSearchParams(location.search).get('online');
+  const params = new URLSearchParams(location.search);
+  const code = params.get('online');
   const token = sessionStorage.getItem('grail-full-seat-' + code);
   const connection = crypto.randomUUID();
   const status = document.createElement('div');
@@ -38,7 +39,9 @@ export async function startRelay() {
   };
   let stopped = false, rejoining = false, ack = 0, started = false, pending = [], failures = 0;
   let useSocket = false, wake = () => {};
-  let socket, lifecycle, activeFetch;
+  let socket, lifecycle;
+  const activeFetches = new Set();
+  const disconnect = () => { socket?.close(); for (const controller of activeFetches) controller.abort(); };
   const peers = new Map();
   const queue = (to, data) => {
     if (stopped || rejoining) return;
@@ -53,7 +56,7 @@ export async function startRelay() {
   const closeRelay = () => {
     finish();
     if (lifecycle) lifecycle.stop();
-    else { socket?.close(); activeFetch?.abort(); }
+    else disconnect();
   };
   async function request(type, extra = {}) {
     const body = { type, code, token, connection, ...extra };
@@ -62,7 +65,8 @@ export async function startRelay() {
       catch (error) { if (error.status || stopped || lifecycle?.inactive) throw error; }
     }
     if (stopped || lifecycle?.inactive) throw new Error('頁面暫停同步');
-    const controller = activeFetch = new AbortController();
+    const controller = new AbortController();
+    activeFetches.add(controller);
     const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
       const response = await fetch('/api/full-room', { method: 'POST', cache: 'no-store',
@@ -71,11 +75,11 @@ export async function startRelay() {
       const data = await response.json();
       if (!response.ok) throw Object.assign(new Error(data.error || '連線暫時中斷'), { status: response.status });
       return data;
-    } finally { clearTimeout(timeout); if (activeFetch === controller) activeFetch = null; }
+    } finally { clearTimeout(timeout); activeFetches.delete(controller); }
   }
   try {
     tell('正在連接完整角色房間…');
-    const attached = await request('attach');
+    const attached = await request('attach', { protocol: 2, recover: params.get('recover') === 'lobby' });
     useSocket = attached.transport === 'websocket';
     if (useSocket) socket = createRelaySocket(code, token, connection, () => wake(40));
     const room = attached.room;
@@ -110,6 +114,23 @@ export async function startRelay() {
       }
     } };
     if (room.isHost) {
+      // Commit the no-restart boundary before native waitForPlayer resumes.
+      // A failed/lost reply keeps the button usable for an idempotent retry.
+      game.grailRequestStart = async () => {
+        if (stopped || lifecycle?.inactive) return false;
+        try {
+          tell('正在確認開局…');
+          const result = await request('start');
+          if (stopped || lifecycle?.inactive) return false;
+          if (result.room?.status !== 'playing') throw new Error('開局尚未確認，請再試一次。');
+          started = true;
+          tell('');
+          return true;
+        } catch (error) {
+          if (!stopped) tell(error.message || '開局連線中斷，請再按一次「開始遊戲」。');
+          return false;
+        }
+      };
       lib.node = {};
       game.onlineroom = true;
       game.switchMode('xingBei', onlineConfig(room.capacity));
@@ -119,7 +140,7 @@ export async function startRelay() {
       // authenticated seat; the existing init/reinit flow does everything else.
     }
     lifecycle = createRelayLifecycle({ poll,
-      disconnect() { socket?.close(); activeFetch?.abort(); },
+      disconnect,
       onStop: finish,
       onError(error) { console.warn('Full room resume:', error.name); },
     });
@@ -146,6 +167,15 @@ export async function startRelay() {
         const data = await request('sync', { ack, messages: batch, started });
         if (stopped) return null;
         if (lifecycle.inactive) return delay;
+        if (!room.isHost && data.rejoinLobby) {
+          // The new host is still the same authenticated owner, rebuilding
+          // only an unstarted lobby. Never replay old choices into that lobby.
+          tell('房主已恢復等待房間，正在重新入座…');
+          closeRelay();
+          _status.reloading = true;
+          location.reload();
+          return null;
+        }
         // A response can also arrive after the browser has frozen an in-flight
         // request. Do not apply that response to the stale local arena.
         rejoining ||= needsRejoin();

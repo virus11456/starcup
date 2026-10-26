@@ -1,12 +1,13 @@
 import { GameError } from './game.ts';
 
 export const FULL_ENGINE = 'noname-v1';
-export type FullMember = { id: string; auth: string; name: string; connection: string; seen: number; ack: number };
+export type FullMember = { id: string; auth: string; name: string; connection: string; seen: number; ack: number; hostGeneration?: number };
 export type RelayMessage = { seq: number; from: string; to: string; connection: string; data: string; at: number };
 export type FullRoom = {
   engine: typeof FULL_ENGINE; code: string; name: string; capacity: number;
   status: 'waiting' | 'playing' | 'closed'; revision: number; created: number; updated: number;
   members: FullMember[]; sequence: number; messages: RelayMessage[]; received: string[];
+  hostGeneration?: number; lobbyRecovery?: boolean;
 };
 export function roomError(message: string, status = 400): never {
   throw Object.assign(new GameError(message), { status });
@@ -45,22 +46,45 @@ export function fullView(room: FullRoom, auth: string) {
   const member = memberFor(room, auth);
   return { ...fullSummary(room), me: member.id, nickname: member.name, isHost: member.id === '1' };
 }
-export function attachFullRoom(room: FullRoom, auth: string, connection: unknown, now = Date.now()) {
+export function checkWaitingHostRecovery(room: FullRoom, auth: string, now = Date.now()) {
+  const member = memberFor(room, auth);
+  if (member.id !== '1') roomError('只有原房主可以恢復等待中的房間。', 403);
+  if (room.status === 'closed') roomError('房間已結束，請建立新牌局。', 410);
+  if (room.status !== 'waiting') roomError('牌局已開始，請回到房主原分頁；目前無法恢復已關閉分頁的進行中牌局。', 409);
+  if (member.connection && !room.lobbyRecovery) roomError('這個舊版房間不支援等待室恢復，請回到原分頁。', 409);
+  if (member.connection && now - member.seen < 60_000) roomError('原房主分頁仍在線上，請回到原分頁；若已關閉，請在離線滿 60 秒後再試。', 409);
+}
+export function startFullRoom(room: FullRoom, auth: string, connection: unknown) {
+  const member = memberFor(room, auth);
+  if (member.id !== '1') roomError('只有房主可以開始牌局。', 403);
+  if (!member.connection || member.connection !== connection) roomError('此牌局已在另一個頁面開啟，請回到目前的房主分頁。', 409);
+  if (room.status === 'closed') roomError('房間已結束，請建立新牌局。', 410);
+  if (room.status === 'playing') return false; // lost start reply: safe to retry
+  room.status = 'playing';
+  return true;
+}
+export function attachFullRoom(room: FullRoom, auth: string, connection: unknown, now = Date.now(),
+  options: { protocol?: unknown; recover?: unknown } = {}) {
   const member = memberFor(room, auth);
   if (typeof connection !== 'string' || !/^[a-zA-Z0-9-]{16,64}$/.test(connection)) roomError('連線識別無效。');
   if (room.status === 'closed') roomError('房間已結束，請建立新牌局。', 410);
   if (member.id === '1' && member.connection && member.connection !== connection) {
-    // A browser host owns the native event stack; never silently replace it
-    // with a fresh game while other clients are still in the previous match.
-    room.status = 'closed';
+    // A second page must never close a surviving host's native event stack.
+    // Only a gated, not-yet-started lobby can be rebuilt after the host expires.
+    if (options.recover !== true || options.protocol !== 2) roomError('房主已有原分頁，請回到原分頁；尚未開局可從大廳恢復等待房間。', 409);
+    checkWaitingHostRecovery(room, auth, now);
+    room.hostGeneration = (room.hostGeneration || 0) + 1;
     room.messages = [];
-    return;
+    room.received = [];
+    for (const seat of room.members) seat.ack = room.sequence;
   }
+  if (member.id === '1' && !member.connection) room.lobbyRecovery = options.protocol === 2;
   if (member.connection !== connection) {
     room.messages = room.messages.filter(m => m.to !== member.id && m.from !== member.id);
     member.ack = room.sequence;
   }
   member.connection = connection;
+  member.hostGeneration = room.hostGeneration || 0;
   member.seen = now;
 }
 const GUEST_COMMANDS = new Set(['init', 'inited', 'reinited', 'result', 'tempResult', 'auto', 'unauto', 'chat', 'emotion', 'throwEmotion']);
@@ -114,6 +138,9 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
   const member = memberFor(room, auth);
   if (!member.connection || member.connection !== input.connection) roomError('此牌局已在另一個頁面開啟，請重新加入。', 409);
   if (room.status === 'closed') roomError('房間已結束，請建立新牌局。', 410);
+  // A guest from the old lobby receives only the restart notice. Its pending
+  // choices/acks must not reach the replacement host before native init.
+  if ((member.hostGeneration || 0) !== (room.hostGeneration || 0)) return false;
   let changed = false;
   if (now - member.seen > 8_000) { member.seen = now; changed = true; }
   const ack = input.ack;
@@ -133,7 +160,7 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
     if (room.received.includes(key)) continue;
     // A departing guest must not abort the host's entire broadcast batch.
     // Their reconnect uses the native reinit snapshot, not this stale inbox.
-    if (!recipient?.connection && member.id === '1') { room.received.push(key); changed = true; continue; }
+    if ((!recipient?.connection || (recipient.hostGeneration || 0) !== (room.hostGeneration || 0)) && member.id === '1') { room.received.push(key); changed = true; continue; }
     if (!recipient?.connection) roomError('對方尚未連線。', 409);
     if (member.id === '1' && message.connection && message.connection !== recipient.connection) {
       room.received.push(key); changed = true; continue;
@@ -151,10 +178,11 @@ export function syncFullRoom(room: FullRoom, auth: string, input: { connection?:
 }
 export function relayView(room: FullRoom, auth: string, now = Date.now()) {
   const member = memberFor(room, auth);
-  return { room: fullView(room, auth), sequence: room.sequence,
+  const rejoinLobby = (member.hostGeneration || 0) !== (room.hostGeneration || 0);
+  return { room: fullView(room, auth), sequence: room.sequence, rejoinLobby,
     messages: room.messages.filter(m => m.to === member.id && m.connection === member.connection && m.seq > member.ack)
       .map(({ seq, from, data }) => ({ seq, from, data })),
-    peers: member.id === '1' ? room.members.filter(m => m.id !== '1' && m.connection && now - m.seen < 60_000)
+    peers: member.id === '1' ? room.members.filter(m => m.id !== '1' && m.connection && !rejoinLobby && (m.hostGeneration || 0) === (room.hostGeneration || 0) && now - m.seen < 60_000)
       .map(m => ({ id: m.id, name: m.name, connection: m.connection })) : [],
     hostAlive: !!room.members[0]?.connection && now - room.members[0].seen < 60_000 };
 }
