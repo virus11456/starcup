@@ -12,7 +12,10 @@ const protectedText = /(?:https?:\/\/[^\s<>"'`]+)|(?:\b(?:href|src|id|class|styl
 export function traditionalText(value) {
   if (!han.test(value)) return value;
   return value.split(new RegExp(`(${protectedText.source})`, "gi"))
-    .map((part, index) => index % 2 ? part : convert(part)
+    .map((part, index) => index % 2 ? part : part
+      // Split at the whole game term so OpenCC cannot read 的 + 士氣 as
+      // the Hong Kong taxi phrase 的士. Keep real taxi wording elsewhere.
+      .split(/(士[气氣])/u).map((text, i) => i % 2 ? "士氣" : convert(text)).join("")
       // Match the official Traditional Chinese role names in our source.
       .replaceAll("染汙者", "染污者").replaceAll("遊擊士", "游擊士")).join("");
 }

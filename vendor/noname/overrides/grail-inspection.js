@@ -46,9 +46,18 @@ export function readInspection(kind, player, context) {
   // Only marks actually present on the public player node. Counts come from
   // the rendered badge, not storage values that may contain hidden cards.
   const marks = [...(player.node?.marks?.children || []), ...(player.node?.marks2?.children || [])];
-  return marks.filter(mark => mark.classList?.contains('mark') && !mark.classList.contains('removing') && !mark.classList.contains('hidden') && !mark.hidden).map(mark => {
-    const id = mark.skill || mark.name, info = mark.info || lib.skill[id]?.intro || {};
-    const title = typeof info.name === 'string' ? inspectionText(info.name) : label(id);
+  return marks.filter(mark => mark.classList?.contains('mark') && !mark.classList.contains('removing') && !mark.classList.contains('hidden') && !mark.hidden).flatMap(mark => {
+    // buildExtra always creates a whitespace-named link marker, even when
+    // the character is not linked. Read only the original public state;
+    // never invoke mark.info.mark or read its potentially private storage.
+    if (mark === player.node?.link) return (player.isHengZhi?.() ?? player.isLinked?.()) ? [{
+      title: '橫置', count: '已橫置', subtitle: '公開狀態',
+      sections: [{ title: '效果說明', text: '此角色目前已橫置。效果與重置時機請查看角色技能或本回合提示。' }],
+    }] : [];
+    const id = [mark.skill, mark.name].find(value => typeof value === 'string' && value.trim()) || '';
+    const info = mark.info || lib.skill[id]?.intro || {};
+    const title = (typeof info.name === 'string' && inspectionText(info.name)) || (id ? label(id) : '');
+    if (!title) return [];
     const count = inspectionText(mark.markcount?.textContent || mark.querySelector?.('.markcount')?.textContent);
     const limit = lib.skill[id] && player.getZhiShiWuLimit ? player.getZhiShiWuLimit(id) : info.max;
     const maximum = Number.isFinite(limit) ? limit : undefined;
@@ -62,9 +71,9 @@ export function readInspection(kind, player, context) {
     if (!sections.length) sections.push({ title: '用途', text: info.content === 'gaiPai'
       ? '角色專有蓋牌。此處顯示公開數量；牌面請依原遊戲允許的方式查看。'
       : '取得、消耗與移除時機請切換「角色」，查看該角色的完整技能說明。' });
-    return { title, count: count || '啟用中', maximum,
+    return [{ title, count: count || '啟用中', maximum,
       subtitle: info.content === 'gaiPai' ? '蓋牌數量' : '公開指示物',
-      image: safeImage(lib.skill[id]?.markimage || lib.skill[id]?.markimage2), sections };
+      image: safeImage(lib.skill[id]?.markimage || lib.skill[id]?.markimage2), sections }];
   });
 }
 

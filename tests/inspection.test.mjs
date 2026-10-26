@@ -69,6 +69,34 @@ test('public marks show visible counts, limits and related skills without readin
   assert.equal(hiddenCards.maximum, undefined);
 });
 
+test('the native whitespace link marker is shown only for a genuinely linked public player', () => {
+  const c = context();
+  const link = { name: ' ', skill: ' ', classList: classes('mark'), info: {
+    mark() { throw new Error('Do not invoke native intros with private storage'); },
+  } };
+  c.other.node.link = link; c.other.node.marks = { children: [link] };
+  c.other.isLinked = () => false;
+  assert.deepEqual(readInspection('marks', c.other, c), []);
+  c.other.isLinked = () => true;
+  const entries = readInspection('marks', c.other, c);
+  assert.equal(entries.length, 1); assert.equal(entries[0].title, '橫置');
+  assert.equal(entries[0].count, '已橫置'); assert.equal(entries[0].subtitle, '公開狀態');
+  c.other.isLinked = () => false;
+  assert.deepEqual(readInspection('marks', c.other, c), []);
+});
+
+test('anonymous mark scaffolding never produces blank headings while named zero-count markers remain', () => {
+  const c = context();
+  const anonymous = { classList: classes('mark'), name: ' ', info: {} };
+  c.other.node.marks = { children: [anonymous, { ...anonymous, name: undefined },
+    { ...anonymous, info: { name: '<br>  ' } },
+    { ...anonymous, info: { name: '公開標記', content: '目前有#點。' }, markcount: { textContent: '0' } },
+    { ...anonymous, name: 'yuanSu', info: { name: ' ' }, markcount: { textContent: '2' } }] };
+  const entries = readInspection('marks', c.other, c);
+  assert.deepEqual(entries.map(entry => entry.title), ['公開標記', '元素']);
+  assert.equal(entries[0].count, '0'); assert.equal(entries[0].sections[0].text, '目前有0點。');
+});
+
 test('unknown, unseen and departed roles cannot be inspected, and dynamic descriptions retain disabled status', () => {
   const c = context();
   c.other.isUnseen = () => true;
