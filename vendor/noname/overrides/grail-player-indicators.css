@@ -71,3 +71,28 @@
   }
   #grail-player-indicators .grail-indicator { min-height: 24px; padding: 2px 4px; }
 }
+
+/* Upright hand-count badge outside rotated native player cards. */
+#grail-player-indicators .grail-indicator-hand {
+  min-height: 32px; max-width: 100%; padding: 3px 6px;
+  border: 2px solid #e9cd8f; border-radius: 8px;
+  background: #102b39f5; color: #fff3d6;
+  box-shadow: 0 3px 12px #000b;
+  font: 750 14px/1.2 system-ui, sans-serif;
+  writing-mode: horizontal-tb !important;
+  white-space: nowrap !important;
+}
+#grail-player-indicators .grail-indicator-hand .grail-indicator-name {
+  max-width: none; overflow: visible; text-overflow: clip;
+}
+#grail-player-indicators .grail-indicator-hand b {
+  min-width: 43px; background: #e8ce8840;
+  font: 800 17px/1.2 system-ui, sans-serif;
+  color: #fff4cf; text-align: center;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-player-indicators .grail-indicator-hand {
+    min-height: 33px; padding: 4px 6px; font-size: 13px;
+  }
+  #grail-player-indicators .grail-indicator-hand b { font-size: 18px; }
+}

@@ -267,3 +267,32 @@ html.grail-match-ended #window #arena > #systembutton {
 #window #arena #handcards1 .handcards > .card {
   -webkit-touch-callout: none; /* native Safari copy menu, not native card input */
 }
+
+/* The full-card inspector is a modal reading surface. Hide the underlying
+   original system toolbar and our HUD shortcuts so they cannot cover its
+   title or Close button; restore them as soon as this overlay closes. */
+html:has(#grail-detail-overlay:not([hidden])) #window > #system,
+html:has(#grail-detail-overlay:not([hidden])) #window #system,
+html:has(#grail-detail-overlay:not([hidden])) #grail-history-toggle,
+html:has(#grail-detail-overlay:not([hidden])) #grail-help,
+html:has(#grail-detail-overlay:not([hidden])) #window .grail-top-pile-tool {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-detail-overlay {
+    padding: max(90px, env(safe-area-inset-top, 0px)) 9px
+      max(14px, env(safe-area-inset-bottom, 0px)) !important;
+    place-items: center !important;
+  }
+  #grail-detail-overlay .grail-detail-header {
+    min-height: 58px !important;
+    padding: 8px 14px !important;
+  }
+  #grail-detail-overlay .grail-detail-header h2 {
+    min-width: 0; flex: 1 1 auto; font-size: 22px !important;
+  }
+  #grail-detail-overlay .grail-detail-sheet {
+    max-height: calc(100dvh - 112px) !important;
+  }
+}

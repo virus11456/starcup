@@ -15,6 +15,7 @@ import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints, positionActionHint } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
 import { updateScoreboardSeatClearance } from './grail-seat-clearance.js';
+import { updatePlayerZoomOrigins } from './grail-player-zoom.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -79,6 +80,7 @@ function update() {
   }
   history.attach(ui.sidebar);
   inspection.update();
+  updatePlayerZoomOrigins(game.players, window.innerWidth);
   indicators.update();
   handSkin.update(game.me);
   targetPreview.update();

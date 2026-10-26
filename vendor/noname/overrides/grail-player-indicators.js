@@ -64,6 +64,17 @@ export function placeIndicatorStrip(rect, viewport, size, occupied = []) {
   return preferred.find(item => !occupied.some(used => clashes(item, used))) || preferred[0];
 }
 
+// Render only Noname's native PUBLIC hand count/limit; never read opponent cards.
+export function publicHandCountBadge(player) {
+  const counter = player?.node?.count;
+  if (!counter || counter.classList?.contains?.('hidden')) return null;
+  const raw = inspectionText(counter.textContent).replace(/\s+/g, '');
+  const match = /^(\d{1,3})\/(\d{1,3}|∞)$/.exec(raw);
+  if (!match) return null;
+  return { id: 'public-hand-count', label: '手牌',
+    count: match[1] + '/' + match[2], kind: 'hand', icon: '▣' };
+}
+
 export function createPlayerIndicators(parent, context, doc = document) {
   const layer = doc.createElement('section');
   layer.id = 'grail-player-indicators';
@@ -77,7 +88,9 @@ export function createPlayerIndicators(parent, context, doc = document) {
       const active = new Set();
       const occupied = [];
       for (const player of players) {
-        const badges = publicPlayerIndicators(player, context);
+        const handCount = publicHandCountBadge(player);
+        if (player.dataset) player.dataset.grailHandCountMirror = String(Boolean(handCount));
+        const badges = [...(handCount ? [handCount] : []), ...publicPlayerIndicators(player, context)];
         const rect = player.getBoundingClientRect?.();
         if (!badges.length || !rect || rect.width <= 0 || rect.height <= 0) continue;
         active.add(player);

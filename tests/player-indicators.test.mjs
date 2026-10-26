@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicPlayerIndicators, placeIndicatorStrip } from '../vendor/noname/overrides/grail-player-indicators.js';
+import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
 const mark = (skill, name, count, options = {}) => ({
@@ -76,4 +76,29 @@ test('top/bottom marker positioning avoids an occupied strip without moving a ro
   const pos = placeIndicatorStrip(rect, viewport, { width: 162, height: 90 }, occupied);
   assert.equal(pos.placement, 'above');
   assert.ok(pos.top + pos.height <= rect.top);
+});
+
+test('native public hand count is mirrored without accessing private card identities', () => {
+  const { other } = fixture();
+  other.node.count = { textContent: '2/4', classList: classes() };
+  assert.deepEqual(publicHandCountBadge(other), {
+    id:'public-hand-count', label:'手牌', count:'2/4', kind:'hand', icon:'▣'
+  });
+  other.node.count.textContent = ' 8 / 6 ';
+  assert.equal(publicHandCountBadge(other)?.count, '8/6');
+  other.node.count.textContent = '3/∞';
+  assert.equal(publicHandCountBadge(other)?.count, '3/∞');
+  other.node.count.textContent = '<script>private</script>';
+  assert.equal(publicHandCountBadge(other), null);
+  other.node.count.classList = classes('hidden');
+  assert.equal(publicHandCountBadge(other), null);
+});
+
+test('unrotated hand-count HUD is legible and hides its native duplicate', async () => {
+  const fs = await import('node:fs/promises');
+  const markerCss = await fs.readFile(new URL('../vendor/noname/overrides/grail-player-indicators.css', import.meta.url), 'utf8');
+  const globalCss = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(markerCss, /\.grail-indicator-hand[\s\S]*?writing-mode:\s*horizontal-tb !important/);
+  assert.match(markerCss, /\.grail-indicator-hand b\s*\{[\s\S]*?font:\s*800 17px/);
+  assert.match(globalCss, /data-grail-hand-count-mirror="true"\] > \.count\s*\{[\s\S]*?visibility:\s*hidden !important/);
 });

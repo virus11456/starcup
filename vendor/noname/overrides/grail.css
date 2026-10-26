@@ -830,9 +830,9 @@ body:has(#arena.choose-character) #roundmenu {
    small enough for the outer seats to stay inside the available table. */
 @media (max-width: 1049px) and (orientation: portrait) {
   .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
-    scale: 1.06;
+    scale: 1.13;
     translate: 0 calc(var(--grail-score-shift, 0px) * var(--grail-touch-scale, 1));
-    transform-origin: center center;
+    transform-origin: var(--grail-role-origin, center center);
   }
 }
 @media (min-width: 601px) and (max-width: 1049px) and (min-height: 501px) and (orientation: landscape) {
@@ -888,4 +888,19 @@ body:has(#arena.choose-character) #roundmenu {
     min-height: calc(29px * var(--grail-touch-scale, 1)) !important;
     font-size: calc(16px * var(--grail-touch-scale, 1)) !important;
   }
+}
+
+/* iPhone portrait: recognizable 20% original role enlargement. Do not
+   enlarge ultra-short landscape seats or duplicate game target elements. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
+    scale: 1.20;
+  }
+}
+/* Rotated noname seats inherit rotation on .count. Once its public
+   text is mirrored into the unrotated HUD, hide the awkward original chip
+   without preventing the engine from continuing to update its data. */
+#window #arena:not(.choose-character) > .player[data-grail-hand-count-mirror="true"] > .count {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

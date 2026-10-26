@@ -403,3 +403,19 @@ test('mobile public hand-count chip, gentle portrait enlargement and stable safe
   assert.equal(scoreboardSeatShift(score, { left: 420, right: 498, top: 468 }), 0,
     'offscreen/side scoreboard does not shift irrelevant seats');
 });
+
+test('inward native portrait scale and modal toolbars remain separate in portrait Safari', async () => {
+  const { playerZoomOrigin } = await import('../vendor/noname/overrides/grail-player-zoom.js');
+  assert.equal(playerZoomOrigin({left: 12, right: 74},390),'left center');
+  assert.equal(playerZoomOrigin({left: 319, right: 382},390),'right center');
+  assert.equal(playerZoomOrigin({left: 150, right: 225},390),'center center');
+  const global = await fs.readFile(new URL('../vendor/noname/overrides/grail.css',import.meta.url),'utf8');
+  const reader = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css',import.meta.url),'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js',import.meta.url),'utf8');
+  assert.match(global,/scale:\s*1\.13/);
+  assert.match(global,/scale:\s*1\.20/);
+  assert.match(global,/transform-origin:\s*var\(--grail-role-origin, center center\)/);
+  assert.match(reader,/html:has\(#grail-detail-overlay:not\(\[hidden\]\)\) #window #system/);
+  assert.match(reader,/padding:\s*max\(90px, env\(safe-area-inset-top, 0px\)\)/);
+  assert.match(bridge,/updatePlayerZoomOrigins\(game\.players, window\.innerWidth\)/);
+});
