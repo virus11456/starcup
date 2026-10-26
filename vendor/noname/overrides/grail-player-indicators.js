@@ -42,26 +42,45 @@ export function publicPlayerIndicators(player, context) {
 }
 
 
-// Pure viewport geometry: a strip can never extend beyond the visible screen.
-// Prefer directly below the portrait, then above it. Already placed strips
-// are avoided when there is room, so multiple marks don't stack on a neighbor.
-export function placeIndicatorStrip(rect, viewport, size, occupied = []) {
+// Actual viewport geometry: only return a visible, collision-free strip.
+// Portraits may be enlarged/rotated by the native engine; use their REAL
+// getBoundingClientRect() rather than assuming a seat is its original size.
+export function placeIndicatorStrip(rect, viewport, size, occupied = [], blockers = []) {
+  if (!rect || !viewport || !size) return null;
   const margin = 8, gap = 8;
-  const width = Math.min(Math.max(1, size.width), Math.max(1, viewport.width - margin * 2));
-  const height = Math.min(Math.max(1, size.height), Math.max(1, viewport.height - margin * 2));
+  const vw = Number(viewport.width), vh = Number(viewport.height);
+  if (!(vw > margin * 2 && vh > margin * 2)) return null;
+  const width = Math.min(Math.max(1, Number(size.width) || 1), vw - margin * 2);
+  const height = Math.min(Math.max(1, Number(size.height) || 1), vh - margin * 2);
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-  const center = rect.left + rect.width / 2;
-  const left = clamp(
-    center >= viewport.width * .7 ? rect.right - width
-      : center <= viewport.width * .3 ? rect.left
-        : center - width / 2,
-    margin, Math.max(margin, viewport.width - width - margin));
-  const below = { left, top: clamp(rect.bottom + gap, margin, Math.max(margin, viewport.height - height - margin)), width, height, placement: 'below' };
-  const above = { left, top: clamp(rect.top - height - gap, margin, Math.max(margin, viewport.height - height - margin)), width, height, placement: 'above' };
-  const clashes = (a,b) => a.left < b.left + b.width + 4 && a.left + a.width + 4 > b.left
-    && a.top < b.top + b.height + 4 && a.top + a.height + 4 > b.top;
-  const preferred = rect.bottom + height + gap <= viewport.height - margin ? [below, above] : [above, below];
-  return preferred.find(item => !occupied.some(used => clashes(item, used))) || preferred[0];
+  const centerX = rect.left + rect.width / 2;
+  const alignX = clamp(centerX >= vw * .7 ? rect.right - width
+    : centerX <= vw * .3 ? rect.left : centerX - width / 2,
+    margin, vw - margin - width);
+  const centers = [
+    ['below', alignX, rect.bottom + gap],
+    ['above', alignX, rect.top - height - gap],
+    ['right', rect.right + gap, rect.top + (rect.height - height) / 2],
+    ['left', rect.left - width - gap, rect.top + (rect.height - height) / 2],
+  ];
+  const forbidden = [...occupied, ...blockers].filter(box =>
+    box && [box.left, box.top, box.width, box.height].every(Number.isFinite) &&
+    box.width > 0 && box.height > 0);
+  const overlaps = (a,b) => a.left < b.left + b.width + 4 &&
+    a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4 &&
+    a.top + a.height + 4 > b.top;
+  for (const [placement, leftRaw, topRaw] of centers) {
+    // A clamped strip is useful only if it doesn't end up on top of the
+    // portrait it belongs to, the scoreboard or an unrelated target.
+    const candidate = {
+      left: clamp(leftRaw, margin, vw - width - margin),
+      top: clamp(topRaw, margin, vh - height - margin),
+      width, height, placement,
+    };
+    if (!overlaps(candidate, rect) && !forbidden.some(box => overlaps(candidate, box)))
+      return candidate;
+  }
+  return null;
 }
 
 // Render only Noname's native PUBLIC hand count/limit; never read opponent cards.
@@ -89,11 +108,12 @@ export function createPlayerIndicators(parent, context, doc = document) {
       const occupied = [];
       for (const player of players) {
         const handCount = publicHandCountBadge(player);
-        if (player.dataset) player.dataset.grailHandCountMirror = String(Boolean(handCount));
         const badges = [...(handCount ? [handCount] : []), ...publicPlayerIndicators(player, context)];
         const rect = player.getBoundingClientRect?.();
-        if (!badges.length || !rect || rect.width <= 0 || rect.height <= 0) continue;
-        active.add(player);
+        if (!badges.length || !rect || rect.width <= 0 || rect.height <= 0) {
+          if (player.dataset) player.dataset.grailHandCountMirror = 'false';
+          continue;
+        }
         let strip = strips.get(player);
         if (!strip) {
           strip = doc.createElement('div');
@@ -129,7 +149,25 @@ export function createPlayerIndicators(parent, context, doc = document) {
         strip.style.maxWidth = `${maxWidth}px`;
         const panelWidth = Math.min(maxWidth, strip.offsetWidth || maxWidth);
         const panelHeight = Math.max(27, strip.offsetHeight || Math.ceil(badges.length / (portrait ? 1 : 2)) * 29);
-        const position = placeIndicatorStrip(rect, { width, height }, { width: panelWidth, height: panelHeight }, occupied);
+        const otherPortraits = players.filter(other => other !== player)
+          .map(other => other.getBoundingClientRect?.()).filter(Boolean);
+        const scoreNode = doc.getElementById?.('grail-scoreboard');
+        const scoreRect = scoreNode && !scoreNode.hidden
+          ? scoreNode.getBoundingClientRect?.() : null;
+        const controlsRect = context.ui?.control?.getBoundingClientRect?.();
+        const handRect = context.ui?.me?.getBoundingClientRect?.();
+        const blockers = [...otherPortraits, scoreRect, controlsRect, handRect]
+          .filter(box => box && box.width > 0 && box.height > 0);
+        const position = placeIndicatorStrip(rect, { width, height },
+          { width: panelWidth, height: panelHeight }, occupied, blockers);
+        if (!position) {
+          // A tiny screen can have no safe slot. Keep native count visible
+          // rather than hiding it before the mirrored status can be drawn.
+          if (player.dataset) player.dataset.grailHandCountMirror = 'false';
+          continue;
+        }
+        active.add(player);
+        if (player.dataset) player.dataset.grailHandCountMirror = String(Boolean(handCount));
         strip.style.transform = 'none';
         strip.style.left = `${position.left}px`;
         strip.style.top = `${position.top}px`;
@@ -138,10 +176,16 @@ export function createPlayerIndicators(parent, context, doc = document) {
       }
       for (const [player, strip] of strips) {
         if (active.has(player)) continue;
+        if (player.dataset) player.dataset.grailHandCountMirror = 'false';
         strip.remove(); strips.delete(player);
       }
       layer.hidden = strips.size === 0;
     },
-    stop() { layer.remove(); strips.clear(); },
+    stop() {
+      for (const player of strips.keys()) {
+        if (player.dataset) player.dataset.grailHandCountMirror = 'false';
+      }
+      layer.remove(); strips.clear();
+    },
   };
 }

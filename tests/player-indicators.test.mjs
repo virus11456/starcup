@@ -102,3 +102,42 @@ test('unrotated hand-count HUD is legible and hides its native duplicate', async
   assert.match(markerCss, /\.grail-indicator-hand b\s*\{[\s\S]*?font:\s*800 17px/);
   assert.match(globalCss, /data-grail-hand-count-mirror="true"\] > \.count\s*\{[\s\S]*?visibility:\s*hidden !important/);
 });
+
+
+test('public marker groups avoid enlarged neighboring portraits and the scoreboard', () => {
+  const viewport = { width: 390, height: 780 };
+  const own = { left: 154, right: 235, top: 300, bottom: 420, width: 81, height: 120 };
+  const score = { left: 6, top: 160, width: 378, height: 134 };
+  const enemy = { left: 85, top: 430, width: 220, height: 90 };
+  const place = placeIndicatorStrip(own, viewport,
+    { width: 142, height: 58 }, [], [score, enemy]);
+  assert.ok(place, 'should find a free region to the side of this player');
+  assert.ok(place.left >= 8 && place.left + place.width <= viewport.width - 8);
+  const hits = (a,b) => a.left < b.left + b.width + 4 &&
+    a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4 &&
+    a.top + a.height + 4 > b.top;
+  assert.equal(hits(place, own), false);
+  assert.equal(hits(place, score), false);
+  assert.equal(hits(place, enemy), false);
+});
+
+test('crowded battle layout refuses any overlapping public chip instead of covering an action', () => {
+  const viewport = { width: 390, height: 670 };
+  const seat = { left: 155, right: 235, top: 285, bottom: 395, width: 80, height: 110 };
+  const blocker = { left: 0, top: 0, width: 390, height: 670 };
+  assert.equal(placeIndicatorStrip(seat, viewport, { width: 145, height: 60 },
+    [], [blocker]), null);
+  assert.equal(placeIndicatorStrip(null, viewport, { width: 120, height: 40 }), null);
+});
+
+test('hand-number mirror is only switched on when an external badge is safely positioned', async () => {
+  const fs = await import('node:fs/promises');
+  const source = await fs.readFile(
+    new URL('../vendor/noname/overrides/grail-player-indicators.js', import.meta.url), 'utf8');
+  const active = source.indexOf('active.add(player);');
+  const safe = source.indexOf('if (!position) {');
+  const mirror = source.indexOf("player.dataset.grailHandCountMirror = String(Boolean(handCount));");
+  assert.ok(safe !== -1 && safe < active && active < mirror,
+    'do not hide original hand count before a collision-free external strip exists');
+  assert.match(source, /stop\(\)[\s\S]*?grailHandCountMirror = 'false'/);
+});
