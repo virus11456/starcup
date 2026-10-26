@@ -85,6 +85,48 @@ test('enlarged hand matches the same own-role attack-only gold rule as the table
   assert.equal(readQuickDetail('card', thunder, c).ownSpecial, false, 'another role sees an ordinary card');
 });
 
+test('a hand touch cancels upstream 500ms intro after its own touchstart, without swallowing native selection', () => {
+  const card = { name: 'anMie', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [card]);
+  const h = historyHarness(), listeners = new Map(), calls = [];
+  h.doc.addEventListener = (name, fn) => listeners.set(name, fn);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  const view = createQuickDetailView({ hud, context: c, document: h.doc,
+    cancelNativeLongPress: node => calls.push(node) });
+  const hand = { closest: selector => selector === '#arena #handcards1 .handcards > .card' ? card : null };
+  const event = { target: hand, prevented: false, stop: false,
+    preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stop = true; } };
+  assert.equal(typeof listeners.get('touchstart'), 'function');
+  listeners.get('touchstart')(event);
+  assert.deepEqual(calls, [card], 'only our card native intro timer is cancelled');
+  assert.equal(event.prevented, false, 'touch events still go to the original engine');
+  assert.equal(event.stop, false, 'no propagation stop on normal card touch');
+  card.classList = classes('infohidden');
+  listeners.get('touchstart')(event);
+  assert.equal(calls.length, 1, 'face-down/hidden card cannot trigger an inspection');
+  view.stop();
+  assert.equal(listeners.size, 0, 'stop must unregister the native-intro coexistence listener');
+});
+
+test('layout CSS defeats noname absolute div rule, avoiding overlapping popup and skill text', async () => {
+  const styles = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css', import.meta.url), 'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(styles, /#grail-detail-overlay \.grail-detail-layout,[\s\S]*?position:\s*static !important/);
+  assert.match(styles, /max-width:\s*1100px\) and \(orientation:\s*portrait/);
+  assert.match(styles, /max-height:\s*500px\) and \(orientation:\s*landscape/);
+  assert.match(bridge, /cancelNativeLongPress\(card\)[\s\S]*?longpresscancel\?\.call\(card\)/);
+});
+
+test('game over disables only the old native round menu above results', async () => {
+  const styles = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css', import.meta.url), 'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(bridge, /classList\.toggle\('grail-match-ended', Boolean\(_status\.over\)\)/);
+  assert.match(styles, /html\.grail-match-ended #window #arena > #roundmenu/);
+  assert.match(styles, /html:has\(#grail-detail-overlay:not\(\[hidden\]\)\) #window #arena > #roundmenu/);
+  assert.doesNotMatch(styles, /html\.grail-match-ended #window #arena > \.dialog/);
+});
+
 test('character draft supports public full-size previews without hijacking ordinary selection', async () => {
   const c = context('fengZhiJianSheng');
   const draft = { link: 'fengZhiJianSheng', classList: classes('button', 'character'),

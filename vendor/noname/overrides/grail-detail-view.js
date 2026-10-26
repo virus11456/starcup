@@ -55,7 +55,8 @@ export function readQuickDetail(kind, subject, context) {
   };
 }
 
-export function createQuickDetailView({ hud, context, document: doc = document }) {
+export function createQuickDetailView({ hud, context, document: doc = document,
+  cancelNativeLongPress = () => {} }) {
   const node = (tag, className = '', text = '') => {
     const el = doc.createElement(tag); el.className = className;
     if (text) el.textContent = text;
@@ -152,6 +153,16 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   const playerAt = target => target?.closest?.('#arena > .player');
   const cardAt = target => target?.closest?.('#arena #handcards1 .handcards > .card');
   const draftAt = target => target?.closest?.('#arena.choose-character .dialog .button.character');
+  function onTouchStart(event) {
+    const card = cardAt(event.target);
+    if (!card) return;
+    // The pinned engine attaches a 500ms touchstart → ui.click.intro timer
+    // to the physical card, while our read-only viewer opens at 580ms. This
+    // BUBBLE-phase handler runs AFTER the card's own touchstart listener and
+    // cancels ONLY its native intro timer; it never prevents selection,
+    // scrolling, native touchend or other player/skill intros.
+    if (readQuickDetail('card', card, context)) cancelNativeLongPress(card);
+  }
   function onClick(event) {
     if (suppresses(event.target)) {
       event.preventDefault(); event.stopImmediatePropagation(); return;
@@ -219,6 +230,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
       event.preventDefault(); event.stopImmediatePropagation();
     }
   }
+  doc.addEventListener('touchstart', onTouchStart, false);
   doc.addEventListener('click', onClick, true);
   doc.addEventListener('contextmenu', onContextMenu, true);
   doc.addEventListener('pointerdown', onPointerDown, true);
@@ -228,6 +240,7 @@ export function createQuickDetailView({ hud, context, document: doc = document }
   doc.addEventListener('touchend', onPointerEnd, true);
   return { close, open, stop() {
     close(); clearPress(); suppressedSubject = null; ignoreClickUntil = 0; overlay.remove();
+    doc.removeEventListener('touchstart', onTouchStart, false);
     doc.removeEventListener('click', onClick, true);
     doc.removeEventListener('contextmenu', onContextMenu, true);
     doc.removeEventListener('pointerdown', onPointerDown, true);

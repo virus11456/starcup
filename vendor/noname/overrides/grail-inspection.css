@@ -191,3 +191,79 @@
   #grail-detail-overlay .grail-detail-layout { grid-template-columns: minmax(120px, 190px) minmax(0, 1fr); gap: 12px; padding: 8px 16px; }
   #grail-detail-overlay .grail-detail-picture { max-height: calc(100dvh - 80px); aspect-ratio: 5/7; }
 }
+
+/* Noname globally sets ALL div elements to position:absolute/transition:all.
+   Explicitly restore normal layout to the card inspector's structural divs.
+   The backdrop, picture and picture-title keep their intentional positioning. */
+#grail-detail-overlay .grail-detail-sheet,
+#grail-detail-overlay .grail-detail-layout,
+#grail-detail-overlay .grail-detail-description,
+#grail-detail-overlay .grail-detail-section,
+#grail-detail-overlay .grail-detail-subtitle,
+#grail-detail-overlay .grail-detail-art-fallback {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  transition: none !important;
+}
+#grail-detail-overlay .grail-detail-layout {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(210px, 320px) minmax(0, 1fr);
+  align-items: start;
+}
+#grail-detail-overlay .grail-detail-picture {
+  position: relative !important;
+  min-width: 0;
+  min-height: 0;
+  align-self: start;
+  transition: none !important;
+}
+#grail-detail-overlay .grail-detail-picture-title {
+  position: absolute !important;
+  inset: 12px 12px auto auto !important;
+}
+#grail-detail-overlay .grail-detail-description { width: 100%; min-height: 0; }
+#grail-detail-overlay .grail-detail-sheet {
+  min-height: 0;
+  max-height: calc(100dvh - 24px);
+}
+/* Portrait iPads up to 1024px need a full readable column rather than
+   squeezing the portrait and the explanation together. */
+@media (max-width: 1100px) and (orientation: portrait) {
+  #grail-detail-overlay .grail-detail-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+  }
+  #grail-detail-overlay .grail-detail-picture {
+    width: min(300px, 70%) !important;
+    max-height: 42dvh;
+    flex: 0 0 auto;
+  }
+  #grail-detail-overlay .grail-detail-description { align-self: stretch; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #grail-detail-overlay .grail-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(100px, 180px) minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 12px;
+  }
+  #grail-detail-overlay .grail-detail-picture { width: 100% !important; max-height: calc(100dvh - 85px); }
+}
+/* Both the focused reader and the battle-end panel are modal situations:
+   the native floating round menu must not appear on top of either. */
+html:has(#grail-detail-overlay:not([hidden])) #window #arena > #roundmenu {
+  display: none !important;
+}
+html.grail-match-ended #window #arena > #roundmenu,
+html.grail-match-ended #window #arena > #systembutton {
+  display: none !important;
+}
+#window #arena #handcards1 .handcards > .card {
+  -webkit-touch-callout: none; /* native Safari copy menu, not native card input */
+}

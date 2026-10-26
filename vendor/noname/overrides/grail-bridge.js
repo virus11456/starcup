@@ -41,7 +41,10 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
-const quickDetail = createQuickDetailView({ hud, context: { lib, game, get } });
+const quickDetail = createQuickDetailView({
+  hud, context: { lib, game, get },
+  cancelNativeLongPress(card) { ui.click?.longpresscancel?.call(card); },
+});
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
 const handSkin = createHandSkin({ lib, get });
 const targetPreview = createTargetPreview({ hud, ui, game, get, lib, event: () => _status.event });
@@ -51,6 +54,9 @@ const text = (value) =>
     .replace(/<[^>]*>/g, "");
 let last = "";
 function update() {
+  // The pinned engine leaves #roundmenu on the battle table while displaying
+  // the game-over result dialog. Hide its visual surface only once over=true.
+  document.documentElement.classList.toggle('grail-match-ended', Boolean(_status.over));
   addRoleLegend(ui.arena);
   updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden);
   history.attach(ui.sidebar);
