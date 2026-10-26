@@ -1,7 +1,7 @@
 /* GPL-3.0: cosmetic classification only. Native dialog elements, input
    handlers and visibility are owned by the engine. This is called from the
    existing 400ms HUD tick; an empty caption can become visible next tick. */
-const readable = value => String(value ?? '').replace(/[\\u200b-\\u200d\\ufeff\\u00a0]/g, ' ').trim();
+const readable = value => String(value ?? '').replace(/[\u200b-\u200d\ufeff\u00a0]/g, ' ').trim();
 const activeChoices = '.buttons .button, .buttons .card, .buttons .tdnode, .buttons .tdnodes, button, input, textarea, select, [contenteditable="true"]';
 export function updateActionHints(arena) {
   if (!arena || arena.classList?.contains('choose-character')) return;

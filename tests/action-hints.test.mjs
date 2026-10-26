@@ -14,7 +14,7 @@ function dialog(texts, hasChoices = false) {
       return texts.map(textContent => ({ textContent }));
     },
     querySelector(selector) {
-      assert.match(selector, /\\.buttons/);
+      assert.match(selector, /\.buttons/);
       return hasChoices ? {} : null;
     } };
   return d;
@@ -29,7 +29,7 @@ function arena(dialogs, choosing = false) {
   return root;
 }
 test('empty native action prompts do not leave a blank bar while text comes back when populated', () => {
-  const labels = ['  ', '\\u00a0']; const d = dialog(labels);
+  const labels = ['  ', '\u00a0']; const d = dialog(labels);
   const a = arena([d]);
   updateActionHints(a);
   assert.equal(d.classList.contains('grail-action-hint'), true);
@@ -50,9 +50,9 @@ test('native interactive dialogs and character draft cannot be changed by action
 test('iOS fallback color and in-card faction label are explicitly provided', async () => {
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const role = await readFile(new URL('../vendor/noname/overrides/grail-role-tags.css', import.meta.url), 'utf8');
-  assert.match(css, /grail-empty-action-hint\\s*\\{\\s*display:\\s*none\\s*!important/);
-  assert.match(css, /grail-action-hint :is\\(\\.caption, \\.prompt\\)[\\s\\S]*?-webkit-text-fill-color:\\s*#fff4d5/);
-  assert.doesNotMatch(css, /:has\\(\\.caption, \\.prompt\\):not\\(:has/);
-  assert.match(role, /\\.button\\.character > \\.identity[\\s\\S]*?inset:\\s*5px 5px auto auto !important/);
-  assert.match(role, /\\.button\\.character > \\.identity > div[\\s\\S]*?writing-mode:\\s*horizontal-tb !important/);
+  assert.match(css, /grail-empty-action-hint\s*\{\s*display:\s*none\s*!important/);
+  assert.match(css, /grail-action-hint :is\(\.caption, \.prompt\)[\s\S]*?-webkit-text-fill-color:\s*#fff4d5/);
+  assert.doesNotMatch(css, /:has\(\.caption, \.prompt\):not\(:has/);
+  assert.match(role, /\.button\.character > \.identity[\s\S]*?inset:\s*5px 5px auto auto !important/);
+  assert.match(role, /\.button\.character > \.identity > div[\s\S]*?writing-mode:\s*horizontal-tb !important/);
 });
