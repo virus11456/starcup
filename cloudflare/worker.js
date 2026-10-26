@@ -184,14 +184,26 @@ export class GrailRoom extends DurableObject {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (!['/api/full-room', '/api/full-room/socket'].includes(url.pathname)) {
+    // Match the renderer's optional trailing slash before it can route a room
+    // request into the retained Next/Supabase adapter. Cloudflare owns all room
+    // traffic; the old simplified API must never revive an old game here.
+    const path = url.pathname.replace(/\/+$/, '');
+    if (!['/api/full-room', '/api/full-room/socket', '/api/game'].includes(path)) {
       const result = await site.fetch(request, env, ctx);
-      if (!url.pathname.startsWith('/engine/')) return result;
+      const installAsset = ['/manifest.webmanifest', '/favicon.svg',
+        '/app-icons/icon-192.png', '/app-icons/icon-512.png',
+        '/app-icons/maskable-512.png', '/app-icons/apple-touch-icon.png'].includes(url.pathname);
+      if (url.pathname.startsWith('/_next/static/') || installAsset && ['GET', 'HEAD'].includes(request.method)) return result;
+      // The asset handler can replace middleware cache headers after access
+      // validation. Reapply the private policy at the outermost boundary so
+      // gated engine/catalog assets cannot remain publicly cacheable.
+      const headers = new Headers(result.headers);
+      headers.set('Cache-Control', PRIVATE_CACHE);
+      headers.set('X-Robots-Tag', 'noindex, nofollow');
       // Safari does not consistently include wss in connect-src 'self'.
       // Permit only this deployment's own WebSocket endpoint.
-      const headers = new Headers(result.headers);
       const policy = headers.get('Content-Security-Policy');
-      if (policy) headers.set('Content-Security-Policy', policy.replace("connect-src 'self'", "connect-src 'self' wss://" + url.host));
+      if (url.pathname.startsWith('/engine/') && policy) headers.set('Content-Security-Policy', policy.replace("connect-src 'self'", "connect-src 'self' wss://" + url.host));
       return new Response(result.body, { status: result.status, statusText: result.statusText, headers });
     }
     const cookie = request.headers.get('cookie')?.split(';').map(x => x.trim()).find(x => x.startsWith(ACCESS_COOKIE + '='))?.slice(ACCESS_COOKIE.length + 1);
@@ -199,7 +211,8 @@ export default {
     if (!config.password || !/^[a-f0-9]{64}$/.test(config.secret || '') || !validAccessToken(cookie, config)) return response({ error: '請先輸入網站密碼。' }, 401);
     try {
       if (request.headers.get('sec-fetch-site') === 'cross-site' || request.headers.get('origin') && new URL(request.headers.get('origin')).origin !== url.origin) roomError('無法接受跨網站操作。', 403);
-      if (url.pathname.endsWith('/socket')) return await env.GRAIL_ROOMS.getByName(codeFor(url.searchParams.get('code'))).fetch(request);
+      if (path === '/api/game') return response({ error: '舊版對戰入口已停用，請從多人對戰建立完整角色房間。', next: '/online' }, 410);
+      if (path.endsWith('/socket')) return await env.GRAIL_ROOMS.getByName(codeFor(url.searchParams.get('code'))).fetch(request);
       if (request.method === 'GET') return response({ rooms: await env.GRAIL_DIRECTORY.getByName('lobby').list(), configured: true });
       if (request.method !== 'POST') return response({ error: '不支援此操作。' }, 405);
       const text = await request.text();

@@ -12,7 +12,7 @@ export default function RulesDictionary() {
       <div className="dictionary-intro">
         <div className="eyebrow">星之典</div>
         <h2>有疑問，就問星之典。</h2>
-        <p>以{WIKI.name}為主要依據，搜尋規則問答並對照本版實作範圍。</p>
+        <p>以{WIKI.name}為主要依據，搜尋基本規則與遊玩提醒。</p>
       </div>
       <div className="dictionary-search">
         <Search size={20} />
@@ -75,7 +75,7 @@ export default function RulesDictionary() {
                 <div className="implementation-note">
                   <BookOpen size={14} />
                   <p>
-                    <b>本版狀態：</b>
+                    <b>遊玩提醒：</b>
                     {r.scope}
                   </p>
                 </div>

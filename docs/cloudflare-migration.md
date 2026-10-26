@@ -2,6 +2,16 @@
 
 Cloudflare 測試站已部署：https://star-grail-online.localhost20000.workers.dev 。目前由 `cloudflare-migration` 分支自動部署，尚未切換 `main`；Vercel 原站保留到完整驗收結束。
 
+## 2026-10-26 最新續作
+
+使用者已取消等待早上八點，要求現在完成開發／本機驗證後集中發布。08:00 自動任務已停用。正式目前仍是 `43c101b2ba900880d41072f427ffbcd1cc6bc26f`；本批改動尚未發布，見 `docs/stage-room-entry-and-role-tags.md`。下方 10 月 25 日資料為歷史紀錄。
+
+- MCP 已核對 Worker 的 ASSETS、兩個 Durable Object 綁定及三個 secret 名稱，未讀取密鑰；沒有 Supabase 綁定。
+- 自動建置仍只監看 `cloudflare-migration`；最新既有 build 成功，建置分鐘上限尚未達到。
+- UTC 2026-10-26 05:14 查當日 `durableObjectsPeriodicGroups`：有回傳的大廳 namespace 為 14 rowsRead／0 rowsWritten，房間 namespace 未回傳資料。這是分析 API 當時已彙整的資料，不保證即時用量或未來免費額度。
+- 修正 API 尾斜線可能落入舊 Next adapter；Cloudflare 的 `/api/game` 明確停用，已認證回傳 410 及 `/online`。
+- 本批 `vercel.json` 明確停用 `cloudflare-migration` 的 Vercel 自動部署，避免 Cloudflare 發布同時產生舊平台部署。Vercel 舊站不刪除。
+
 ## 已準備
 
 - 以 vinext / Cloudflare Workers 建置現有 Next.js 16 應用，保留原本 Next.js 指令。

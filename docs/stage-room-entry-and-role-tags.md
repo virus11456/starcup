@@ -1,5 +1,21 @@
 # 分階段發布：開房重試、共用 Logo、選角定位與難度
 
+## 2026-10-26 續作：現在開發，整合完成才發布
+
+使用者明確更正：不是等早上八點才做，現在繼續開發／測試，再一次上傳 Cloudflare。原 08:00 任務已停用，不應重新排程。本輪仍不推正式分支；最新正式版本保持 `43c101b2ba900880d41072f427ffbcd1cc6bc26f`。以下先列最新修改，原批次紀錄保留在後。
+
+- Cloudflare 的 `/api/full-room/` 與 `/api/full-room/socket/` 會走同一套 DO 後端，不再因尾斜線落入保留的 Next／Supabase adapter。舊 `/api/game`（含尾斜線）先驗證密碼，再回傳 410 及 `/online`，不建立或恢復舊核心房間。
+- 以實際建置檔做 HTTP 驗收時，發現 Vinext asset handler 沒有保留 proxy 的私人快取標頭。現在最外層 Worker 對受保護頁面、引擎與圖鑑素材補回 `private, no-store, max-age=0` 和 noindex；公開安裝資訊及不可變 Next 靜態資產保留原政策。原同來源引擎 CSP 與 WebSocket 設定保留。
+- 更新教學、規則、圖鑑中「多人是簡化版／完整技能僅單人／提煉未實作」的過時說明。規則答案及來源沒有更改；舊核心的實作註解換成目前遊玩提醒，不宣稱全部角色裁定都已驗收。
+- `vercel.json` 明確停用遷移分支的 Vercel 自動部署，避免一次 Cloudflare 發布也觸發 Vercel 部署；不改 main、不刪既有 Vercel 專案。
+- 把實際建置 HTTP 驗收加入 `npm run verify:local`：`npm run test:cloudflare:site` 使用本機 workerd、隨機測試密碼、臨時 SQLite，沒有正式資料庫寫入，不需要 Supabase 設定。
+
+驗證：本輪應用 **102**、引擎 **88**、Cloudflare runtime **9**，共 **199** 項通過；Vinext 建置與 TypeScript 成功。另實際建置 HTTP **64 項檢查通過**，涵蓋首頁／單人／多人／教學／規則／圖鑑、密碼保護、上鎖、API 尾斜線、舊入口停用及邀請登入回跳。首次遇到既有測試仍要求「提煉尚未實作」而失敗，修正過時期待後重新驗證；HTTP 首輪確實攔下素材快取標頭缺失，修復並重建後才通過。紀錄在 `outputs/cloudflare-consolidation-verify.log` 與 `outputs/cloudflare-consolidation-http-final.log`。
+
+MCP 核對自動建置仍只監看 `cloudflare-migration`、建置額度未達上限、Worker 只需 ASSETS／兩個 DO／三個站內 secret（未讀取密鑰）。UTC 05:14 查當日分析：大廳 14 rowsRead／0 rowsWritten，未回傳房間 namespace 資料；分析有延遲，不能作免費額度保證。查 GraphQL schema 曾遇分析 API 查詢限流，停止重試、處理本機工作後再次查詢成功；這不是遊戲資料庫額度耗盡。
+
+新版手機畫面、餘下 M07–M10 仍待整合發布後驗收；房主真正關頁／重載後的事件與 AI 接手仍未實作。新路由與快取測試不是自然完成對局，仍單人 10/10、多人 6/10；Vercel 尚不可刪除。
+
 台灣 2026-10-26，使用者確認「分階段，一個大階段一起部署」，並補充單人模式 Logo 與首頁一致、開局每張角色卡顯示分類。本批開發、測試及 GitHub 備份完成後先累積，不推正式分支。正式仍為 `43c101b2ba900880d41072f427ffbcd1cc6bc26f`。
 
 最新補充：所有功能繼續以 Cloudflare 為最終部署位置，達到可以移除 Vercel 的條件時明確通知使用者；現在不刪除。使用者要求上手星等，並詢問本場 log 所在位置，本批一併處理。

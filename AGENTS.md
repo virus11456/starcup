@@ -10,9 +10,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Local development and consolidated deployment
 
+- Latest instruction supersedes the old schedule: continue development now, finish local implementation and verification, then deploy one consolidated Cloudflare release. The 08:00 automation was disabled on 2026-10-26. Do not wait for or recreate it. Notify the user when Vercel retirement is safe; do not delete it before migration acceptance.
 - Latest user instruction (2026-10-26): work in stages and deploy once per completed major stage. Stage work can be backed up on the non-deploying GitHub branch. Do not turn an individual fix or documentation update into its own deployment; see `docs/stage-room-entry-and-role-tags.md` for current acceptance criteria.
 - User preference (2026-10-26): finish and test changes locally, then publish one integrated release. Do not use the production Cloudflare deployment for repeated development iterations or push deployment branches for unfinished changes.
-- Run `npm run verify:local` before release. It prepares the pinned engine, builds the Cloudflare bundle, runs application/engine tests and checks types. Do not run engine preparation/build commands concurrently: they share generated files.
+- Run `npm run verify:local` before release. It prepares the pinned engine, builds the Cloudflare bundle, runs application/engine/runtime tests, checks types and exercises the built Worker HTTP/password/invitation boundary. Do not run engine preparation/build commands concurrently: they share generated files.
 - Use local SQLite and relay fixtures for repetitive storage/connection checks. Local simulations and unit tests do not count toward the requested naturally completed online game totals.
 - Do the necessary deployed WebSocket/platform checks only after local checks pass. Record Durable Objects SQL rows written before and after each game and preserve quota for users; stop tests at the documented budget.
 - Keep visual verification separate from logic tests. If the available browser cannot reach the local server, record the missing viewport/UI checks rather than claiming that automated logic tests prove the layout.

@@ -20,5 +20,5 @@ test("rule citations identify the relevant encyclopedia sections", () => {
 test("unknown questions return no invented answer and categories constrain results", () => {
   assert.equal(searchRules("龍騎士與時空法師互相換位時如何結算").length, 0);
   assert.ok(searchRules("", "卡牌").every((r) => r.category === "卡牌"));
-  assert.ok(searchRules("提煉")[0].scope.includes("尚未實作"));
+  assert.match(searchRules("提煉")[0].scope, /隊伍星石.*角色能量/);
 });

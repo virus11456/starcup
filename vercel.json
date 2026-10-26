@@ -3,6 +3,7 @@
   "regions": ["hnd1"],
   "git": {
     "deploymentEnabled": {
+      "cloudflare-migration": false,
       "fix/relay-recovery-20261026": false
     }
   }

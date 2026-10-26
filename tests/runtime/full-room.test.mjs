@@ -69,6 +69,33 @@ test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', 
       assert.match(unauthenticated.headers.get('cache-control'), /no-store/);
       assert.equal((await request({ type: 'create' }, { origin: 'https://untrusted.test' })).status, 403);
     });
+    await t.test('Cloudflare handles trailing-slash room URLs and retires the legacy API without the page adapter', async () => {
+      for (const path of ['/api/full-room', '/api/full-room/']) {
+        const denied = await mf.dispatchFetch(origin + path);
+        assert.equal(denied.status, 401);
+        const listed = await mf.dispatchFetch(origin + path, { headers: { cookie, origin } });
+        assert.equal(listed.status, 200);
+        assert.deepEqual(await listed.json(), { rooms: [], configured: true });
+        const invalid = await mf.dispatchFetch(origin + path, {
+          method: 'POST', headers: { cookie, origin, 'content-type': 'application/json' }, body: '{}',
+        });
+        assert.equal(invalid.status, 403, 'room validation, not the excluded renderer, handles POST');
+      }
+      for (const path of ['/api/full-room/socket', '/api/full-room/socket/']) {
+        const denied = await mf.dispatchFetch(origin + path);
+        assert.equal(denied.status, 401);
+        const invalid = await mf.dispatchFetch(origin + path + '?code=bad', { headers: { cookie, origin } });
+        assert.equal(invalid.status, 400);
+      }
+      for (const path of ['/api/game', '/api/game/']) for (const method of ['GET', 'POST']) {
+        const denied = await mf.dispatchFetch(origin + path, { method });
+        assert.equal(denied.status, 401);
+        const retired = await mf.dispatchFetch(origin + path, { method, headers: { cookie, origin } });
+        assert.equal(retired.status, 410);
+        assert.match(retired.headers.get('cache-control'), /no-store/);
+        assert.equal((await retired.json()).next, '/online');
+      }
+    });
     for (const capacity of [4, 6, 8]) await t.test(`${capacity} sockets preserve private inboxes, survive eviction and reject stale epochs`, async () => {
       const seats = Array.from({ length: capacity }, (_, n) => ({ token: randomBytes(32).toString('hex'), connection: randomUUID(), name: `測試${n + 1}` }));
       const created = await request({ type: 'create', token: seats[0].token, name: seats[0].name, title: `本機${capacity}人`, capacity });

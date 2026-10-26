@@ -50,6 +50,6 @@ export default function Compendium({ initialView = "physical" }: { initialView?:
       </article>; })}
     </div>}
     {!count && <div className="portal-empty"><p>沒有符合的項目。試試較短的牌名或技能關鍵字。</p><button className="portal-secondary" onClick={clear}>清除篩選</button></div>}
-    <div className="scope-banner">規則、玩法與卡牌效果以{WIKI.name}為主要參考；角色技能摘要仍包含參考引擎文字，未核對項目已標示。核心多人模式尚無完整角色技能。圖片為牌型插畫，屬性與標記另行列出，並非 150 張不同印刷掃描。</div>
+    <div className="scope-banner">規則、玩法與卡牌效果以{WIKI.name}為主要參考；角色技能摘要仍包含參考引擎文字，未核對項目已標示。單人與多人對戰皆可使用角色技能；尚未核對全部角色交互裁定。圖片為牌型插畫，屬性與標記另行列出，並非 150 張不同印刷掃描。</div>
   </>;
 }
