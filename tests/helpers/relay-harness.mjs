@@ -19,6 +19,8 @@ export function clock() {
   const timers = new Map();
   return {
     timers,
+    now: () => now,
+    jump(ms) { now += ms; },
     setTimer(fn, delay = 0) { const key = ++id; timers.set(key, { fn, at: now + delay }); return key; },
     clearTimer(key) { timers.delete(key); },
     async tick(ms = 0) {
@@ -71,14 +73,16 @@ export async function onlineHarness({ transport = 'websocket', isHost = false } 
   const status = { setAttribute() {}, classList: { toggle() {} } };
   const doc = Object.assign(surface.doc, { createElement: () => status, body: { append() {} }, getElementById: () => null });
   const game = { online: true, requireSandboxOn() {}, switchMode() {} };
+  const nativeStatus = {};
   const lib = { config: {}, wsOL: [], mode: { xingBei: { connect: {} } }, message: { client: {
     onmessage: (from, data) => received.push(JSON.parse(data)), onclose() {}, onconnection() {},
   } }, element: { ws: { onmessage: event => received.push(JSON.parse(event.data)) } } };
-  let sessionReads = 0, generatedIds = 0;
+  let sessionReads = 0, generatedIds = 0, reloads = 0;
   const start = vm.runInNewContext(onlineSource + '\nstartRelay;', {
-    game, lib, ui: {}, _status: {}, freeDraftMethods: {}, characterFamily() {}, availableCharacters() {},
+    game, lib, ui: {}, _status: nativeStatus, freeDraftMethods: {}, characterFamily() {}, availableCharacters() {},
     security: { createSandbox() {} }, URLSearchParams, crypto: { randomUUID() { generatedIds++; return webcrypto.randomUUID(); } }, AbortController,
-    location: { search: '?online=LOCAL123' }, window: surface.win, document: doc,
+    location: { search: '?online=LOCAL123', reload() { reloads++; } }, window: surface.win, document: doc,
+    Date: { now: time.now },
     sessionStorage: { getItem() { sessionReads++; return 'local-seat'; } }, matchMedia: () => ({ matches: false }),
     console: { warn: (...args) => warnings.push(args) }, setTimeout: time.setTimer, clearTimeout: time.clearTimer,
     createRelaySocket: wire.createSocket,
@@ -93,5 +97,6 @@ export async function onlineHarness({ transport = 'websocket', isHost = false } 
     },
   });
   await start();
-  return { ...surface, ...wire, game, lib, calls, received, warnings, status, sessionReads: () => sessionReads, generatedIds: () => generatedIds };
+  return { ...surface, ...wire, game, lib, calls, received, warnings, status, nativeStatus,
+    reloads: () => reloads, sessionReads: () => sessionReads, generatedIds: () => generatedIds };
 }

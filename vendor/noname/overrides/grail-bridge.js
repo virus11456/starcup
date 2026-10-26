@@ -6,6 +6,7 @@ import { anchorToViewport } from "./grail-viewport.js";
 import { describeStage, teamSummary } from "./grail-battle-state.js";
 import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
+import { createHistorySession } from './grail-history-session.js';
 import { createBattleInspection } from "./grail-inspection.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
@@ -14,7 +15,11 @@ hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
-const history = createBattleHistory(hud, () => game.phaseNumber || 0);
+const history = createBattleHistory(hud, () => game.phaseNumber || 0, {
+  journal: createHistorySession(new URLSearchParams(location.search).get('online')),
+});
+const flushHistory = () => { if (document.visibilityState === 'hidden') history.flush(); };
+document.addEventListener('visibilitychange', flushHistory);
 const stopHud = anchorToViewport(hud, (scale) => {
   document.documentElement.style.setProperty("--grail-touch-scale", String(scale > 0 ? 1 / scale : 1));
 });
@@ -182,6 +187,7 @@ try {
 window.addEventListener(
   "pagehide",
   (event) => {
+    history.flush();
     if (event.persisted) return;
     clearInterval(handle);
     clearInterval(ready);
@@ -189,6 +195,7 @@ window.addEventListener(
     stopMotion();
     stopHud();
     history.stop();
+    document.removeEventListener('visibilitychange', flushHistory);
     inspection.stop();
     handSkin.stop();
     hud.remove();

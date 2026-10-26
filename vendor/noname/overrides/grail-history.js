@@ -1,7 +1,14 @@
 /* GPL-3.0: observe the engine's existing public log; no rules or server writes. */
-export function createHistoryBuffer(limit = 1000) {
+export function createHistoryBuffer(limit = 1000, initial = []) {
   const entries = [];
   let sequence = 0;
+  for (const entry of Array.isArray(initial) ? initial.slice(-limit) : []) {
+    if (!entry || !Number.isSafeInteger(entry.id) || entry.id <= sequence || entry.id >= Number.MAX_SAFE_INTEGER ||
+      typeof entry.text !== 'string' || !entry.text.trim() || entry.text.length > 8000 ||
+      !Number.isFinite(entry.turn) || entry.turn < 0) continue;
+    entries.push({ id: entry.id, text: entry.text, turn: entry.turn });
+    sequence = entry.id;
+  }
   return {
     append(text, turn = 0) {
       text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 8000);
@@ -37,8 +44,8 @@ export function observeNativeHistory(sidebar, append, getTurn, Observer = Mutati
   return () => observer.disconnect();
 }
 
-export function createBattleHistory(parent, getTurn) {
-  const buffer = createHistoryBuffer();
+export function createBattleHistory(parent, getTurn, { journal } = {}) {
+  const buffer = createHistoryBuffer(1000, journal?.load());
   const node = (tag, text, className = '') => {
     const el = document.createElement(tag);
     el.className = className;
@@ -69,11 +76,15 @@ export function createBattleHistory(parent, getTurn) {
   list.tabIndex = 0;
   list.setAttribute('aria-label', '對戰紀錄，由新到舊');
   const more = node('button', '顯示較早紀錄');
-  const note = node('p', '顯示原引擎已公開的紀錄，最多保留本頁最近 1,000 筆；重新整理後重新累積。', 'grail-history-note');
+  const note = node('p', '', 'grail-history-note');
   panel.append(header, search, fresh, summary, list, more, note);
   parent.append(toggle, panel);
-  let shown = 100, seenId = 0, source, stop = () => {};
+  let shown = 100, seenId = buffer.latest?.id || 0, source, stop = () => {};
   function announce() {
+    note.textContent = journal?.available
+      ? '本場公開紀錄暫存於同一分頁，重連後保留最多 1,000 筆；文字過多時保留較新的紀錄。離線期間未收到的事件可能缺漏。'
+      : journal ? '瀏覽器無法暫存紀錄，目前僅保留本頁最近 1,000 筆；重新整理後重新累積。'
+        : '顯示原引擎已公開的紀錄，最多保留本頁最近 1,000 筆；重新整理後重新累積。';
     const unread = Math.max(0, (buffer.latest?.id || 0) - seenId);
     toggle.textContent = unread ? `本場紀錄 ${unread > 99 ? '99+' : unread}` : '本場紀錄';
     toggle.setAttribute('aria-label', `對戰紀錄${unread ? `，${unread} 筆新紀錄` : ''}`);
@@ -130,9 +141,10 @@ export function createBattleHistory(parent, getTurn) {
       stop();
       source = sidebar;
       stop = observeNativeHistory(sidebar, (text, turn) => {
-        if (buffer.append(text, turn)) announce();
+        if (buffer.append(text, turn)) { journal?.save(buffer.search()); announce(); }
       }, getTurn);
     },
-    stop() { stop(); },
+    flush() { journal?.flush(); },
+    stop() { stop(); journal?.stop(); },
   };
 }

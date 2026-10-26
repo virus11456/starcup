@@ -155,3 +155,81 @@ test('permanently stopped adapters discard later engine messages instead of grow
     assert.equal(h.time.timers.size, 0); assert.equal(h.calls.length, 1); assert.equal(h.sockets.length, 1);
   }
 });
+
+for (const transport of ['websocket', 'http']) test(`long guest suspension uses native rejoin without submitting a stale choice (${transport})`, async () => {
+  const h = await onlineHarness({ transport });
+  await h.time.tick();
+  if (transport === 'websocket') { h.sockets[0].open(); await settle(); }
+  const initial = { sequence: 4, messages: [{ seq: 4, from: '1', data: '["update","before-pause"]' }], hostAlive: true };
+  if (transport === 'websocket') h.sockets[0].reply(initial); else h.calls[1].resolve(initial);
+  await settle();
+  h.game.ws.send('["result",{"bool":true,"id":"old-choice"}]');
+  await h.time.tick(40);
+  h.emit(h.win, 'pagehide', { persisted: true }); await settle();
+  await h.time.tick(130_000);
+  h.emit(h.win, 'pageshow', { persisted: true }); await h.time.tick();
+  if (transport === 'websocket') { h.sockets[1].open(); await settle(); }
+  const probe = transport === 'websocket' ? h.sockets[1].sent[0] : h.calls.at(-1).body;
+  assert.equal(probe.ack, 4, 'do not acknowledge missing updates');
+  assert.equal(probe.messages.length, 0, 'do not resend a choice from the old event');
+  const ids = h.generatedIds();
+  h.game.ws.send('["result",{"bool":false,"id":"another-stale-choice"}]');
+  assert.equal(h.generatedIds(), ids, 'stale UI cannot enqueue more choices while recovering');
+  const partial = { sequence: 20, messages: [{ seq: 20, from: '1', data: '["update","partial-after-expiry"]' }], hostAlive: true };
+  if (transport === 'websocket') h.sockets[1].reply(partial); else h.calls.at(-1).resolve(partial);
+  await settle();
+  assert.deepEqual(h.received, [['update', 'before-pause']], 'never apply an incomplete inbox to the old arena');
+  assert.equal(h.reloads(), 1); assert.equal(h.nativeStatus.reloading, true);
+  assert.equal(h.game.ws.readyState, 3); assert.equal(h.time.timers.size, 0);
+  assert.equal(h.sessionReads(), 1, 'the same seat stays in sessionStorage for native reinitialization');
+  h.emit(h.win, 'online'); h.emit(h.doc, 'visibilitychange'); await h.time.tick(60_000);
+  assert.equal(h.reloads(), 1); assert.equal(h.time.timers.size, 0);
+});
+
+test('a stale guest waits for the original host and never applies partial replies or enters a reload loop', async () => {
+  const h = await onlineHarness(); await h.time.tick(); h.sockets[0].open(); await settle();
+  h.sockets[0].reply({ sequence: 0, messages: [], hostAlive: true }); await settle();
+  h.emit(h.win, 'pagehide', { persisted: true }); await h.time.tick(95_000);
+  h.emit(h.win, 'pageshow', { persisted: true }); await h.time.tick(); h.sockets[1].open(); await settle();
+  for (let i = 0; i < 3; i++) {
+    h.sockets[1].reply({ sequence: 8, messages: [{ seq: 8, from: '1', data: '["update","stale"]' }], hostAlive: false }); await settle();
+    assert.equal(h.reloads(), 0); assert.equal(h.received.length, 0); assert.match(h.status.textContent, /等待房主/);
+    await h.time.tick(10_000);
+    assert.equal(h.sockets[1].sent.at(-1).ack, 0); assert.equal(h.sockets[1].sent.at(-1).messages.length, 0);
+  }
+  h.sockets[1].reply({ sequence: 8, messages: [], hostAlive: true }); await settle();
+  assert.equal(h.reloads(), 1); assert.equal(h.time.timers.size, 0);
+});
+
+test('a response delayed by a frozen browser triggers guest rejoin before dispatching native messages', async () => {
+  const h = await onlineHarness(); await h.time.tick(); h.sockets[0].open(); await settle();
+  h.time.jump(130_000); // no timer callbacks while the browser process is frozen
+  h.sockets[0].reply({ sequence: 9, messages: [{ seq: 9, from: '1', data: '["update","partial"]' }], hostAlive: true }); await settle();
+  assert.equal(h.received.length, 0); assert.equal(h.reloads(), 1); assert.equal(h.time.timers.size, 0);
+});
+
+test('a long-suspended host retains its actual engine and retry batch instead of using guest reload', async () => {
+  const h = await onlineHarness({ isHost: true }); await h.time.tick(); h.sockets[0].open(); await settle();
+  const peers = [{ id: '2', connection: 'guest-epoch' }];
+  h.sockets[0].reply({ sequence: 0, messages: [], peers, hostAlive: true }); await settle();
+  const nativeSocket = h.game.ws;
+  nativeSocket.send(JSON.stringify(['server', 'send', '2', '["update","host-event"]']));
+  await h.time.tick(40); const lost = h.sockets[0].sent.at(-1);
+  h.emit(h.win, 'pagehide', { persisted: true }); await settle(); await h.time.tick(130_000);
+  h.emit(h.win, 'pageshow', { persisted: true }); await h.time.tick(); h.sockets[1].open(); await settle();
+  assert.deepEqual(h.sockets[1].sent[0].messages, lost.messages);
+  assert.equal(h.sockets[1].sent[0].connection, lost.connection);
+  h.sockets[1].reply({ sequence: 1, messages: [], peers, hostAlive: true }); await settle();
+  assert.equal(h.reloads(), 0); assert.equal(h.game.ws, nativeSocket); assert.equal(h.nativeStatus.reloading, undefined);
+  h.game.ws.close();
+});
+
+for (const status of [401, 409, 410, 429]) test(`long guest suspension preserves terminal ${status} instead of auto-rejoining`, async () => {
+  const h = await onlineHarness(); await h.time.tick(); h.sockets[0].open(); await settle();
+  h.sockets[0].reply({ sequence: 0, messages: [], hostAlive: true }); await settle();
+  h.emit(h.win, 'pagehide', { persisted: true }); await h.time.tick(130_000);
+  h.emit(h.win, 'pageshow', { persisted: true }); await h.time.tick(); h.sockets[1].open(); await settle();
+  h.sockets[1].reply({ error: '測試終止原因' }, 0, status); await settle();
+  assert.equal(h.reloads(), 0); assert.equal(h.game.ws.readyState, 3); assert.equal(h.time.timers.size, 0);
+  assert.match(h.status.textContent, /測試終止原因/); assert.equal(h.calls.length, 1);
+});

@@ -416,6 +416,7 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
 #window .grail-free-draft .button.grail-taken::after { content: '已選取'; position: absolute; inset: auto 0 0; padding: 5px 2px; background: #111e28ed; color: #fff; text-align: center; font: 12px/1.4 system-ui, sans-serif; }
 @media (max-width: 600px) { .grail-free-draft .grail-draft-status { font-size: calc(12px * var(--grail-touch-scale, 1)); } }
 #grail-online-status.fatal { top: 35%; width: min(360px, 80%); border: 1px solid #ab7567; }
+#grail-online-status.recovering { inset: 0; transform: none; width: auto; max-width: none; display: flex; align-items: center; justify-content: center; padding: 24px; border-radius: 0; background: #0b1823ed; pointer-events: auto; }
 
 /* Short landscape phones need distinct score, target, action and hand rows.
    Keep the engine's body scale and its existing clickable player/card nodes. */

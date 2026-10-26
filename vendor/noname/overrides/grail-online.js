@@ -36,12 +36,12 @@ export async function startRelay() {
     status.textContent = message; status.hidden = !message;
     status.classList.toggle('fatal', fatal);
   };
-  let stopped = false, ack = 0, started = false, pending = [], failures = 0;
+  let stopped = false, rejoining = false, ack = 0, started = false, pending = [], failures = 0;
   let useSocket = false, wake = () => {};
   let socket, lifecycle, activeFetch;
   const peers = new Map();
   const queue = (to, data) => {
-    if (stopped) return;
+    if (stopped || rejoining) return;
     pending.push({ id: crypto.randomUUID(), to, data, connection: peers.get(to) }); wake(40);
   };
   const finish = () => {
@@ -81,6 +81,11 @@ export async function startRelay() {
     const room = attached.room;
     if (room.status === 'closed') throw Object.assign(new Error('房主已離開牌局。請返回大廳建立新房間。'), { status: 410 });
     ack = attached.sequence;
+    // A guest view cannot safely replay an inbox after a long suspension:
+    // peers age out at 60s and relay messages expire at 120s. Rejoin using the
+    // original seat and native init/reinit before replaying partial state.
+    // The browser host must keep its existing event stack instead of reloading.
+    let lastSyncAt = Date.now();
     _status.connectMode = true;
     lib.config.connect_nickname = room.nickname;
     lib.config.connect_avatar = 'fengYinShi';
@@ -125,6 +130,13 @@ export async function startRelay() {
       try {
         // Do not acknowledge a handshake until createServer installed wsOL.
         if (room.isHost && !lib.wsOL) return 100;
+        const needsRejoin = () => !room.isHost && Date.now() - lastSyncAt >= 90_000;
+        rejoining ||= needsRejoin();
+        if (rejoining) {
+          pending = [];
+          status.classList.toggle('recovering', true);
+          tell('正在恢復連線，暫停送出操作…');
+        }
         const batch = [];
         let bytes = 0;
         for (const message of pending) {
@@ -134,6 +146,22 @@ export async function startRelay() {
         const data = await request('sync', { ack, messages: batch, started });
         if (stopped) return null;
         if (lifecycle.inactive) return delay;
+        // A response can also arrive after the browser has frozen an in-flight
+        // request. Do not apply that response to the stale local arena.
+        rejoining ||= needsRejoin();
+        if (rejoining) {
+          pending = [];
+          status.classList.toggle('recovering', true);
+          tell(data.hostAlive ? '連線已恢復，正在重新取得本場牌局…' : '正在等待房主回到原本的分頁，恢復後會自動重新連線。');
+          if (data.hostAlive) {
+            closeRelay();
+            _status.reloading = true; // native confirm_exit exempts intentional reconnects
+            location.reload(); // this guest iframe only; retain its sessionStorage seat
+            return null;
+          }
+          return delay;
+        }
+        lastSyncAt = Date.now();
         pending.splice(0, batch.length);
         if (room.isHost) {
           for (const [id, epoch] of peers) {

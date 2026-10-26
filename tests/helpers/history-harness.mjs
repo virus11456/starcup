@@ -10,7 +10,7 @@ const ast = ts.createSourceFile('init.js', nativeSource, ts.ScriptTarget.Latest,
 const nativeKeys = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'setWindowListener')?.getText(ast);
 if (!nativeKeys) throw new Error('Native keyboard handler missing');
 
-export function historyHarness() {
+export function historyHarness(options = {}) {
   const win = {}, calls = { auto: 0, pause: 0, reload: 0 };
   const observers = [];
   let doc;
@@ -59,11 +59,11 @@ export function historyHarness() {
   };
   const create = vm.runInNewContext(historySource.replaceAll('export function', 'function') + '\n' + nativeKeys + '\nsetWindowListener();\ncreateBattleHistory;',
     { document: doc, MutationObserver: Observer, window: win, game, ui, lib: {} });
-  const history = create(parent, () => turn);
+  const history = create(parent, () => turn, options);
   history.attach(sidebar);
   const [toggle, panel] = parent.children;
-  const [header, search, fresh, summary, list, more] = panel.children;
-  return { calls, doc, toggle, panel, search, fresh, summary, list, more, close: header.children[1], history,
+  const [header, search, fresh, summary, list, more, note] = panel.children;
+  return { calls, doc, toggle, panel, search, fresh, summary, list, more, note, close: header.children[1], history,
     keyOnTable(values) { return parent.emit('keydown', values); },
     append(text, nextTurn = turn) {
       turn = nextTurn;
