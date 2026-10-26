@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip } from '../vendor/noname/overrides/grail-player-indicators.js';
+import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
 const mark = (skill, name, count, options = {}) => ({
@@ -182,4 +182,46 @@ test('sliding does not move a status with an already safe normal placement', () 
   assert.equal(p.placement,'below');
   assert.equal(p.top,328);
   assert.equal(p.left,218);
+});
+
+
+test('crowded status fallback keeps public hand number visible when complete markers do not fit', () => {
+  const hand = { id:'public-hand-count', label:'手牌', count:'4/6', kind:'hand' };
+  const shield = { id:'shield', label:'聖盾', count:'1', kind:'shield' };
+  const poison = { id:'poison', label:'中毒', count:'2', kind:'danger' };
+  const variants = [];
+  const result = chooseIndicatorVariant([hand, shield, poison], hand, shown => {
+    variants.push(shown.map(x => x.id));
+    return shown.length === 1 ? { left:22, top:330, width:104, height:32 } : null;
+  });
+  assert.equal(result.compact, true);
+  assert.deepEqual(result.badges, [hand]);
+  assert.deepEqual(variants.map(v => v.length), [3, 1]);
+  assert.equal(result.position.left, 22);
+});
+
+test('full status set returns when sufficient space exists and compact prefers stable DOM', () => {
+  const hand = { id:'public-hand-count' }, crystal = { id:'crystal' };
+  const all = [hand, crystal];
+  const result = chooseIndicatorVariant(all, hand,
+    shown => shown.length === 2 ? {left:10,top:110} : null);
+  assert.equal(result.compact, false);
+  assert.deepEqual(result.badges, all);
+  const tried = [];
+  const compact = chooseIndicatorVariant(all, hand, shown => {
+    tried.push(shown.length);
+    return { left:10, top:230 };
+  }, true);
+  assert.equal(compact.compact, true);
+  assert.deepEqual(tried, [1], 'compact mode may persist briefly without 400ms full-DOM churn');
+});
+
+test('when no safe strip exists the native hand count is never hidden', () => {
+  const hand = { id:'public-hand-count' }, marks = { id:'shield' };
+  const result = chooseIndicatorVariant([hand, marks], hand, () => null);
+  assert.equal(result, null);
+  const noHand = chooseIndicatorVariant([marks], null, () => null);
+  assert.equal(noHand, null);
+  assert.deepEqual(chooseIndicatorVariant([hand], hand, () => ({left:8,top:8})).badges,
+    [hand], 'a lone hand badge needs no duplicate compact variant');
 });

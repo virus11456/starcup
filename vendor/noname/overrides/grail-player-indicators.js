@@ -109,6 +109,20 @@ export function placeIndicatorStrip(rect, viewport, size, occupied = [], blocker
   return null;
 }
 
+// Try the complete PUBLIC indicator set first. A single crowded status
+// should not erase the important readable hand count if only that smaller
+// badge fits. The callback measures the actual DOM variant before placing.
+export function chooseIndicatorVariant(badges, handBadge, measure, compactFirst = false) {
+  const compact = handBadge && badges.length > 1 ? [handBadge] : null;
+  const variants = compactFirst && compact ? [compact, badges] : [badges, compact];
+  for (const variant of variants) {
+    if (!variant) continue;
+    const position = measure(variant);
+    if (position) return { badges: variant, position, compact: variant === compact };
+  }
+  return null;
+}
+
 // Render only Noname's native PUBLIC hand count/limit; never read opponent cards.
 export function publicHandCountBadge(player) {
   const counter = player?.node?.count;
@@ -150,31 +164,12 @@ export function createPlayerIndicators(parent, context, doc = document) {
         }
         const label = inspectionText(context.get.translation(player.name));
         strip.setAttribute('aria-label', label + '的狀態');
-        const signature = JSON.stringify(badges);
-        if (strip.dataset.signature !== signature) {
-          strip.dataset.signature = signature;
-          strip.replaceChildren();
-          for (const badge of badges) {
-            const item = doc.createElement('span');
-            item.className = 'grail-indicator grail-indicator-' + badge.kind;
-            item.title = `${label}：${badge.label}，${badge.count}`;
-            const icon = doc.createElement('span'); icon.className = 'grail-indicator-icon'; icon.textContent = badge.icon; icon.setAttribute('aria-hidden', 'true');
-            const name = doc.createElement('span'); name.className = 'grail-indicator-name'; name.textContent = badge.label;
-            const count = doc.createElement('b'); count.textContent = badge.count === '啟用中' ? '✓' : badge.count;
-            item.append(icon, name, count);
-            strip.append(item);
-          }
-        }
-        // Statuses are outside the native player hit box; native markers and
-        // the portrait retain their existing click / touch handlers.
         const width = doc.defaultView?.innerWidth ?? innerWidth;
         const height = doc.defaultView?.innerHeight ?? innerHeight;
         const portrait = height > width;
         const maxWidth = portrait && width <= 600 ? Math.min(158, width * .44)
           : width <= 1049 ? Math.min(210, width * .30) : Math.min(240, width * .22);
         strip.style.maxWidth = `${maxWidth}px`;
-        const panelWidth = Math.min(maxWidth, strip.offsetWidth || maxWidth);
-        const panelHeight = Math.max(27, strip.offsetHeight || Math.ceil(badges.length / (portrait ? 1 : 2)) * 29);
         const otherPortraits = players.filter(other => other !== player)
           .map(other => other.getBoundingClientRect?.()).filter(Boolean);
         const scoreNode = doc.getElementById?.('grail-scoreboard');
@@ -184,21 +179,62 @@ export function createPlayerIndicators(parent, context, doc = document) {
         const handRect = context.ui?.me?.getBoundingClientRect?.();
         const blockers = [...otherPortraits, scoreRect, controlsRect, handRect]
           .filter(box => box && box.width > 0 && box.height > 0);
-        const position = placeIndicatorStrip(rect, { width, height },
-          { width: panelWidth, height: panelHeight }, occupied, blockers);
-        if (!position) {
-          // A tiny screen can have no safe slot. Keep native count visible
-          // rather than hiding it before the mirrored status can be drawn.
+        const geometryKey = JSON.stringify([width, height,
+          ...[rect, ...blockers, ...occupied].map(box =>
+            [box.left, box.top, box.width, box.height].map(value => Math.round(value / 8))),
+          badges.map(badge => [badge.id, badge.count])]);
+        const previousCompact = strip.dataset.compact === 'true';
+        const unchanged = strip.dataset.geometryKey === geometryKey;
+        const now = Date.now();
+        // Once compact, avoid rebuilding the whole badge DOM every 400ms.
+        // Retry the full set when geometry changes or after 3 seconds.
+        const compactFirst = previousCompact && unchanged &&
+          now - Number(strip.dataset.lastFullAttempt || 0) < 3000;
+        function paint(displayed) {
+          const signature = JSON.stringify(displayed);
+          if (strip.dataset.signature === signature) return;
+          strip.dataset.signature = signature;
+          strip.replaceChildren();
+          for (const badge of displayed) {
+            const item = doc.createElement('span');
+            item.className = 'grail-indicator grail-indicator-' + badge.kind;
+            item.title = `${label}：${badge.label}，${badge.count}`;
+            const icon = doc.createElement('span'); icon.className = 'grail-indicator-icon';
+            icon.textContent = badge.icon; icon.setAttribute('aria-hidden', 'true');
+            const name = doc.createElement('span'); name.className = 'grail-indicator-name';
+            name.textContent = badge.label;
+            const count = doc.createElement('b');
+            count.textContent = badge.count === '啟用中' ? '✓' : badge.count;
+            item.append(icon, name, count);
+            strip.append(item);
+          }
+        }
+        const candidate = chooseIndicatorVariant(badges, handCount, displayed => {
+          paint(displayed);
+          // Measure the actual visible size AFTER switching full/compact mode.
+          const panelWidth = Math.min(maxWidth, strip.offsetWidth || maxWidth);
+          const panelHeight = Math.max(27, strip.offsetHeight ||
+            Math.ceil(displayed.length / (portrait ? 1 : 2)) * 29);
+          return placeIndicatorStrip(rect, { width, height },
+            { width: panelWidth, height: panelHeight }, occupied, blockers);
+        }, compactFirst);
+        if (!compactFirst) strip.dataset.lastFullAttempt = String(now);
+        strip.dataset.geometryKey = geometryKey;
+        if (!candidate) {
+          // Keep the native hand count instead of hiding it for an invisible
+          // mirror when a compact badge cannot fit either.
           if (player.dataset) player.dataset.grailHandCountMirror = 'false';
           continue;
         }
         active.add(player);
-        if (player.dataset) player.dataset.grailHandCountMirror = String(Boolean(handCount));
+        strip.dataset.compact = String(candidate.compact);
+        if (player.dataset) player.dataset.grailHandCountMirror = String(
+          Boolean(handCount) && candidate.badges.includes(handCount));
         strip.style.transform = 'none';
-        strip.style.left = `${position.left}px`;
-        strip.style.top = `${position.top}px`;
-        strip.dataset.placement = position.placement;
-        occupied.push(position);
+        strip.style.left = `${candidate.position.left}px`;
+        strip.style.top = `${candidate.position.top}px`;
+        strip.dataset.placement = candidate.position.placement;
+        occupied.push(candidate.position);
       }
       for (const [player, strip] of strips) {
         if (active.has(player)) continue;
