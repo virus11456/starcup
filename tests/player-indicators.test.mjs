@@ -152,3 +152,34 @@ test('phone role art is larger than before, while public hand digits stay high c
   assert.match(badges, /\.grail-indicator-hand \{\s*max-width:\s*108px/);
   assert.match(badges, /\.grail-indicator-hand b\s*\{\s*font-size:\s*17px/);
 });
+
+
+test('if all four nominal anchors are blocked, slide a chip along the free lower lane', () => {
+  const screen = { width: 390, height: 760 };
+  const seat = { left:155, right:235, top:290, bottom:390, width:80, height:100 };
+  const obstacles = [
+    { left:0, top:180, width:390, height:102 }, // above
+    { left:135, top:398, width:135, height:56 }, // below centre
+    { left:240, top:290, width:150, height:100 }, // right
+    { left:0, top:286, width:152, height:104 }, // left
+  ];
+  const result = placeIndicatorStrip(seat, screen, { width:122, height:44 }, [], obstacles);
+  assert.ok(result, 'lower-left area should remain free');
+  assert.equal(result.placement, 'below');
+  assert.ok(result.left + result.width <= 131, 'slides left of below-centre obstacle');
+  assert.equal(result.top, 398);
+  const collides = (a,b) => a.left < b.left + b.width + 4
+    && a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4
+    && a.top + a.height + 4 > b.top;
+  assert.equal(collides(result, seat), false);
+  for (const obstacle of obstacles) assert.equal(collides(result, obstacle), false);
+});
+
+test('sliding does not move a status with an already safe normal placement', () => {
+  const screen = { width:390, height:760 };
+  const seat = { left:318,right:380,top:200,bottom:320,width:62,height:120 };
+  const p = placeIndicatorStrip(seat, screen, {width:162,height:90});
+  assert.equal(p.placement,'below');
+  assert.equal(p.top,328);
+  assert.equal(p.left,218);
+});

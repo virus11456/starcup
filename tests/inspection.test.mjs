@@ -431,3 +431,31 @@ test('large portrait scale preserves inward origin without left-right jitter', a
   assert.equal(playerZoomOrigin({ left: 283, right: 361 }, 390, 34, 'right center'), 'right center');
   assert.equal(playerZoomOrigin({ left: 120, right: 205 }, 390), 'center center');
 });
+
+
+test('edge portrait zoom retains inward transform origin through 400ms refresh jitter', async () => {
+  const { playerZoomOrigin, updatePlayerZoomOrigins } =
+    await import('../vendor/noname/overrides/grail-player-zoom.js');
+  assert.equal(playerZoomOrigin({left:10,right:90},390), 'left center');
+  assert.equal(playerZoomOrigin({left:45,right:125},390,34,'left center'), 'left center');
+  assert.equal(playerZoomOrigin({left:52,right:132},390,34,'left center'), 'left center');
+  assert.equal(playerZoomOrigin({left:53,right:133},390,34,'left center'), 'center center');
+  assert.equal(playerZoomOrigin({left:290,right:385},390), 'right center');
+  assert.equal(playerZoomOrigin({left:282,right:356},390,34,'right center'), 'right center');
+  assert.equal(playerZoomOrigin({left:281,right:337},390,34,'right center'), 'center center');
+  const assignments = [];
+  let rectangle = {left:10,right:90};
+  const player = {
+    dataset:{position:'2'},
+    style:{setProperty: (key,value) => assignments.push([key,value])},
+    getBoundingClientRect: () => rectangle,
+  };
+  updatePlayerZoomOrigins([player],390);
+  assert.equal(assignments.length,1);
+  rectangle = {left:44,right:125};
+  updatePlayerZoomOrigins([player],390);
+  assert.equal(assignments.length,1,'same stable origin should not trigger another CSS repaint');
+  rectangle = {left:60,right:140};
+  updatePlayerZoomOrigins([player],390);
+  assert.deepEqual(assignments.at(-1), ['--grail-role-origin','center center']);
+});

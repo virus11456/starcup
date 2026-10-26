@@ -69,16 +69,42 @@ export function placeIndicatorStrip(rect, viewport, size, occupied = [], blocker
   const overlaps = (a,b) => a.left < b.left + b.width + 4 &&
     a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4 &&
     a.top + a.height + 4 > b.top;
+  const clear = candidate => !overlaps(candidate, rect) &&
+    !forbidden.some(box => overlaps(candidate, box));
+  // Preserve the familiar directly-below/above placement when possible.
   for (const [placement, leftRaw, topRaw] of centers) {
-    // A clamped strip is useful only if it doesn't end up on top of the
-    // portrait it belongs to, the scoreboard or an unrelated target.
     const candidate = {
       left: clamp(leftRaw, margin, vw - width - margin),
       top: clamp(topRaw, margin, vh - height - margin),
       width, height, placement,
     };
-    if (!overlaps(candidate, rect) && !forbidden.some(box => overlaps(candidate, box)))
-      return candidate;
+    if (clear(candidate)) return candidate;
+  }
+  // All four nominal anchors are obstructed. Slide along a row/column
+  // rather than dropping a status despite free space a few pixels away.
+  // Do not move any original player or clickable target.
+  for (const [placement, leftRaw, topRaw] of centers) {
+    const horizontal = placement === 'below' || placement === 'above';
+    const base = horizontal ? leftRaw : topRaw;
+    const low = margin;
+    const high = horizontal ? vw - width - margin : vh - height - margin;
+    const extent = horizontal ? width : height;
+    const alternatives = [];
+    for (const blocker of [rect, ...forbidden]) {
+      const start = horizontal ? blocker.left : blocker.top;
+      const end = start + (horizontal ? blocker.width : blocker.height);
+      alternatives.push(clamp(start - extent - 5, low, high));
+      alternatives.push(clamp(end + 5, low, high));
+    }
+    alternatives.sort((a, b) => Math.abs(a - base) - Math.abs(b - base));
+    for (const value of new Set(alternatives)) {
+      const candidate = {
+        left: horizontal ? value : clamp(leftRaw, margin, vw - width - margin),
+        top: horizontal ? clamp(topRaw, margin, vh - height - margin) : value,
+        width, height, placement,
+      };
+      if (clear(candidate)) return candidate;
+    }
   }
   return null;
 }

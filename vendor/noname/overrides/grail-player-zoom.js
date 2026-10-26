@@ -3,8 +3,9 @@
 export function playerZoomOrigin(rect, viewportWidth, margin = 34, previous = 'center center') {
   if (!rect || !Number.isFinite(rect.left) || !Number.isFinite(rect.right)
       || !(viewportWidth > 0)) return 'center center';
-  // The bounding box already reflects the last CSS scale and origin. Keep
-  // the edge origin until the card clears the boundary by another 18px.
+  // getBoundingClientRect includes prior CSS scaling. Hold an established
+  // inward edge-origin until the card moves a full 18px inside the margin,
+  // avoiding repeated left/center toggles on the 400ms HUD update.
   const release = 18;
   if (previous === 'left center' && rect.left <= margin + release)
     return 'left center';
