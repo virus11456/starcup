@@ -33,7 +33,7 @@
   min-width: calc(44px * var(--grail-touch-scale, 1));
   margin: 0;
   padding: 0 calc(6px * var(--grail-touch-scale, 1));
-  font: calc(12px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  font: calc(13px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
   pointer-events: auto;
   overflow: visible;
 }
@@ -62,8 +62,23 @@
   min-height: calc(44px * var(--grail-touch-scale, 1));
   padding: 0 calc(12px * var(--grail-touch-scale, 1));
   margin: 0;
-  font: calc(14px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  font: calc(16px * var(--grail-touch-scale, 1)) / 1.25 system-ui;
+  white-space: nowrap;
 }
 .grail-phone-layout #window .menu-container > .menu.main:not(.center) {
   top: calc(60px * var(--grail-touch-scale, 1)) !important;
+}
+
+/* Top native system controls use one 44px touch token, background and font. */
+.grail-phone-layout #window #system > div > div:not(.hidden) {
+  height: calc(44px * var(--grail-touch-scale, 1)) !important;
+  min-height: calc(44px * var(--grail-touch-scale, 1)) !important;
+  min-width: calc(44px * var(--grail-touch-scale, 1)) !important;
+  border-radius: calc(8px * var(--grail-touch-scale, 1)) !important;
+  border: 1px solid #ccb88d75 !important;
+  box-shadow: 0 2px 8px #0006, inset 0 1px 0 #fff2 !important;
+  background: linear-gradient(180deg, #2e4851, #172d37) !important;
+  color: #f4e5c6 !important;
+  font: 650 calc(13px * var(--grail-touch-scale, 1))/1.2 system-ui, sans-serif !important;
+  text-align: center;
 }

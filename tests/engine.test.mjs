@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import ts from "typescript";
 import { loadPacks } from "../scripts/engine-catalog.mjs";
@@ -10,7 +11,7 @@ const pin = JSON.parse(
 const catalog = JSON.parse(
   await fs.readFile(new URL("../public/engine/catalog.json", import.meta.url)),
 );
-const root = new URL("../public/engine/", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../public/engine/", import.meta.url));
 const { packs, lib } = await loadPacks(root, pin);
 test("catalog maps every current role to the requested encyclopedia without claiming skill verification", () => {
   for (const role of catalog.characters) {

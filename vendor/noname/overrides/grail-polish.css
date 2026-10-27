@@ -13,7 +13,8 @@
 }
 body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #080f1a); }
 
-/* Element tints are separate from the gold selectable / mint selected ring. */
+/* Element tints are separate from the neutral playable / mint selected ring.
+   Only an attack owned by the current character receives a gold border. */
 [data-grail-element="an"] { --grail-card-accent: #c3b4e9; }
 [data-grail-element="shui"] { --grail-card-accent: #91d8f0; }
 [data-grail-element="huo"] { --grail-card-accent: #f3ad98; }
@@ -52,8 +53,8 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
   text-shadow: none;
 }
 #window #arena .handcards > .card[data-grail-element].selectable {
-  outline: 2px solid #e5c782; outline-offset: 1px;
-  box-shadow: 0 4px 14px #0008, 0 0 0 1px #e5c78255;
+  outline: 2px solid #9abecb; outline-offset: 1px;
+  box-shadow: 0 4px 14px #0008, 0 0 0 1px #9abecb55;
 }
 #window #arena .handcards > .card[data-grail-element].selected {
   outline: 3px solid var(--grail-picked); outline-offset: 1px;
@@ -61,6 +62,30 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
 }
 #window #arena .handcards > .card[data-grail-element].selected > .name {
   background: #103a39f5; box-shadow: inset 3px 0 0 var(--grail-picked); color: #f3fff9;
+}
+
+/* Only cards bearing an innate special attack of the CURRENT character get
+   gold. Keep the native selected state legible with an outer mint halo. */
+#window #arena .handcards > .card[data-grail-own-special="true"] {
+  /* The inner ring stays visible inside the clipped, scrolling phone hand. */
+  outline: 4px solid #ffd454;
+  outline-offset: -1px;
+  box-shadow: inset 0 0 0 3px #fff1a3, 0 0 0 2px #ffd454, 0 0 18px 4px #ffc145b0, 0 5px 14px #000a;
+}
+#window #arena .handcards > .card[data-grail-own-special="true"].selected {
+  outline: 4px solid #ffd454;
+  outline-offset: -1px;
+  box-shadow: inset 0 0 0 3px #fff1a3, 0 0 0 4px var(--grail-picked), 0 0 18px 4px #ffc145b0, 0 6px 18px #0009;
+}
+#window #arena .handcards > .card[data-grail-own-special="true"] > .name {
+  color: #fff2ce;
+  background: #513618ed;
+  box-shadow: inset 4px 0 0 #ffd454, 0 1px 5px #0008;
+}
+#window #arena .handcards > .card[data-grail-own-special="true"] > .info {
+  color: #fff1b8;
+  background: #573811ef;
+  box-shadow: 0 0 0 2px #ffd454, 0 2px 8px #0009;
 }
 
 /* Character portraits retain their original crop and seat locations. */
@@ -97,6 +122,7 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
 #window #control > .control > div + div { box-shadow: -1px 0 0 #d8d1b52b; }
 #window #control > .control > [data-grail-action="confirm"] { color: #142630; background: linear-gradient(135deg, #f0dfb1, #c3a775); font-weight: 750; }
 #window #control > .control > [data-grail-action="cancel"] { color: #c5d6d6; background: #10232b66; }
+#window #control > .control > [data-grail-action="end-turn"] { color: #f3e5c1; background: linear-gradient(135deg, #365052, #263a41); box-shadow: inset 0 0 0 1px #dec68c80; font-weight: 750; white-space: nowrap; }
 #window #control > .control > [data-grail-action="damage"] { color: #ffdcce; background: linear-gradient(135deg, #663e40, #412c38); box-shadow: inset 0 0 0 1px #d59c8877; }
 #window #control > .control > :first-child { border-top-left-radius: 7px; border-bottom-left-radius: 7px; }
 #window #control > .control > :last-child { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }
@@ -144,4 +170,59 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
 }
 @media (prefers-reduced-motion: reduce) {
   #window #arena .handcards > .card[data-grail-element], #window #control > .control > div { transition: none; }
+}
+
+/* Gold from the first instant this owned printed special attack enters hand.
+   Native noname .card::after has z-index:-1; previously its outline/glow
+   could be hidden by the art or clipped until native selection lifted it. */
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"] {
+  position: relative;
+  box-sizing: border-box;
+  border: 3px solid #ffd454 !important;
+  outline: 2px solid #ffe6a0;
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px #aa690c, 0 0 12px 2px #e7aa2e80, 0 4px 12px #000a;
+}
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"]::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  border: 3px solid #ffe177 !important;
+  border-radius: inherit !important;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px #6c3e0d, inset 0 0 12px #ffc65778 !important;
+  /* This must stay non-important: important opacity prevented the keyframes
+     from actually breathing, even though the animation was running. */
+  opacity: .58;
+  visibility: visible !important;
+  transform: none !important;
+  z-index: 9 !important;
+  pointer-events: none !important;
+}
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"].selected {
+  border-color: #ffd454 !important;
+  outline-color: #ffd454 !important;
+  box-shadow: 0 0 0 3px var(--grail-picked), 0 0 12px 2px #e7aa2e80, 0 6px 16px #000a;
+}
+@media (prefers-reduced-motion: reduce) {
+  #window #arena #handcards1 .handcards > .card[data-grail-own-special="true"] { transition: none !important; }
+}
+
+/* Animate only compositable opacity, not box-shadow paint on every frame.
+   The permanent base border remains gold even at the dimmest moment. */
+@keyframes grail-special-gold-breathe {
+  0%, 100% { opacity: .58; }
+  50% { opacity: 1; }
+}
+#window #arena #handcards1 .handcards > .card[data-grail-own-special="true"]::after {
+  animation: grail-special-gold-breathe 2.6s ease-in-out infinite !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #window #arena #handcards1 .handcards > .card[data-grail-own-special="true"]::after {
+    animation: none !important;
+    opacity: 1 !important;
+    box-shadow: inset 0 0 0 2px #fff1bd, inset 0 0 9px #ffd660bb, 0 0 6px 1px #ffd85e8f !important;
+  }
 }

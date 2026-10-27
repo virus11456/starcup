@@ -194,11 +194,71 @@ test('a stale guest waits for the original host and never applies partial replie
   for (let i = 0; i < 3; i++) {
     h.sockets[1].reply({ sequence: 8, messages: [{ seq: 8, from: '1', data: '["update","stale"]' }], hostAlive: false }); await settle();
     assert.equal(h.reloads(), 0); assert.equal(h.received.length, 0); assert.match(h.status.textContent, /等待房主/);
-    await h.time.tick(10_000);
+    await h.time.tick(30_000);
     assert.equal(h.sockets[1].sent.at(-1).ack, 0); assert.equal(h.sockets[1].sent.at(-1).messages.length, 0);
   }
   h.sockets[1].reply({ sequence: 8, messages: [], hostAlive: true }); await settle();
   assert.equal(h.reloads(), 1); assert.equal(h.time.timers.size, 0);
+});
+
+test('a connected guest fences its old choices as soon as the playing host is confirmed absent', async () => {
+  const h = await onlineHarness(); await h.time.tick(); h.sockets[0].open(); await settle();
+  h.sockets[0].reply({ sequence: 2, messages: [], hostAlive: true }); await settle();
+  h.game.ws.send('["result",{"id":"outdated-answer"}]');
+  await h.time.tick(40);
+  assert.equal(h.sockets[0].sent.at(-1).messages.length, 1);
+  h.sockets[0].reply({ sequence: 6, messages: [{ seq: 6, from: '1', data: '["update","partial"]' }], hostAlive: false });
+  await settle();
+  assert.equal(h.received.length, 0, 'an incomplete inbox cannot update the old native picker');
+  assert.match(h.status.textContent, /等待房主/);
+  assert.match(h.status.textContent, /關閉分頁.*無法接手/);
+  assert.equal(h.status.classList.contains('recovering'), true, 'stale actions must be blocked by the recovery overlay');
+  assert.equal(h.reloads(), 0);
+  const before = h.generatedIds();
+  h.game.ws.send('["result",{"id":"another-outdated-answer"}]');
+  assert.equal(h.generatedIds(), before, 'the obsolete choice cannot enter the durable relay');
+  await h.time.tick(10_000);
+  assert.equal(h.sockets[0].sent.at(-1).messages.length, 1, 'do not retry a stale choice while waiting for the original host');
+  await h.time.tick(20_000);
+  assert.equal(h.sockets[0].sent.at(-1).messages.length, 0, 'the prior unacknowledged choice is dropped before retry');
+  assert.equal(h.sockets[0].sent.at(-1).ack, 2, 'do not acknowledge unread host updates');
+  h.sockets[0].reply({ sequence: 6, messages: [], hostAlive: true }); await settle();
+  assert.equal(h.reloads(), 1, 'reconnect only after the original host is alive again');
+  assert.equal(h.time.timers.size, 0);
+});
+
+test('HTTP fallback keeps the guest seat alive without rapid polling while the host is absent', async () => {
+  const h = await onlineHarness({ transport: 'http' });
+  await h.time.tick();
+  assert.equal(h.calls.length, 2);
+  h.calls[1].resolve({ sequence: 1, messages: [], hostAlive: false });
+  await settle();
+  assert.equal(h.status.classList.contains('recovering'), true);
+  await h.time.tick(29_000);
+  assert.equal(h.calls.length, 2, 'do not continue the normal 600ms HTTP polling cadence while the host is gone');
+  await h.time.tick(1_000);
+  assert.equal(h.calls.length, 3, 'renew the guest lease before its 60s expiration');
+  assert.equal(h.calls[2].body.messages.length, 0);
+  h.calls[2].resolve({ sequence: 1, messages: [], hostAlive: true });
+  await settle();
+  assert.equal(h.reloads(), 1, 'resume a clean native guest only when the original host returns');
+  assert.equal(h.time.timers.size, 0);
+});
+
+test('a guest in an unstarted lobby still waits for its first host without forcing native rejoin', async () => {
+  const h = await onlineHarness({ roomStatus: 'waiting' });
+  await h.time.tick(); h.sockets[0].open(); await settle();
+  h.sockets[0].reply({ sequence: 0, messages: [], hostAlive: false, room: { status: 'waiting' } });
+  await settle();
+  assert.equal(h.reloads(), 0);
+  assert.equal(h.status.classList.contains('recovering'), false);
+  assert.match(h.status.textContent, /房主連線中斷/);
+  await h.time.tick(10_000);
+  h.sockets[0].reply({ sequence: 0, messages: [], hostAlive: true, room: { status: 'waiting' } });
+  await settle();
+  assert.equal(h.reloads(), 0);
+  assert.equal(h.status.hidden, true);
+  h.game.ws.close();
 });
 
 test('a response delayed by a frozen browser triggers guest rejoin before dispatching native messages', async () => {

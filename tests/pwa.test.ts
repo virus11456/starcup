@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import ts from 'typescript';
 import manifest from '../app/manifest.ts';
+import { requestPwaInstall, type InstallPrompt } from '../lib/pwa-install.ts';
 import * as access from '../lib/site-access.ts';
 
 const require = createRequire(import.meta.url);
@@ -78,4 +79,31 @@ test('an installed app still uses the signed site session for private content', 
     if (previous.password === undefined) delete process.env.SITE_ACCESS_PASSWORD; else process.env.SITE_ACCESS_PASSWORD = previous.password;
     if (previous.secret === undefined) delete process.env.SITE_ACCESS_SESSION_SECRET; else process.env.SITE_ACCESS_SESSION_SECRET = previous.secret;
   }
+});
+
+test('PWA button invokes the one-time install prompt, reads userChoice and never invents acceptance', async () => {
+  let calls = 0;
+  const event = {
+    prompt: async () => { calls++; },
+    userChoice: Promise.resolve({ outcome: 'accepted' as const, platform: 'web' }),
+  } as unknown as InstallPrompt;
+  assert.equal(await requestPwaInstall(event), 'accepted');
+  assert.equal(calls, 1);
+  assert.equal(await requestPwaInstall({
+    prompt: async () => ({ outcome: 'dismissed' }),
+  } as InstallPrompt), 'dismissed');
+  assert.equal(await requestPwaInstall({
+    prompt: async () => undefined,
+  } as InstallPrompt), 'unknown', 'some browsers do not return a choice');
+});
+
+test('install guidance is discoverable from the hero and remains a legible in-page section', () => {
+  const lobby = readFileSync(new URL('../app/lobby.tsx', import.meta.url), 'utf8');
+  const card = readFileSync(new URL('../app/install-app.tsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../app/install-app.module.css', import.meta.url), 'utf8');
+  assert.match(lobby, /href="#install-app"/);
+  assert.equal(lobby.match(/<InstallApp \/>/g)?.length, 1);
+  assert.match(card, /id="install-app"/);
+  assert.match(card, /遊玩仍需要網路連線/);
+  assert.match(styles, /\.content p, \.content li \{[^}]*font-size: 16px/);
 });

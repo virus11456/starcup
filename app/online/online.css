@@ -29,3 +29,53 @@
 .online-invite > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .online-invite :focus-visible, .online-resume button:focus-visible { outline: 2px solid #e5d3a8; outline-offset: 2px; }
 @media(max-width: 650px) { .online-forms, .online-player { grid-template-columns: 1fr; } .online-player { gap: 16px; } .online-shell .full-header { gap: 8px; } .online-shell .full-header nav { gap: 4px; } .online-shell .full-header > a { font-size: 17px; } }
+
+/* Multiplayer setup: readable hints and input labels even on 320px phones. */
+.online-shell :is(.online-player p, .online-form-help, .online-invite p,
+  .online-intro p, .online-notice p, .online-resume p) { font-size: 16px; line-height: 1.75; }
+.online-shell :is(.online-forms label, .online-player label, .online-invite label) { font-size: 15px; }
+.online-shell :is(.online-forms, .online-player) > *, .online-shell .online-forms form { min-width: 0; }
+.online-shell :is(.online-forms input, .online-forms select, .online-player input, .online-invite input) { font-size: 16px; }
+.online-shell :is(.online-invite button, .online-resume button) { font-size: 15px; }
+.online-shell .online-invite { overflow-wrap: anywhere; }
+@media (max-width: 650px) {
+  .online-shell .online-forms { gap: 12px; }
+  .online-shell .online-player { gap: 16px; }
+  .online-shell .online-invite { width: min(480px, calc(100% - 20px)); padding: 18px 14px; }
+}
+
+/* Safe fallback only: user-initiated NEW room after proven host absence.
+   Avoid implying that the native interrupted match can be restored. */
+.online-host-absent {
+  position: fixed;
+  z-index: 85;
+  top: max(72px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  width: min(460px, calc(100vw - 24px));
+  max-height: calc(100dvh - 95px);
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid #e5c184;
+  border-radius: 12px;
+  background: #132932fa;
+  color: #f5ebd8;
+  box-shadow: 0 12px 36px #000b;
+  font: 16px/1.6 system-ui, sans-serif;
+}
+.online-host-absent strong { display: block; font-size: 19px; color: #ffe1a5; }
+.online-host-absent p { margin: 8px 0 12px; overflow-wrap: anywhere; }
+.online-host-absent button {
+  min-height: 48px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e1c386;
+  border-radius: 8px;
+  background: #3b504d;
+  color: #fff2ca;
+  font: 700 16px/1.3 system-ui, sans-serif;
+  cursor: pointer;
+}
+.online-host-absent button:disabled { opacity: .55; cursor: wait; }
+.online-host-absent button:focus-visible { outline: 3px solid #ffe1a5; outline-offset: 2px; }

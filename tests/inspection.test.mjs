@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { loadPacks } from '../scripts/engine-catalog.mjs';
 import { createBattleInspection, readInspection, inspectionPlayers, inspectionText } from '../vendor/noname/overrides/grail-inspection.js';
+import { readQuickDetail, createQuickDetailView } from '../vendor/noname/overrides/grail-detail-view.js';
 import { historyHarness } from './helpers/history-harness.mjs';
 
-const root = new URL('../public/engine/', import.meta.url).pathname;
+const root = fileURLToPath(new URL('../public/engine/', import.meta.url));
 const pin = JSON.parse(await fs.readFile(new URL('../vendor/noname/pin.json', import.meta.url)));
 const { packs, lib } = await loadPacks(root, pin);
 Object.assign(lib.translate, packs.card.translate);
@@ -20,7 +22,8 @@ function context(role = 'fengZhiJianSheng', cards = []) {
     getCards() { throw new Error('Opponent cards must remain private'); },
     get storage() { throw new Error('Do not read private mark storage'); } };
   const game = { me, players: [me, other] };
-  const get = { translation: id => lib.translate[id] || id, skillInfoTranslation: id => lib.translate[id + '_info'] };
+  const get = { translation: id => lib.translate[id] || id, skillInfoTranslation: id => lib.translate[id + '_info'],
+    type: card => card.type || lib.card[card.name]?.type };
   return { lib, game, get, me, other };
 }
 
@@ -50,6 +53,203 @@ test('all 68 current roles retain complete translated skill descriptions', () =>
     assert.ok(entries.every(entry => entry.title && entry.sections[0].text), role.id);
     assert.equal(entries[0].sections[0].text, inspectionText(lib.translate[lib.character[role.id][3].find(id => lib.translate[id + '_info'] && !lib.skill[id]?.nopop && !lib.skill[id]?.equipSkill) + '_info']));
   }
+});
+
+test('quick role and own hand readers produce portrait art and full public descriptions', () => {
+  const card = { name: 'anMie', duYou: '', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [card]);
+  c.me.hp = 5; c.me.maxHp = 6;
+  const role = readQuickDetail('role', c.me, c);
+  assert.equal(role.kind, 'role');
+  assert.equal(role.image, 'image/character/fengZhiJianSheng.jpg');
+  assert.match(role.subtitle, /生命 5 \/ 6/);
+  assert.ok(role.sections.some(section => section.title.includes('風怒追擊')));
+  const hand = readQuickDetail('card', card, c);
+  assert.equal(hand.kind, 'card');
+  assert.equal(hand.image, 'image/card/anMie.png');
+  assert.ok(hand.sections[0].text);
+  assert.equal(readQuickDetail('card', { name: 'anMie' }, c), null, 'never inspect another or stale card');
+  assert.equal(readQuickDetail('role', { name: c.me.name }, c), null, 'not a public player node');
+  c.other.isUnseen = () => true;
+  assert.equal(readQuickDetail('role', c.other, c), null, 'unrevealed roles remain hidden');
+});
+
+test('enlarged hand matches the same own-role attack-only gold rule as the table and hides facedown cards', () => {
+  const thunder = { name: 'leiGuangZhan', type: 'gongJi', duYou: 'jiFengJi|jingZhunSheJi', classList: classes('selectable') };
+  const spell = { name: 'anMie', type: 'faShu', duYou: 'jiFengJi', classList: classes('selectable') };
+  const hidden = { name: 'leiGuangZhan', type: 'gongJi', duYou: 'jiFengJi', classList: classes('infohidden') };
+  const c = context('fengZhiJianSheng', [thunder, spell, hidden]);
+  assert.equal(readQuickDetail('card', thunder, c).ownSpecial, true, 'native special attack is gold in the enlarged viewer');
+  assert.equal(readQuickDetail('card', spell, c).ownSpecial, false, 'a spell does not borrow the special-attack gold frame');
+  assert.equal(readQuickDetail('card', hidden, c), null, 'hidden cards cannot be magnified');
+  c.me.name = 'shengNv';
+  assert.equal(readQuickDetail('card', thunder, c).ownSpecial, false, 'another role sees an ordinary card');
+});
+
+test('a hand touch cancels upstream 500ms intro after its own touchstart, without swallowing native selection', () => {
+  const card = { name: 'anMie', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [card]);
+  const h = historyHarness(), listeners = new Map(), calls = [];
+  h.doc.addEventListener = (name, fn) => listeners.set(name, fn);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  const view = createQuickDetailView({ hud, context: c, document: h.doc,
+    cancelNativeLongPress: node => calls.push(node) });
+  const hand = { closest: selector => selector === '#arena #handcards1 .handcards > .card' ? card : null };
+  const event = { target: hand, prevented: false, stop: false,
+    preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stop = true; } };
+  assert.equal(typeof listeners.get('touchstart'), 'function');
+  listeners.get('touchstart')(event);
+  assert.deepEqual(calls, [card], 'only our card native intro timer is cancelled');
+  assert.equal(event.prevented, false, 'touch events still go to the original engine');
+  assert.equal(event.stop, false, 'no propagation stop on normal card touch');
+  card.classList = classes('infohidden');
+  listeners.get('touchstart')(event);
+  assert.equal(calls.length, 1, 'face-down/hidden card cannot trigger an inspection');
+  view.stop();
+  assert.equal(listeners.size, 0, 'stop must unregister the native-intro coexistence listener');
+});
+
+test('layout CSS defeats noname absolute div rule, avoiding overlapping popup and skill text', async () => {
+  const styles = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css', import.meta.url), 'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(styles, /#grail-detail-overlay \.grail-detail-layout,[\s\S]*?position:\s*static !important/);
+  assert.match(styles, /max-width:\s*1100px\) and \(orientation:\s*portrait/);
+  assert.match(styles, /max-height:\s*500px\) and \(orientation:\s*landscape/);
+  assert.match(bridge, /cancelNativeLongPress\(card\)[\s\S]*?longpresscancel\?\.call\(card\)/);
+});
+
+test('game over disables only the old native round menu above results', async () => {
+  const styles = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css', import.meta.url), 'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(bridge, /classList\.toggle\('grail-match-ended', Boolean\(_status\.over\)\)/);
+  assert.match(styles, /html\.grail-match-ended #window #arena > #roundmenu/);
+  assert.match(styles, /html:has\(#grail-detail-overlay:not\(\[hidden\]\)\) #window #arena > #roundmenu/);
+  assert.doesNotMatch(styles, /html\.grail-match-ended #window #arena > \.dialog/);
+});
+
+test('character draft supports public full-size previews without hijacking ordinary selection', async () => {
+  const c = context('fengZhiJianSheng');
+  const draft = { link: 'fengZhiJianSheng', classList: classes('button', 'character'),
+    closest: selector => selector === '#arena.choose-character' ? {} : null };
+  const detail = readQuickDetail('draft-role', draft, c);
+  assert.equal(detail.kind, 'role');
+  assert.equal(detail.image, 'image/character/fengZhiJianSheng.jpg');
+  assert.match(detail.sections.map(section => section.title + section.text).join(' '), /風怒追擊/);
+  assert.equal(readQuickDetail('draft-role', { ...draft, link: 'invalid_role' }, c), null);
+  assert.equal(readQuickDetail('draft-role', { ...draft, closest: () => null }, c), null);
+  const h = historyHarness(), listeners = new Map();
+  h.doc.addEventListener = (name, fn) => listeners.set(name, fn);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  const view = createQuickDetailView({ hud, context: c, document: h.doc });
+  const overlay = hud.children[0];
+  overlay.children[0].children[1].children[0].dataset = {};
+  const target = { closest: query => query === '#arena.choose-character .dialog .button.character' ? draft : null };
+  const event = () => ({ target, prevented: false, stopped: false, button: 0, isPrimary: true,
+    pointerId: 42, clientX: 8, clientY: 8,
+    preventDefault() { this.prevented = true; },
+    stopImmediatePropagation() { this.stopped = true; } });
+  const ordinaryClick = event();
+  listeners.get('click')(ordinaryClick);
+  assert.equal(ordinaryClick.prevented, false, 'normal click remains the native choice');
+  assert.equal(overlay.hidden, true);
+  listeners.get('pointerdown')(event());
+  await new Promise(resolve => setTimeout(resolve, 625));
+  assert.equal(overlay.hidden, false, 'hold shows the enlarged public character');
+  assert.match(overlay.textContent, /風怒追擊/);
+  const released = event();
+  listeners.get('touchend')(released);
+  assert.equal(released.prevented, true, 'long-press release cannot select the draft character');
+  view.stop();
+  assert.equal(listeners.size, 0, 'all document-level preview listeners are removed on teardown');
+});
+
+test('a role tap opens only for non-selectable targets; long pressing our hand opens without playing it', async () => {
+  const card = { name: 'anMie', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [card]);
+  const h = historyHarness();
+  const listeners = new Map();
+  h.doc.addEventListener = (name, handler) => listeners.set(name, handler);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  createQuickDetailView({ hud, context: c, document: h.doc });
+  const overlay = hud.children[0];
+  const picture = overlay.children[0].children[1].children[0];
+  picture.dataset = {};
+  const playerNode = { closest: query => query === '#arena > .player' ? c.me : null };
+  const cardNode = { closest: query => query === '#arena #handcards1 .handcards > .card' ? card : null };
+  c.me.classList = classes('selectable');
+  const event = target => ({ target, prevented: false, stopped: false,
+    preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; } });
+  const selection = event(playerNode);
+  listeners.get('click')(selection);
+  assert.equal(selection.prevented, false, 'native selection still receives click');
+  assert.equal(overlay.hidden, true);
+  c.me.classList = classes();
+  const inspection = event(playerNode);
+  listeners.get('click')(inspection);
+  assert.equal(inspection.prevented, true);
+  assert.equal(overlay.hidden, false);
+  assert.match(overlay.textContent, /風怒追擊/);
+  // Open a new viewer instance to exercise the genuine 580ms long-press path.
+  const hud2 = h.doc.createElement('div');
+  createQuickDetailView({ hud: hud2, context: c, document: h.doc });
+  const overlay2 = hud2.children[0];
+  overlay2.children[0].children[1].children[0].dataset = {};
+  listeners.get('pointerdown')({ target: cardNode, button: 0, isPrimary: true, pointerId: 7, clientX: 20, clientY: 20 });
+  await new Promise(resolve => setTimeout(resolve, 625));
+  assert.equal(overlay2.hidden, false);
+  assert.match(overlay2.textContent, /暗滅/);
+  const release = event(cardNode); release.pointerId = 7;
+  listeners.get('touchend')(release);
+  assert.equal(release.prevented, true, 'a held card must not activate native touchend');
+});
+
+test('long-press blocks only its own hand card, not another card or selectable player', async () => {
+  const pressedCard = { name: 'anMie', type: 'gongJi', classList: classes('selectable') };
+  const otherCard = { name: 'huoYanZhan', type: 'gongJi', classList: classes('selectable') };
+  const c = context('fengZhiJianSheng', [pressedCard, otherCard]);
+  const h = historyHarness(), listeners = new Map();
+  h.doc.addEventListener = (name, handler) => listeners.set(name, handler);
+  h.doc.removeEventListener = name => listeners.delete(name);
+  const hud = h.doc.createElement('div');
+  const view = createQuickDetailView({ hud, context: c, document: h.doc });
+  const overlay = hud.children[0];
+  overlay.children[0].children[1].children[0].dataset = {};
+  const cardTarget = card => ({
+    closest: selector => selector === '#arena #handcards1 .handcards > .card' ? card : null,
+  });
+  const myTarget = cardTarget(pressedCard), otherTarget = cardTarget(otherCard);
+  const player = { closest: selector => selector === '#arena > .player' ? c.me : null };
+  const event = target => ({ target, pointerId: 17, button: 0, isPrimary: true,
+    clientX: 4, clientY: 9, prevented: false, stopped: false,
+    preventDefault() { this.prevented = true; },
+    stopImmediatePropagation() { this.stopped = true; },
+  });
+  listeners.get('pointerdown')(event(myTarget));
+  await new Promise(resolve => setTimeout(resolve, 625));
+  assert.equal(overlay.hidden, false);
+  for (const type of ['pointerup', 'touchend', 'click', 'contextmenu']) {
+    const held = event(myTarget);
+    listeners.get(type)(held);
+    assert.equal(held.prevented, true, type + ' should suppress the held-card native event');
+    const unrelated = event(otherTarget);
+    listeners.get(type)(unrelated);
+    assert.equal(unrelated.prevented, false, type + ' must not suppress another hand card');
+    const anotherPlayer = event(player);
+    listeners.get(type)(anotherPlayer);
+    assert.equal(anotherPlayer.prevented, false, type + ' must not suppress a player target');
+  }
+  view.stop();
+  assert.equal(listeners.size, 0, 'viewer teardown must remove all document handlers');
+});
+
+test('portrait iPad details stack their large card over full-width skill text', async () => {
+  const styles = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css', import.meta.url), 'utf8');
+  assert.match(styles, /@media\s*\(max-width:\s*900px\)\s*and\s*\(orientation:\s*portrait\)/);
+  assert.match(styles, /grail-detail-layout\s*\{\s*display:\s*flex;\s*flex-direction:\s*column/);
+  assert.match(styles, /grail-detail-description\s*\{\s*align-self:\s*stretch/);
 });
 
 test('public marks show visible counts, limits and related skills without reading hidden card storage', () => {
@@ -164,4 +364,99 @@ test('viewer outputs text and blocks unavailable artwork instead of inserting so
   const paragraph = h.list.children[0].children.at(-1).children.at(-1);
   assert.equal(paragraph.textContent, '完整技能\n下一行'); assert.equal(paragraph.children.length, 0);
   assert.equal(inspectionText('<p>第一段</p><p>第二段</p>'), '第一段\n第二段');
+});
+
+test('touching a public player or draft role cancels only the native grey intro', () => {
+  const c = context('fengZhiJianSheng');
+  const h = historyHarness(), handlers = new Map(), cancelled = [];
+  h.doc.addEventListener = (name, fn) => handlers.set(name, fn);
+  h.doc.removeEventListener = name => handlers.delete(name);
+  const viewer = createQuickDetailView({ hud: h.doc.createElement('div'), context: c,
+    document: h.doc, cancelNativeLongPress: subject => cancelled.push(subject) });
+  const playerTarget = { closest: selector => selector === '#arena > .player' ? c.other : null };
+  handlers.get('touchstart')({ target: playerTarget });
+  assert.deepEqual(cancelled, [c.other], 'readable public player uses full-sized viewer only');
+  const draft = { link: 'fengZhiJianSheng', classList: classes('character'),
+    closest: selector => selector === '#arena.choose-character' ? {} : null };
+  const draftTarget = { closest: selector =>
+    selector === '#arena.choose-character .dialog .button.character' ? draft : null };
+  handlers.get('touchstart')({ target: draftTarget });
+  assert.deepEqual(cancelled, [c.other, draft], 'draft role cancels native long popup too');
+  c.other.isUnseen = () => true;
+  handlers.get('touchstart')({ target: playerTarget });
+  assert.equal(cancelled.length, 2, 'unknown role keeps native privacy safeguards');
+  viewer.stop();
+  assert.equal(handlers.size, 0);
+});
+test('mobile public hand-count chip, gentle portrait enlargement and stable safe shift are present', async () => {
+  const css = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.22/);
+  assert.match(css, /scale:\s*1\.38/);
+  assert.match(css, /translate:\s*0 calc\(var\(--grail-score-shift, 0px\)/);
+  assert.match(css, /> \.player > \.count:not\(\.hidden\)[\s\S]*?font:\s*750 calc\(15px/);
+  assert.match(css, /\.count:not\(\.hidden\)::before\s*\{\s*content:\s*'牌'/);
+  assert.match(bridge, /updateScoreboardSeatClearance\(game\.players, scoreboardNode,/);
+  const { scoreboardSeatShift } = await import('../vendor/noname/overrides/grail-seat-clearance.js');
+  const score = { left: 0, right: 390, bottom: 476 };
+  assert.equal(scoreboardSeatShift(score, { left: 159, right: 230, top: 468 }), 22);
+  assert.equal(scoreboardSeatShift(score, { left: 159, right: 230, top: 490 }, 22), 22,
+    'subtract previous translate to avoid a 400ms up/down layout loop');
+  assert.equal(scoreboardSeatShift(score, { left: 420, right: 498, top: 468 }), 0,
+    'offscreen/side scoreboard does not shift irrelevant seats');
+});
+
+test('inward native portrait scale and modal toolbars remain separate in portrait Safari', async () => {
+  const { playerZoomOrigin } = await import('../vendor/noname/overrides/grail-player-zoom.js');
+  assert.equal(playerZoomOrigin({left: 12, right: 74},390),'left center');
+  assert.equal(playerZoomOrigin({left: 319, right: 382},390),'right center');
+  assert.equal(playerZoomOrigin({left: 150, right: 225},390),'center center');
+  const global = await fs.readFile(new URL('../vendor/noname/overrides/grail.css',import.meta.url),'utf8');
+  const reader = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css',import.meta.url),'utf8');
+  const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js',import.meta.url),'utf8');
+  assert.match(global,/scale:\s*1\.22/);
+  assert.match(global,/scale:\s*1\.38/);
+  assert.match(global,/transform-origin:\s*var\(--grail-role-origin, center center\)/);
+  assert.match(reader,/html:has\(#grail-detail-overlay:not\(\[hidden\]\)\) #window #system/);
+  assert.match(reader,/padding:\s*max\(90px, env\(safe-area-inset-top, 0px\)\)/);
+  assert.match(bridge,/updatePlayerZoomOrigins\(game\.players, window\.innerWidth\)/);
+});
+
+
+test('large portrait scale preserves inward origin without left-right jitter', async () => {
+  const { playerZoomOrigin } = await import('../vendor/noname/overrides/grail-player-zoom.js');
+  assert.equal(playerZoomOrigin({ left: 12, right: 88 }, 390), 'left center');
+  assert.equal(playerZoomOrigin({ left: 45, right: 122 }, 390, 34, 'left center'), 'left center');
+  assert.equal(playerZoomOrigin({ left: 53, right: 128 }, 390, 34, 'left center'), 'center center');
+  assert.equal(playerZoomOrigin({ left: 309, right: 383 }, 390), 'right center');
+  assert.equal(playerZoomOrigin({ left: 283, right: 361 }, 390, 34, 'right center'), 'right center');
+  assert.equal(playerZoomOrigin({ left: 120, right: 205 }, 390), 'center center');
+});
+
+
+test('edge portrait zoom retains inward transform origin through 400ms refresh jitter', async () => {
+  const { playerZoomOrigin, updatePlayerZoomOrigins } =
+    await import('../vendor/noname/overrides/grail-player-zoom.js');
+  assert.equal(playerZoomOrigin({left:10,right:90},390), 'left center');
+  assert.equal(playerZoomOrigin({left:45,right:125},390,34,'left center'), 'left center');
+  assert.equal(playerZoomOrigin({left:52,right:132},390,34,'left center'), 'left center');
+  assert.equal(playerZoomOrigin({left:53,right:133},390,34,'left center'), 'center center');
+  assert.equal(playerZoomOrigin({left:290,right:385},390), 'right center');
+  assert.equal(playerZoomOrigin({left:282,right:356},390,34,'right center'), 'right center');
+  assert.equal(playerZoomOrigin({left:281,right:337},390,34,'right center'), 'center center');
+  const assignments = [];
+  let rectangle = {left:10,right:90};
+  const player = {
+    dataset:{position:'2'},
+    style:{setProperty: (key,value) => assignments.push([key,value])},
+    getBoundingClientRect: () => rectangle,
+  };
+  updatePlayerZoomOrigins([player],390);
+  assert.equal(assignments.length,1);
+  rectangle = {left:44,right:125};
+  updatePlayerZoomOrigins([player],390);
+  assert.equal(assignments.length,1,'same stable origin should not trigger another CSS repaint');
+  rectangle = {left:60,right:140};
+  updatePlayerZoomOrigins([player],390);
+  assert.deepEqual(assignments.at(-1), ['--grail-role-origin','center center']);
 });

@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './install-app.module.css';
 
-type InstallPrompt = Event & {
-  prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>;
-};
+import { requestPwaInstall, type InstallPrompt } from '@/lib/pwa-install';
 
 export default function InstallApp() {
   const pending = useRef<InstallPrompt | null>(null);
@@ -44,21 +42,23 @@ export default function InstallApp() {
     pending.current = null; // Browser prompts can only be used once.
     setAvailable(false);
     try {
-      const choice = await event.prompt();
-      setMessage(choice.outcome === 'accepted' ? '已送出安裝要求，請依瀏覽器提示完成。' : '已取消安裝，仍可直接在網站遊玩。');
+      const outcome = await requestPwaInstall(event);
+      setMessage(outcome === 'accepted' ? '已接受安裝，請依瀏覽器提示完成。'
+        : outcome === 'dismissed' ? '已取消安裝，仍可直接在網站遊玩。'
+          : '瀏覽器已收到安裝要求，請查看畫面提示或下方安裝方式。');
     } catch {
       setMessage('請使用下方的瀏覽器選單步驟加入主畫面。');
     }
   }
 
   if (installed) return null;
-  return <section className={styles.card} aria-labelledby="install-heading">
+  return <section id="install-app" className={styles.card} aria-labelledby="install-heading">
     <img src="/app-icons/icon-192.png" width="48" height="48" alt="" />
     <div className={styles.content}>
       <h2 id="install-heading">把星杯放到主畫面</h2>
       <p>下次點圖示就能開啟。遊玩仍需要網路連線。</p>
       <details>
-        <summary>查看安裝方式</summary>
+        <summary>iPhone／iPad、Android、電腦安裝步驟</summary>
         <ol>
           <li><strong>iPhone／iPad：</strong>用 Safari 開啟本站，從「分享」選單選擇「加入主畫面」；若出現「作為網頁 App 打開」，請開啟後加入。</li>
           <li><strong>Android：</strong>用 Chrome 開啟本站，從選單選擇「安裝應用程式」或「新增至主畫面」。選項名稱可能因版本而異。</li>

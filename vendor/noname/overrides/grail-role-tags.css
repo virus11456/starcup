@@ -76,3 +76,124 @@
     font-size: calc(11px * var(--grail-touch-scale, 1));
   }
 }
+
+
+/* Keep full, horizontal names on their own card. The upstream vertical label
+   exceeds the portrait width when a character name contains a pack prefix. */
+#window #arena.choose-character .dialog .button.character[data-grail-role] {
+  width: 124px;
+  height: 184px;
+  --grail-role-footer: 44px;
+  overflow: hidden;
+}
+#window #arena.choose-character .dialog .button.character[data-grail-difficulty] {
+  height: 184px;
+  --grail-role-footer: 44px;
+}
+#window #arena.choose-character .dialog .button.character > .name {
+  box-sizing: border-box;
+  writing-mode: horizontal-tb !important;
+  -webkit-writing-mode: horizontal-tb !important;
+  top: auto !important;
+  right: 0 !important;
+  bottom: var(--grail-role-footer, 0px) !important;
+  left: 0 !important;
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  max-height: 46px;
+  padding: 4px 5px;
+  overflow: hidden;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font: 700 14px/1.3 system-ui, sans-serif !important;
+  letter-spacing: 0;
+  transform: none !important;
+  color: #fff6da;
+  background: linear-gradient(180deg, #15252ae8, #102028f9) !important;
+  text-shadow: 0 1px 3px #000 !important;
+  z-index: 2;
+  pointer-events: none;
+}
+@media (max-width: 1049px) {
+  #window #arena.choose-character .dialog .button.character[data-grail-role],
+  #window #arena.choose-character .dialog .button.character[data-grail-difficulty] {
+    width: calc(118px * var(--grail-touch-scale, 1));
+    height: calc(178px * var(--grail-touch-scale, 1));
+    --grail-role-footer: calc(44px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character .dialog .button.character > .name {
+    min-height: calc(34px * var(--grail-touch-scale, 1));
+    max-height: calc(46px * var(--grail-touch-scale, 1));
+    padding: calc(3px * var(--grail-touch-scale, 1));
+    font-size: calc(13px * var(--grail-touch-scale, 1)) !important;
+  }
+}
+@media (max-width: 600px) {
+  #window #arena.choose-character .dialog .button.character[data-grail-role],
+  #window #arena.choose-character .dialog .button.character[data-grail-difficulty] {
+    width: calc(100px * var(--grail-touch-scale, 1));
+    height: calc(160px * var(--grail-touch-scale, 1));
+  }
+}
+
+/* iPhone / iPad Safari: native faction badges used absolute/outside offsets,
+   vertical writing and clipping by the larger portrait. Keep every label
+   INSIDE its own art area, horizontally readable, without stealing touches. */
+#window #arena.choose-character .dialog .button.character > .identity {
+  box-sizing: border-box !important;
+  position: absolute !important;
+  inset: 5px 5px auto auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: max-content !important;
+  max-width: calc(100% - 10px) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 24px !important;
+  max-height: 46px !important;
+  margin: 0 !important;
+  padding: 3px 6px !important;
+  transform: none !important;
+  overflow: hidden !important;
+  border-radius: 5px;
+  border: 1px solid #f4d7a777;
+  background: #102933ec;
+  box-shadow: 0 2px 6px #000a;
+  color: #fff4d8 !important;
+  -webkit-text-fill-color: #fff4d8 !important;
+  font: 700 12px/1.25 system-ui, sans-serif !important;
+  text-align: center;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  writing-mode: horizontal-tb !important;
+  pointer-events: none !important;
+  z-index: 8 !important;
+}
+#window #arena.choose-character .dialog .button.character > .identity > div {
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  color: inherit !important;
+  -webkit-text-fill-color: #fff4d8 !important;
+  font: inherit !important;
+  line-height: 1.25 !important;
+  writing-mode: horizontal-tb !important;
+  white-space: normal !important;
+  text-shadow: none !important;
+}
+@media (max-width: 1049px) {
+  #window #arena.choose-character .dialog .button.character > .identity {
+    inset: calc(4px * var(--grail-touch-scale, 1)) calc(4px * var(--grail-touch-scale, 1)) auto auto !important;
+    max-width: calc(100% - 8px * var(--grail-touch-scale, 1)) !important;
+    min-height: calc(22px * var(--grail-touch-scale, 1)) !important;
+    padding: calc(3px * var(--grail-touch-scale, 1)) calc(5px * var(--grail-touch-scale, 1)) !important;
+    font-size: calc(12px * var(--grail-touch-scale, 1)) !important;
+  }
+}

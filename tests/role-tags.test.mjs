@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { roleProfile, roleDifficulty, decorateRoleButton } from '../vendor/noname/overrides/grail-role-tags.js';
@@ -76,7 +77,7 @@ test('role tags update reused native character buttons without replacing control
 
 test('difficulty preserves every pinned role rating, including explicit half-star categories', async () => {
   const pin = JSON.parse(await fs.readFile(new URL('../vendor/noname/pin.json', import.meta.url), 'utf8'));
-  const { packs } = await loadPacks(new URL('../public/engine/', import.meta.url).pathname, pin);
+  const { packs } = await loadPacks(fileURLToPath(new URL('../public/engine/', import.meta.url)), pin);
   let checked = 0;
   for (const pack of [...pin.packs, ...pin.legacyPacks]) {
     for (const [id, character] of Object.entries(packs[pack].character)) {

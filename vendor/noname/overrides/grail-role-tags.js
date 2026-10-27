@@ -79,7 +79,7 @@ export function addRoleLegend(arena) {
     if (!buttons || dialog.querySelector('.grail-role-legend')) continue;
     const legend = arena.ownerDocument.createElement('p');
     legend.className = 'grail-role-legend';
-    legend.textContent = '定位參考：戰鬥／法師／輔助。上手難度 ★ 越多越需要熟悉技能，保留原引擎半星；星等不是強度。';
+    legend.textContent = '長按角色卡（電腦可按滑鼠右鍵）查看大圖與完整技能；一般點擊仍會選角。定位與上手難度僅供參考，星等不是角色強度。';
     buttons.before(legend);
   }
 }

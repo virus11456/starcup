@@ -257,38 +257,10 @@ await patch('noname/library/element/player.js',
                         if (lib.node.torespondtimeout[player.playerid] !== grailTimeout) return;
                     }
                     player.unwait("ai");`);
-// An optional response must not ask the human player to grant a card-limited
-// extra action that cannot be used. Upstream `check` only guides AI decisions;
-// these guards belong in `filter`, which runs for both human and AI seats.
-// Other optional skills are deliberately left alone when they can still draw,
-// grant markers, discard a target's card or produce some other useful effect.
-async function requireOptionalSkillCards(file, skill, predicate) {
-  const location = path.join(output, 'character', file);
-  const source = await readFile(location, 'utf8');
-  const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-  const matches = [];
-  const visitSkill = node => {
-    if (ts.isPropertyAssignment(node) && node.name.getText(parsed) === skill && ts.isObjectLiteralExpression(node.initializer)) {
-      const filter = node.initializer.properties.find(property => property.name?.getText(parsed) === 'filter');
-      const functionNode = filter && (ts.isPropertyAssignment(filter) ? filter.initializer : filter);
-      if (!functionNode?.body) throw new Error(`Missing optional skill filter: ${file}/${skill}`);
-      matches.push(functionNode.body.getStart(parsed) + 1);
-    }
-    ts.forEachChild(node, visitSkill);
-  };
-  visitSkill(parsed);
-  if (matches.length !== 1) throw new Error(`Expected one optional skill: ${file}/${skill}, found ${matches.length}`);
-  const position = matches[0];
-  await writeFile(location, source.slice(0, position) + `\n            if (!(${predicate})) return false;` + source.slice(position));
-}
-for (const [file, skill, predicate] of [
-  ['shiZhouNian.js', 'fengNuZhuiJi', `player.countCards('h', card => get.xiBie(card) === 'feng' && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
-  ['shiZhouNian.js', 'xiuLuoLianZhan', `player.countCards('h', card => get.xiBie(card) === 'huo' && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
-  ['teDian.js', 'jiZhiJianYi', `player.countCards('h', card => get.mingGe(card) === 'ji' && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
-  ['teDian.js', 'erChongJianYing', `player.countCards('h', card => get.xiBie(card) === get.xiBie(event.card) && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
-  ['teDian.js', 'xuRongZhangWo', `player.countCards('h', card => get.name(card) === 'moDan' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0 || (player.hasSkill('xiangSiBing') && player.countCards('h', card => (get.xiBie(card) === 'di' || get.xiBie(card) === 'feng') && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0)`],
-  ['teDian.js', 'jiDuZhuiFang', `player.countCards('h', card => get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0 && game.hasPlayer(target => target.side !== player.side && target.countCards('h') > player.countCards('h'))`],
-]) await requireOptionalSkillCards(file, skill, predicate);
+// Do not narrow optional skill `filter`s using current hand, target or action
+// availability. The pinned rules allow acquiring an extra action at its
+// printed timing even if a usable card/target is not available *yet*.
+// In particular, upstream `check` is AI advice, not a player legality rule.
 // Remove community character registrations, not just their menu buttons.
 const specialPath = path.join(output, "character/teDian.js");
 let special = await readFile(specialPath, "utf8");

@@ -88,6 +88,14 @@ export async function startRelay() {
     useSocket = attached.transport === 'websocket';
     if (useSocket) socket = createRelaySocket(code, token, connection, () => wake(40));
     const room = attached.room;
+    let lastHostNotice = 'present';
+    function announceHostPresence(state) {
+      if (room.isHost || state === lastHostNotice) return;
+      lastHostNotice = state;
+      try {
+        window.parent?.postMessage({ type: 'grail-host-presence', code, state }, location.origin);
+      } catch { /* The outer frame may already be closing. */ }
+    }
     if (room.status === 'closed') throw Object.assign(new Error('房主已離開牌局。請返回大廳建立新房間。'), { status: 410 });
     ack = attached.sequence;
     // A guest view cannot safely replay an inbox after a long suspension:
@@ -193,20 +201,29 @@ export async function startRelay() {
           location.reload();
           return null;
         }
-        // A response can also arrive after the browser has frozen an in-flight
-        // request. Do not apply that response to the stale local arena.
-        rejoining ||= needsRejoin();
+        // The host owns the native event stack. Once the authoritative host
+        // has missed the server's liveness window during play, guest choices
+        // cannot safely be replayed from the old picker (relay inboxes expire
+        // and the host may have advanced its AI timeout). Fence them before
+        // applying even this response; reload the native guest only after the
+        // original host resumes. Waiting lobbies still await their first host.
+        rejoining ||= needsRejoin() || (!room.isHost && (data.room?.status || room.status) === 'playing' && data.hostAlive === false);
         if (rejoining) {
           pending = [];
           status.classList.toggle('recovering', true);
-          tell(data.hostAlive ? '連線已恢復，正在重新取得本場牌局…' : '正在等待房主回到原本的分頁，恢復後會自動重新連線。');
+          tell(data.hostAlive ? '連線已恢復，正在重新取得本場牌局…'
+            : '正在等待房主原分頁恢復連線。若房主已關閉分頁，本局目前無法接手；可使用上方「離開」返回大廳。');
+          announceHostPresence(data.hostAlive ? 'present' : 'absent');
           if (data.hostAlive) {
             closeRelay();
             _status.reloading = true; // native confirm_exit exempts intentional reconnects
             location.reload(); // this guest iframe only; retain its sessionStorage seat
             return null;
           }
-          return delay;
+          // A missing host has no game state to deliver. Keep this guest's
+          // seat alive but avoid HTTP's 600ms fallback polling while waiting
+          // for the same host to return (well inside the 60s member lease).
+          return 30_000;
         }
         lastSyncAt = Date.now();
         pending.splice(0, batch.length);
@@ -237,7 +254,7 @@ export async function startRelay() {
         ack = Math.max(ack, data.sequence);
         failures = 0;
         const confirmed = hostGuard?.confirm(hostTicket);
-        if (!hostGuard?.blocked) tell(!room.isHost && !data.hostAlive ? '房主連線中斷，請讓房主回到原本的分頁恢復連線。' : '');
+        if (!hostGuard?.blocked) tell(!room.isHost && !data.hostAlive ? '房主連線中斷，請讓房主回到原本的分頁；若已關閉分頁，請返回大廳另開新局。' : '');
         if (confirmed === false) delay = 80; // require a reply requested after the interruption
         if (ui.connectShareButton) ui.connectShareButton.style.display = 'none';
         if (!room.isHost && ui.connectStartButton) ui.connectStartButton.style.display = 'none';

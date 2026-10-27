@@ -14,7 +14,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --test --test-concurrency=1 tests/*.test.ts",
     "test:engine": "node --test tests/*.test.mjs",
     "test:cloudflare": "node --experimental-strip-types --test tests/runtime/*.test.mjs",
     "test:cloudflare:site": "node --experimental-strip-types scripts/check-cloudflare-local.mjs",

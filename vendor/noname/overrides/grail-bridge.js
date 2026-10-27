@@ -8,14 +8,27 @@ import { createScoreboard } from "./grail-scoreboard.js";
 import { createBattleHistory } from "./grail-history.js";
 import { createHistorySession } from './grail-history-session.js';
 import { createBattleInspection } from "./grail-inspection.js";
+import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { addRoleLegend } from './grail-role-tags.js';
+import { updateActionHints, positionActionHint } from './grail-action-hints.js';
+import { createTargetPreview } from './grail-target-preview.js';
+import { updateScoreboardSeatClearance } from './grail-seat-clearance.js';
+import { updatePlayerZoomOrigins } from './grail-player-zoom.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
+// The passive instruction belongs BELOW the battle, not over the scoreboard
+// or its morale counters. Reuse the already inverse-scaled, pointer-free HUD.
+const scoreboardNode = hud.querySelector('#grail-scoreboard');
+const phaseHint = document.createElement('span');
+phaseHint.id = 'grail-phase-hint';
+phaseHint.setAttribute('role', 'status');
+phaseHint.hidden = true;
+hud.append(phaseHint);
 const history = createBattleHistory(hud, () => game.phaseNumber || 0, {
   journal: createHistorySession(new URLSearchParams(location.search).get('online')),
 });
@@ -28,19 +41,51 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
+const quickDetail = createQuickDetailView({
+  hud, context: { lib, game, get },
+  cancelNativeLongPress(card) { ui.click?.longpresscancel?.call(card); },
+});
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
-const handSkin = createHandSkin();
+const handSkin = createHandSkin({ lib, get });
+const targetPreview = createTargetPreview({
+  hud, ui, game, get, lib, event: () => _status.event,
+  isOver: () => _status.over,
+});
 const text = (value) =>
   String(value || "")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]*>/g, "");
 let last = "";
 function update() {
+  // The pinned engine leaves #roundmenu on the battle table while displaying
+  // the game-over result dialog. Hide its visual surface only once over=true.
+  document.documentElement.classList.toggle('grail-match-ended', Boolean(_status.over));
   addRoleLegend(ui.arena);
+  updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden && !_status.over);
+  const hintHasSafeSlot = positionActionHint(phaseHint, {
+    width: window.innerWidth, height: window.innerHeight,
+    scoreboard: scoreboardNode?.getBoundingClientRect?.(),
+    players: (game.players || []).map(p => p.getBoundingClientRect?.()).filter(Boolean),
+    controls: ui.control?.getBoundingClientRect?.() || ui.arena?.querySelector?.('#control')?.getBoundingClientRect?.(),
+    hand: ui.me?.getBoundingClientRect?.(),
+    extras: [ui.roundmenu?.getBoundingClientRect?.(),
+      document.querySelector('.grail-motion-piles')?.getBoundingClientRect?.()].filter(Boolean),
+  });
+  if (!hintHasSafeSlot && !phaseHint.hidden) {
+    // Never cover a legal target or confirm button. On pathological screens
+    // fall back to the engine's native prompt instead of silently losing it.
+    phaseHint.hidden = true;
+    ui.arena?.querySelectorAll('.dialog.grail-inline-action-hint')?.forEach(
+      dialog => dialog.classList.remove('grail-inline-action-hint'));
+  }
   history.attach(ui.sidebar);
   inspection.update();
+  updatePlayerZoomOrigins(game.players, window.innerWidth);
   indicators.update();
   handSkin.update(game.me);
+  targetPreview.update();
+  // Preserve the native deck button and click handler; CSS-only finish.
+  ui.cardPileButton?.classList?.add('grail-top-pile-tool');
   if (ui.arena) document.getElementById("grail-loading")?.remove();
   // The native hall's restart/exit reloads only the iframe. Embedded rooms
   // return through the parent page so its authenticated leave flow runs.
@@ -71,6 +116,13 @@ function update() {
   const stage = describeStage(_status.event, { started: game.phaseNumber > 0, over: _status.over });
   const teams = teamSummary(game);
   updateScoreboard(teams, { side: me.side, turn: game.phaseNumber, over: Boolean(_status.over) });
+  // Keep enlarging portraits away from the public scoreboard's real bottom.
+  // Don't touch native game selection, offsets, or the local hand.
+  updateScoreboardSeatClearance(game.players, scoreboardNode,
+    window.innerWidth, window.innerHeight, {
+      enabled: Boolean(scoreboardNode && !scoreboardNode.hidden && !_status.over),
+      isChoosing: Boolean(ui.arena?.classList?.contains('choose-character')),
+    });
   const prompt = [
     ...(ui.arena?.querySelectorAll(".dialog .prompt, .dialog .caption") || []),
   ]
@@ -196,11 +248,13 @@ window.addEventListener(
     clearInterval(ready);
     stop();
     stopMotion();
+    targetPreview.stop();
     stopHud();
     indicators.stop();
     history.stop();
     document.removeEventListener('visibilitychange', flushHistory);
     inspection.stop();
+    quickDetail.stop();
     handSkin.stop();
     hud.remove();
   },

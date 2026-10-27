@@ -3,6 +3,50 @@
 }
 #grail-hud { z-index: 20; }
 #grail-hud #grail-help { pointer-events: auto; }
+/* The native settings/tutorial dialog (including 新手嚮導) must be above
+   the fixed score and help HUD while it is open. Its closed .hidden state
+   stays at the engine's original stacking order. */
+#window > .menu-container:not(.hidden) { z-index: 70 !important; }
+/* Native body scaling also shrinks the settings/tutorial to 160px on a
+   390px phone. Restore readable menu pixels while retaining native events
+   and the full-screen outside-click dismissal surface. */
+@media (max-width: 1049px) {
+  #window > .menu-container:not(.hidden) > .menu.main {
+    transform: scale(var(--grail-touch-scale, 1)) !important;
+    transform-origin: top left !important;
+    left: calc(8px * var(--grail-touch-scale, 1)) !important;
+    top: calc(60px * var(--grail-touch-scale, 1)) !important;
+    width: min(400px, calc(100vw - 18px));
+    height: min(360px, calc(100vh - 76px));
+    transition: none;
+  }
+  #window > .menu-container > .menu.main > .menu-tab {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 4px;
+    height: 44px;
+  }
+  #window > .menu-container > .menu.main > .menu-tab > div {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding-top: 0;
+    height: 44px;
+    line-height: 44px;
+    font-size: 14px;
+  }
+  #window > .menu-container > .menu.main > .menu-content {
+    height: calc(100% - 44px);
+  }
+  #window > .menu-container > .menu.main > .menu-content > div > .menubutton.round {
+    top: auto !important;
+    left: auto !important;
+    right: 12px !important;
+    bottom: 12px !important;
+  }
+}
 #grail-backdrop { z-index: 0; }
 .card-motion-layer { position: fixed !important; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
 .card-motion-layer canvas { position: absolute; inset: 0; }
@@ -443,4 +487,464 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   #window #arena > .player[data-grail-team] > .identity { padding: calc(2px * var(--grail-touch-scale, 1)); top: 0; right: 0; }
   #window #arena > .player[data-grail-team] > .identity > div { font-size: calc(9px * var(--grail-touch-scale, 1)) !important; }
   .grail-scoreboard-ready #grail-help:not(:has(#grail-help-toggle[aria-expanded="false"])) { top: 98px; bottom: auto; width: 240px; max-height: calc(100vh - 110px) !important; }
+}
+
+/* UI/UX Pro Max: the character draft is a gallery, not a narrow alert box.
+   Keep the native buttons/search and the confirmation row fully operable. */
+@media (min-width: 1050px) {
+  #window #arena.choose-character > .dialog:not(.popped) {
+    box-sizing: border-box;
+    width: min(94%, 1380px) !important;
+    left: 50% !important;
+    top: 48% !important;
+    bottom: auto !important;
+    height: min(80%, 780px) !important;
+    transform: translate(-50%, -50%) !important;
+    overflow: hidden;
+  }
+  #window #arena.choose-character > .dialog > .content-container {
+    height: 100% !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #window #arena.choose-character > .dialog .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    padding: 12px 8px 20px;
+    box-sizing: border-box;
+  }
+  #window #arena.choose-character > .dialog .button.character { margin: 0; }
+}
+@media (min-width: 601px) and (max-width: 1049px) {
+  #window #arena.choose-character > .dialog:not(.popped) {
+    left: 50% !important;
+    width: calc(100% - 20px) !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  #window #arena.choose-character > .dialog .buttons { gap: calc(14px * var(--grail-touch-scale, 1)); }
+}
+
+/* UI-UX repair: ONLY non-interactive, text-bearing native hint dialogs get
+   compact styling. grail-action-hint.js assigns this class; do not use a broad
+   :has(.caption) selector that can reposition a live choice dialog. */
+#window #arena:not(.choose-character) > .dialog.grail-action-hint:not(.popped) {
+  box-sizing: border-box;
+  top: 6px !important;
+  bottom: auto !important;
+  left: clamp(190px, 21%, 285px) !important;
+  right: auto !important;
+  width: min(252px, 29%) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 76px !important;
+  overflow: hidden;
+  padding: 0 !important;
+  border-radius: 8px;
+  background: #102832f3;
+  box-shadow: 0 4px 12px #0007;
+  pointer-events: none !important;
+}
+#window #arena:not(.choose-character) > .dialog.grail-action-hint.grail-empty-action-hint {
+  display: none !important;
+}
+#window #arena:not(.choose-character) > .dialog.grail-action-hint > .content-container,
+#window #arena:not(.choose-character) > .dialog.grail-action-hint > .content-container > .content {
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  box-sizing: border-box;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  overflow: visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+#window #arena:not(.choose-character) > .dialog.grail-action-hint :is(.caption, .prompt, .content > .text) {
+  position: static !important;
+  display: block !important;
+  box-sizing: border-box;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 6px 8px !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #fff4d5 !important;
+  -webkit-text-fill-color: #fff4d5 !important;
+  text-shadow: 0 1px 2px #000b !important;
+  background: none !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: calc(14px * var(--grail-touch-scale, 1)) !important;
+  font-weight: 650 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  writing-mode: horizontal-tb !important;
+}
+@media (min-width: 601px) and (max-width: 1049px) {
+  #window #arena:not(.choose-character) > .dialog.grail-action-hint:not(.popped) {
+    top: 6px !important;
+    /* Passive tip stays in the left lane, clear of the centre-seat card. */
+    left: calc(7px * var(--grail-touch-scale, 1)) !important;
+    width: min(calc(190px * var(--grail-touch-scale, 1)), 37%) !important;
+    max-width: 37% !important;
+  }
+}
+@media (max-width: 600px) {
+  #window #arena:not(.choose-character) > .dialog.grail-action-hint:not(.popped) {
+    top: 5px !important;
+    left: calc(6px * var(--grail-touch-scale, 1)) !important;
+    /* iPhone centre role begins beyond 40% of the table width. */
+    width: min(calc(146px * var(--grail-touch-scale, 1)), 36%) !important;
+    max-width: 36% !important;
+    max-height: calc(84px * var(--grail-touch-scale, 1)) !important;
+    border-radius: 7px !important;
+  }
+}
+
+/* Keep passive prompts readable when the left-side lane wraps. Native
+   selectable dialogs are excluded by grail-action-hints.js. */
+@media (max-width: 1049px) {
+  #window #arena:not(.choose-character) > .dialog.grail-action-hint :is(.caption, .prompt, .content > .text) {
+    padding: calc(5px * var(--grail-touch-scale, 1)) calc(6px * var(--grail-touch-scale, 1)) !important;
+    font-size: calc(12px * var(--grail-touch-scale, 1)) !important;
+    line-height: 1.35 !important;
+    text-align: center !important;
+    word-break: break-word;
+  }
+}
+/* Match the unscaled HUD to native system/pile buttons without relocating
+   or rebuilding native button nodes, their listeners or action hit boxes. */
+@media (max-width: 1049px) {
+  #grail-history-toggle,
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]),
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) #grail-help-toggle {
+    box-sizing: border-box !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    border-radius: 8px !important;
+    border: 1px solid #ccb88d75 !important;
+    background: linear-gradient(180deg, #2e4851, #172d37) !important;
+    color: #f4e5c6 !important;
+    box-shadow: 0 2px 8px #0006, inset 0 1px 0 #fff2 !important;
+    font: 650 13px/1.2 system-ui, sans-serif !important;
+    letter-spacing: 0 !important;
+    text-align: center !important;
+  }
+  #grail-history-toggle { top: 4px !important; right: 116px !important; width: 76px !important; padding: 3px 5px !important; }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) {
+    top: 4px !important; right: 52px !important; width: 60px !important; padding: 0 !important;
+  }
+  #grail-help:has(#grail-help-toggle[aria-expanded="false"]) #grail-help-toggle {
+    width: 100% !important; padding: 3px 5px !important;
+  }
+  #window .grail-top-pile-tool {
+    box-sizing: border-box !important;
+    min-height: calc(44px * var(--grail-touch-scale, 1)) !important;
+    border-radius: calc(8px * var(--grail-touch-scale, 1)) !important;
+    border: 1px solid #ccb88d75 !important;
+    box-shadow: 0 2px 8px #0006, inset 0 1px 0 #fff2 !important;
+    background: linear-gradient(180deg, #2e4851, #172d37) !important;
+    color: #f4e5c6 !important;
+    font: 650 calc(13px * var(--grail-touch-scale, 1))/1.2 system-ui, sans-serif !important;
+  }
+}
+
+/* Portrait AND landscape: render passive text inside the existing public
+   scoreboard heading. Never cover a player or change native skill choices. */
+#grail-phase-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 8px;
+  padding: 2px 6px;
+  color: #fff0c9;
+  -webkit-text-fill-color: #fff0c9;
+  font: 700 12px/1.35 system-ui, sans-serif;
+  text-align: center;
+  border-radius: 5px;
+  border: 1px solid #ddc88c77;
+  background: #20333aec;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+#grail-phase-hint[hidden] { display: none !important; }
+/* Original DOM stays intact for the native engine; only its non-interactive
+   visual copy is hidden while the inline scoreboard status is displayed. */
+#window #arena:not(.choose-character) > .dialog.grail-inline-action-hint:not(.popped) {
+  display: none !important;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-phase-hint { font-size: 11px; line-height: 1.2; margin: 0 4px; padding: 1px 3px; }
+  #grail-scoreboard .grail-score-heading { min-height: 25px; gap: 3px; }
+  #grail-scoreboard .grail-score-round { flex: 0 0 auto; }
+}
+@media (min-width: 601px) and (max-height: 500px) and (orientation: landscape) {
+  #grail-phase-hint { font-size: 11px; max-width: 36vw; }
+  #grail-scoreboard .grail-score-heading { flex: 1 1 auto; min-width: 0; }
+  /* Keep all four seats inside the arena, even for extreme short landscape. */
+  .grail-scoreboard-ready #window #arena:not(.chess) > .player:not([data-position="0"]) {
+    left: clamp(0px, calc((100% - 60px * var(--grail-touch-scale, 1)) * var(--grail-seat-fraction, .5)), calc(100% - 60px * var(--grail-touch-scale, 1))) !important;
+    right: auto !important;
+  }
+}
+
+/* Only when a user selects an attack or spell card AND native target.
+   Overlay is aligned by grail-hud, never intercepts selection or buttons. */
+#grail-target-preview {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 18;
+  overflow: visible;
+  pointer-events: none !important;
+  opacity: 1;
+}
+#grail-target-preview[hidden] { display: none !important; }
+#grail-target-preview .grail-target-line-halo {
+  stroke: #091824;
+  stroke-width: 9px;
+  stroke-linecap: round;
+  opacity: .88;
+}
+#grail-target-preview .grail-target-line-core {
+  stroke: #ffde69;
+  stroke-width: 4px;
+  stroke-dasharray: 11 7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px #ffbd45);
+  animation: grail-target-flow 1.2s linear infinite;
+}
+#grail-target-preview .grail-target-line-end {
+  fill: #ffe18c;
+  stroke: #55380d;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 6px #ffd34f);
+}
+#grail-target-preview[data-kind="spell"] .grail-target-line-core {
+  stroke: #84e2ff;
+  filter: drop-shadow(0 0 4px #63d5ff);
+}
+#grail-target-preview[data-kind="spell"] .grail-target-line-end {
+  fill: #c3f4ff;
+  stroke: #175368;
+}
+@keyframes grail-target-flow { to { stroke-dashoffset: -36; } }
+@media (prefers-reduced-motion: reduce) {
+  #grail-target-preview .grail-target-line-core {
+    animation: none !important;
+    stroke-dasharray: none !important;
+  }
+}
+
+/* The original floating hamburger duplicates the permanently visible top
+   「選項」 toolbar button, which opens the same native menu. Remove only its
+   visual/hit surface; keep the real settings/tutorial menu and handlers. */
+#window #arena > #roundmenu {
+  display: none !important;
+}
+/* The native character filter category controls are DIVs with absolute
+   positioning by default. Restore their normal flow and keep long labels on
+   one scrollable horizontal row rather than squeezing Chinese names. */
+#window #arena.choose-character .dialog .caption.pointerspan {
+  box-sizing: border-box;
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  margin: 0 !important;
+  padding: 4px 0 !important;
+}
+#window #arena.choose-character .dialog .caption.pointerspan > div {
+  box-sizing: border-box;
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: calc(7px * var(--grail-touch-scale, 1));
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: calc(48px * var(--grail-touch-scale, 1));
+  height: auto !important;
+  margin: 0 !important;
+  padding: calc(4px * var(--grail-touch-scale, 1)) calc(7px * var(--grail-touch-scale, 1));
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  white-space: nowrap !important;
+  text-align: left !important;
+  font-size: calc(14px * var(--grail-touch-scale, 1)) !important;
+}
+/* The native secondary filter row is intentionally hidden until 篩選 is
+   tapped. Never override its inline display:none with our flex !important. */
+#window #arena.choose-character .dialog .caption.pointerspan > div[style*="display: none"] {
+  display: none !important;
+}
+#window #arena.choose-character .dialog .caption.pointerspan > div > .tdnode {
+  position: relative !important;
+  inset: auto !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: max-content !important;
+  height: calc(44px * var(--grail-touch-scale, 1)) !important;
+  min-height: calc(44px * var(--grail-touch-scale, 1)) !important;
+  margin: 0 !important;
+  padding: 0 calc(12px * var(--grail-touch-scale, 1)) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  writing-mode: horizontal-tb !important;
+  font: 650 calc(14px * var(--grail-touch-scale, 1))/1.15 system-ui, sans-serif !important;
+  border-radius: calc(7px * var(--grail-touch-scale, 1)) !important;
+}
+/* Passive action guidance lives in the spacious middle-lower part of the
+   game HUD, not in the scoreboard's score row. JS chooses a safe vertical
+   lane between visible portraits and native action/hand controls. */
+#grail-hud > #grail-phase-hint {
+  position: absolute !important;
+  left: var(--grail-hint-center-x, 50%) !important;
+  right: auto !important;
+  bottom: auto !important;
+  /* JS controls the horizontal and vertical anchor after collision checks. */
+  transform: translateX(-50%) !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: min(250px, calc(100% - 28px));
+  max-width: min(540px, calc(100% - 28px));
+  margin: 0 !important;
+  padding: 10px 16px !important;
+  z-index: 27 !important;
+  border: 2px solid #e4c78b !important;
+  border-radius: 11px !important;
+  background: linear-gradient(160deg, #17333cf7, #0e212df9) !important;
+  color: #ffedbf !important;
+  -webkit-text-fill-color: #ffedbf !important;
+  box-shadow: 0 8px 26px #000b, 0 0 0 1px #ffe1a53d inset !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  font: 750 clamp(15px, 2vw, 19px)/1.42 system-ui, sans-serif !important;
+  pointer-events: none !important;
+}
+#grail-hud > #grail-phase-hint[hidden] { display: none !important; }
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-hud > #grail-phase-hint {
+    width: calc(100% - 36px) !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 36px) !important;
+    padding: 10px 12px !important;
+    font-size: 16px !important;
+  }
+}
+@media (min-width: 601px) and (max-height: 500px) and (orientation: landscape) {
+  #grail-hud > #grail-phase-hint {
+    max-width: min(400px, 54%) !important;
+    min-width: 0 !important;
+    padding: 5px 10px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* iPhone/iPad: slightly larger ORIGINAL player portraits, not duplicates.
+   CSS individual scale preserves native transform/target selection and is
+   small enough for the outer seats to stay inside the available table. */
+@media (max-width: 1049px) and (orientation: portrait) {
+  .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
+    scale: 1.22;
+    translate: 0 calc(var(--grail-score-shift, 0px) * var(--grail-touch-scale, 1));
+    transform-origin: var(--grail-role-origin, center center);
+  }
+}
+@media (min-width: 601px) and (max-width: 1049px) and (min-height: 501px) and (orientation: landscape) {
+  .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
+    scale: 1.035;
+  }
+}
+/* The native noname player.node.count already shows a PUBLIC 4/6 (hand
+   count / limit). Turn the tiny offset text into a high-contrast, legible
+   card-corner chip without reading hidden card identities or cloning hands.
+   Bottom-right avoids existing HP bottom-left and team top-right badges. */
+#window #arena:not(.choose-character) > .player > .count:not(.hidden) {
+  box-sizing: border-box !important;
+  position: absolute !important;
+  top: auto !important;
+  left: auto !important;
+  right: calc(4px * var(--grail-touch-scale, 1)) !important;
+  bottom: calc(5px * var(--grail-touch-scale, 1)) !important;
+  width: max-content !important;
+  max-width: calc(100% - 34px * var(--grail-touch-scale, 1)) !important;
+  min-width: calc(42px * var(--grail-touch-scale, 1)) !important;
+  height: auto !important;
+  min-height: calc(26px * var(--grail-touch-scale, 1)) !important;
+  margin: 0 !important;
+  padding: calc(3px * var(--grail-touch-scale, 1)) calc(5px * var(--grail-touch-scale, 1)) !important;
+  display: inline-flex !important;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: calc(3px * var(--grail-touch-scale, 1));
+  border: 1px solid #e9d39b !important;
+  border-radius: calc(6px * var(--grail-touch-scale, 1)) !important;
+  background: #0d2534ef !important;
+  color: #fff5cc !important;
+  -webkit-text-fill-color: #fff5cc !important;
+  box-shadow: 0 2px 7px #000a !important;
+  font: 750 calc(15px * var(--grail-touch-scale, 1))/1.2 system-ui, sans-serif !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap !important;
+  text-shadow: 0 1px 2px #000a !important;
+  z-index: 6 !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+#window #arena:not(.choose-character) > .player > .count:not(.hidden)::before {
+  content: '牌';
+  color: #f6dca0;
+  -webkit-text-fill-color: #f6dca0;
+  font: 600 calc(11px * var(--grail-touch-scale, 1))/1.2 system-ui, sans-serif;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  #window #arena:not(.choose-character) > .player > .count:not(.hidden) {
+    min-height: calc(29px * var(--grail-touch-scale, 1)) !important;
+    font-size: calc(16px * var(--grail-touch-scale, 1)) !important;
+  }
+}
+
+/* iPhone portrait: enlarged native role art balanced with a compact public badge. Do not
+   enlarge ultra-short landscape seats or duplicate game target elements. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
+    scale: 1.38;
+  }
+}
+/* Rotated noname seats inherit rotation on .count. Once its public
+   text is mirrored into the unrotated HUD, hide the awkward original chip
+   without preventing the engine from continuing to update its data. */
+#window #arena:not(.choose-character) > .player[data-grail-hand-count-mirror="true"] > .count {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
