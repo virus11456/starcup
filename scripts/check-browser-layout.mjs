@@ -263,6 +263,97 @@ try {
   checks.push('390px phone scoreboard: 44px expand button, full live details, compact log, collapsed return');
   await phone.screenshot({path:path.join(out,'game-6-players-iphone-390x844.png'),fullPage:false});
   await phone.close();
+
+  // Real mobile Chromium context (touch events + high DPR), not a desktop
+  // page merely resized to 390px. This probes the previously untested
+  // iPhone-like CSS visual viewport, including short four-player scenes.
+  const mobileContext = await browser.newContext({
+    viewport:{width:375,height:667},deviceScaleFactor:3,
+    isMobile:true,hasTouch:true,locale:'zh-TW',reducedMotion:'reduce',
+  });
+  const authPage=await mobileContext.newPage();
+  await authPage.goto(base+'/access?next=%2F',{waitUntil:'domcontentloaded'});
+  await authPage.locator('#site-password').fill(password);
+  await authPage.locator('button[type="submit"]').tap({force:true});
+  await authPage.waitForURL(u=>u.pathname==='/',{timeout:30000});
+  await authPage.close();
+
+  for(const scenario of [{players:4,width:375,height:667},{players:6,width:430,height:932}]) {
+    const p=await mobileContext.newPage();
+    await p.setViewportSize({width:scenario.width,height:scenario.height});
+    const sceneName='mobile-touch-'+scenario.players+'p-'+scenario.width+'x'+scenario.height;
+    try {
+      await p.goto(base+'/full',{waitUntil:'domcontentloaded'});
+      await p.waitForFunction(()=> {
+        const btn=document.querySelector('.full-primary');
+        return btn&&!btn.disabled;
+      },null,{timeout:60000});
+      await p.locator('input[name="players"][value="'+scenario.players+'"]').check({force:true});
+      await p.locator('.full-primary').first().tap({force:true});
+      const game=p.frameLocator('iframe.full-frame');
+      const draft=game.locator('#arena.choose-character .dialog .button.character').first();
+      await draft.waitFor({state:'attached',timeout:90000});
+      await draft.tap({force:true});
+      const confirm=game.locator('#control .control > div').filter({hasText:/確定|确定/}).first();
+      if(await confirm.isVisible().catch(()=>false)) await confirm.tap({force:true});
+      try {
+        await game.locator('#arena:not(.choose-character) > .player:not([data-position="0"])')
+          .first().waitFor({state:'attached',timeout:25000});
+      } catch(error) {
+        const diagnosis=await game.locator('#window').evaluate(root=>({
+          screen:{innerWidth,innerHeight,dpr:devicePixelRatio,
+            visual:window.visualViewport&&{
+              width:visualViewport.width,height:visualViewport.height,
+              scale:visualViewport.scale,offsetTop:visualViewport.offsetTop}},
+          arenaClass:root.querySelector('#arena')?.className,
+          dialogText:root.querySelector('#arena .dialog')?.textContent?.trim().slice(0,180),
+          controls:[...root.querySelectorAll('#control .control > div')]
+            .map(node=>({text:node.textContent?.trim(),cls:node.className})),
+          selectedDraft:[...root.querySelectorAll('#arena .dialog .button.character.selected')].length,
+        }));
+        await p.screenshot({path:path.join(out,sceneName+'-selection-debug.png'),fullPage:false});
+        throw new Error('Mobile touch character selection did not finish: '+JSON.stringify(diagnosis)+' / '+error.message);
+      }
+      await p.waitForTimeout(1400);
+      const layout=await game.locator('#arena').evaluate(arena=>{
+        const rect=el=>{
+          const r=el.getBoundingClientRect();
+          return {l:r.left,r:r.right,t:r.top,b:r.bottom,w:r.width,h:r.height};
+        };
+        const roles=[...arena.querySelectorAll(':scope > .player:not([data-position="0"])')]
+          .filter(el=>getComputedStyle(el).display!=='none')
+          .map(el=>({id:el.dataset.position,role:rect(el),
+            identity:el.querySelector('.identity')?rect(el.querySelector('.identity')):null,
+            cap:el.style.getPropertyValue('--grail-portrait-seat-scale')}));
+        const chips=[...document.querySelectorAll('#grail-player-indicators .grail-player-indicator-strip')]
+          .filter(el=>el.getClientRects().length)
+          .map(el=>({name:el.getAttribute('aria-label'),rect:rect(el)}));
+        const intersects=(a,b)=>a&&b&&
+          Math.min(a.r,b.r)-Math.max(a.l,b.l)>5&&
+          Math.min(a.b,b.b)-Math.max(a.t,b.t)>5;
+        const overlaps=[];
+        for(let i=0;i<roles.length;i++) for(let j=i+1;j<roles.length;j++)
+          if(intersects(roles[i].role,roles[j].role))
+            overlaps.push(['roles',roles[i].id,roles[j].id]);
+        for(const chip of chips) for(const role of roles)
+          if(intersects(chip.rect,role.role))
+            overlaps.push(['badge/role',chip.name,role.id]);
+        const board=document.querySelector('#grail-scoreboard');
+        const score=board&&rect(board);
+        for(const role of roles) if(intersects(score,role.role))
+          overlaps.push(['score/role',role.id]);
+        return {roles,chips,score,overlaps,viewport:{
+          innerWidth,innerHeight,dpr:devicePixelRatio,
+          visual:visualViewport&&{width:visualViewport.width,height:visualViewport.height,
+            scale:visualViewport.scale,offsetTop:visualViewport.offsetTop}}};
+      });
+      await p.screenshot({path:path.join(out,sceneName+'.png'),fullPage:false});
+      if(layout.roles.length!==scenario.players-1 || layout.overlaps.length)
+        throw new Error('Mobile touch portrait/HUD collision: '+JSON.stringify(layout));
+      checks.push(sceneName+': live combat cards and public indicators do not overlap');
+    } finally {await p.close();}
+  }
+  await mobileContext.close();
   await context.close();
   console.log('Browser visual QA PASS: ' + checks.length + ' checks');
   for (const check of checks) console.log('PASS ' + check);
