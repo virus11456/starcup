@@ -134,6 +134,39 @@ export function publicHandCountBadge(player) {
     count: match[1] + '/' + match[2], kind: 'hand', icon: '▣' };
 }
 
+// Read layout from *visible* native UI. The player's own portrait is not
+// the handcard fan, and neither pile buttons nor the action hint should be
+// obscured by a read-only mark or hand-count chip.
+export function visibleIndicatorObstacle(node) {
+  if (!node || node.hidden || node.classList?.contains?.('hidden') ||
+      node.style?.display === 'none' || node.style?.visibility === 'hidden' ||
+      node.getAttribute?.('aria-hidden') === 'true') return null;
+  if (node.getClientRects && node.getClientRects().length === 0) return null;
+  const rect = node.getBoundingClientRect?.();
+  if (!rect || ![rect.left, rect.top, rect.width, rect.height].every(Number.isFinite) ||
+      rect.width <= 0 || rect.height <= 0) return null;
+  return rect;
+}
+
+export function publicIndicatorUiObstacles(context, doc) {
+  const ui = context.ui || {};
+  const handFan = doc.querySelector?.('#arena #handcards1 .handcards') || ui.handcards1;
+  const nodes = [
+    ui.control,
+    handFan,
+    doc.getElementById?.('grail-phase-hint'),
+    doc.querySelector?.('.grail-motion-piles'),
+    ui.cardPileButton,
+    ui.discardPileButton,
+    doc.getElementById?.('grail-history-toggle'),
+    doc.getElementById?.('grail-help'),
+    doc.querySelector?.('#window #roundmenu'),
+  ];
+  // Do not count repeated references to the same native element as separate
+  // obstacles; all positioning calculations still use viewport CSS pixels.
+  return [...new Set(nodes.filter(Boolean))].map(visibleIndicatorObstacle).filter(Boolean);
+}
+
 export function createPlayerIndicators(parent, context, doc = document) {
   const layer = doc.createElement('section');
   layer.id = 'grail-player-indicators';
@@ -181,10 +214,9 @@ export function createPlayerIndicators(parent, context, doc = document) {
         const scoreNode = doc.getElementById?.('grail-scoreboard');
         const scoreRect = scoreNode && !scoreNode.hidden
           ? scoreNode.getBoundingClientRect?.() : null;
-        const controlsRect = context.ui?.control?.getBoundingClientRect?.();
-        const handRect = context.ui?.me?.getBoundingClientRect?.();
-        const blockers = [...otherPortraits, scoreRect, controlsRect, handRect]
-          .filter(box => box && box.width > 0 && box.height > 0);
+        const blockers = [
+          ...otherPortraits, scoreRect, ...publicIndicatorUiObstacles(context, doc),
+        ].filter(box => box && box.width > 0 && box.height > 0);
         const geometryKey = JSON.stringify([width, height,
           ...[rect, ...blockers, ...occupied].map(box =>
             [box.left, box.top, box.width, box.height].map(value => Math.round(value / 8))),

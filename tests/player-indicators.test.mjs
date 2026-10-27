@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators } from '../vendor/noname/overrides/grail-player-indicators.js';
+import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators, visibleIndicatorObstacle, publicIndicatorUiObstacles } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
 const mark = (skill, name, count, options = {}) => ({
@@ -292,4 +292,77 @@ test('first battle update after draft measures public badges with an unhidden HU
   assert.equal(player.dataset.grailHandCountMirror, 'true');
   controller.stop();
   assert.equal(player.dataset.grailHandCountMirror, 'false');
+});
+
+
+test('indicator collision blockers use actual handcard fan, phase text, and pile buttons', () => {
+  const rect = (left, top, width, height) => ({
+    left, top, width, height, right: left + width, bottom: top + height,
+  });
+  const node = box => ({
+    hidden: false, getBoundingClientRect: () => box, getClientRects: () => [box],
+  });
+  const handFan = node(rect(140, 645, 230, 140));
+  const playerPortrait = node(rect(20, 650, 90, 100)); // not the hand fan
+  const phaseHint = node(rect(30, 450, 330, 60));
+  const pileButtons = node(rect(305, 590, 75, 48));
+  const hiddenHelp = { ...node(rect(0, 0, 390, 840)), hidden: true };
+  const hiddenPhase = { ...node(rect(0, 400, 390, 65)),
+    style: { display: 'none' } };
+  const doc = {
+    querySelector(selector) {
+      if (selector === '#arena #handcards1 .handcards') return handFan;
+      if (selector === '.grail-motion-piles') return pileButtons;
+      return null;
+    },
+    getElementById(id) {
+      if (id === 'grail-phase-hint') return phaseHint;
+      if (id === 'grail-help') return hiddenHelp;
+      return null;
+    },
+  };
+  const context = { ui: { me: playerPortrait, cardPileButton: pileButtons } };
+  const obstacles = publicIndicatorUiObstacles(context, doc);
+  assert.equal(obstacles.length, 3, 'dedup pile button, exclude hidden help and own portrait');
+  assert.deepEqual(obstacles, [
+    handFan.getBoundingClientRect(),
+    phaseHint.getBoundingClientRect(),
+    pileButtons.getBoundingClientRect(),
+  ]);
+  const seat = { ...rect(170, 280, 76, 110) };
+  for (const block of obstacles) {
+    const candidate = placeIndicatorStrip(seat, {width:390,height:844},
+      {width:116,height:46}, [], [block]);
+    assert.ok(candidate, 'at least one free location remains in fixture');
+  }
+  assert.equal(visibleIndicatorObstacle(hiddenHelp), null);
+  assert.equal(visibleIndicatorObstacle(hiddenPhase), null);
+});
+
+test('hidden and zero-sized UI never block public status strips on mobile', () => {
+  const box = {left:0,top:0,width:390,height:844};
+  const hiddenNative = {getBoundingClientRect: () => box,
+    getClientRects: () => [], classList: classes()};
+  const visuallyHidden = {getBoundingClientRect: () => box,
+    getClientRects: () => [box], getAttribute: () => 'true'};
+  assert.equal(visibleIndicatorObstacle(hiddenNative), null);
+  assert.equal(visibleIndicatorObstacle(visuallyHidden), null);
+  assert.equal(visibleIndicatorObstacle({
+    getBoundingClientRect: () => ({left:0,top:0,width:0,height:60})
+  }), null);
+  assert.deepEqual(publicIndicatorUiObstacles({ui:{}}, {
+    querySelector: () => null, getElementById: () => null,
+  }), []);
+});
+
+test('readable hand counts do not cover action hint when other positions are available', () => {
+  const hint = {left:0,top:425,width:390,height:66};
+  const portrait = {left:150,right:240,top:280,bottom:390,width:90,height:110};
+  const candidate = placeIndicatorStrip(portrait, {width:390,height:844},
+    {width:112,height:42}, [], [hint]);
+  assert.ok(candidate);
+  const overlaps = (a,b) => a.left < b.left + b.width + 4 &&
+    a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4 &&
+    a.top + a.height + 4 > b.top;
+  assert.equal(overlaps(candidate, hint), false);
 });
