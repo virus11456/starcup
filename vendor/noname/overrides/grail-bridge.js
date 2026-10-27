@@ -13,7 +13,7 @@ import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { createHandVisibilityRecovery } from "./grail-hand-visibility.js";
 import { addRoleLegend } from './grail-role-tags.js';
-import { updateActionHints, positionActionHint } from './grail-action-hints.js';
+import { updateActionHints } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
 import { updateScoreboardSeatClearance } from './grail-seat-clearance.js';
 import { updatePlayerZoomOrigins } from './grail-player-zoom.js';
@@ -29,7 +29,11 @@ const phaseHint = document.createElement('span');
 phaseHint.id = 'grail-phase-hint';
 phaseHint.setAttribute('role', 'status');
 phaseHint.hidden = true;
-hud.append(phaseHint);
+const scoreboardHeading = scoreboardNode?.querySelector('.grail-score-heading');
+// Keep passive instructions inside the public score header instead of laying
+// a wide banner across cards, characters and the native choice controls.
+if (scoreboardHeading) scoreboardHeading.insertBefore(phaseHint, scoreboardHeading.lastElementChild);
+else hud.append(phaseHint);
 const history = createBattleHistory(hud, () => game.phaseNumber || 0, {
   journal: createHistorySession(new URLSearchParams(location.search).get('online')),
 });
@@ -64,22 +68,9 @@ function update() {
   document.documentElement.classList.toggle('grail-match-ended', Boolean(_status.over));
   addRoleLegend(ui.arena);
   updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden && !_status.over);
-  const hintHasSafeSlot = positionActionHint(phaseHint, {
-    width: window.innerWidth, height: window.innerHeight,
-    scoreboard: scoreboardNode?.getBoundingClientRect?.(),
-    players: (game.players || []).map(p => p.getBoundingClientRect?.()).filter(Boolean),
-    controls: ui.control?.getBoundingClientRect?.() || ui.arena?.querySelector?.('#control')?.getBoundingClientRect?.(),
-    hand: ui.me?.getBoundingClientRect?.(),
-    extras: [ui.roundmenu?.getBoundingClientRect?.(),
-      document.querySelector('.grail-motion-piles')?.getBoundingClientRect?.()].filter(Boolean),
-  });
-  if (!hintHasSafeSlot && !phaseHint.hidden) {
-    // Never cover a legal target or confirm button. On pathological screens
-    // fall back to the engine's native prompt instead of silently losing it.
-    phaseHint.hidden = true;
-    ui.arena?.querySelectorAll('.dialog.grail-inline-action-hint')?.forEach(
-      dialog => dialog.classList.remove('grail-inline-action-hint'));
-  }
+  // The native active choice UI remains authoritative. Only mirror passive
+  // status in the compact scoreboard; no free-floating text may cover a seat.
+  if (!phaseHint.hidden) phaseHint.title = phaseHint.textContent || '';
   history.attach(ui.sidebar);
   inspection.update();
   updatePlayerZoomOrigins(game.players, window.innerWidth);
