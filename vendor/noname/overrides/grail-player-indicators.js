@@ -113,7 +113,7 @@ export function placeIndicatorStrip(rect, viewport, size, occupied = [], blocker
 // differently from the layout dimensions used by placeIndicatorStrip(). Recheck
 // the ACTUAL painted rectangle. Only move the read-only status strip, never a
 // native player, skill target, hand card or click region.
-export function correctPaintedIndicatorRect(rect, viewport, blockers = [], gap = 7) {
+export function correctPaintedIndicatorRect(rect, viewport, blockers = [], gap = 16) {
   const normalize = r => {
     if(!r || ![r.left,r.top,r.width,r.height].every(Number.isFinite)) return null;
     return {left:r.left,top:r.top,width:r.width,height:r.height,
@@ -319,28 +319,41 @@ export function createPlayerIndicators(parent, context, doc = document) {
         strip.style.left = `${candidate.position.left}px`;
         strip.style.top = `${candidate.position.top}px`;
         strip.dataset.placement = candidate.position.placement;
-        const painted = visibleIndicatorObstacle(strip);
-        // Test/legacy DOM shells may provide offset sizes but not a painted
-        // rectangle yet. Native placement is already collision-checked there.
-        const final = painted ? correctPaintedIndicatorRect(
-          {left:painted.left,right:painted.right,top:painted.top,
-            bottom:painted.bottom,width:painted.width,height:painted.height},
-          {width,height}, [rect,...blockers,...occupied]) : candidate.position;
-        if(!final) {
+        // Read AFTER painting: on iPhone/WebKit the ancestor body's scale,
+        // font metrics and seat-clearance translate can change the physical
+        // coordinates after the first intrinsic measurement. Retry at most
+        // three times; never leave a visual chip covering a native target.
+        const unsafe = [rect,...blockers,...occupied];
+        let finalPainted = visibleIndicatorObstacle(strip);
+        let blocked = false;
+        if(finalPainted) {
+          for(let pass=0;pass<3;pass++) {
+            const safe = correctPaintedIndicatorRect(finalPainted,{width,height},unsafe);
+            if(!safe) { blocked=true; break; }
+            const dx=safe.left-finalPainted.left, dy=safe.top-finalPainted.top;
+            if(Math.abs(dx)<1 && Math.abs(dy)<1) break;
+            const factor=strip.offsetWidth>0 ? finalPainted.width/strip.offsetWidth : 1;
+            const scale=Number.isFinite(factor)&&factor>0 ? factor : 1;
+            strip.style.left = `${(Number.parseFloat(strip.style.left)||0)+dx/scale}px`;
+            strip.style.top = `${(Number.parseFloat(strip.style.top)||0)+dy/scale}px`;
+            finalPainted=visibleIndicatorObstacle(strip) || safe;
+          }
+          const endSafe=correctPaintedIndicatorRect(finalPainted,{width,height},unsafe,8);
+          if(!endSafe || Math.abs(endSafe.left-finalPainted.left)>2 ||
+             Math.abs(endSafe.top-finalPainted.top)>2) blocked=true;
+        } else {
+          // Minimal DOM mocks and pre-layout frames retain the previously
+          // collision-tested native candidate. Do not discard public info
+          // merely because getBoundingClientRect has not become available.
+          finalPainted=candidate.position;
+        }
+        if(blocked) {
           if(player.dataset) player.dataset.grailHandCountMirror = 'false';
           continue;
-        }
-        if(painted && (Math.abs(final.left-painted.left)>1 || Math.abs(final.top-painted.top)>1)) {
-          // Native body zoom affects the HUD's rendered coordinate scale.
-          const factor=strip.offsetWidth>0 ? painted.width/strip.offsetWidth : 1;
-          const scale=Number.isFinite(factor)&&factor>0 ? factor : 1;
-          strip.style.left = `${candidate.position.left+(final.left-painted.left)/scale}px`;
-          strip.style.top = `${candidate.position.top+(final.top-painted.top)/scale}px`;
         }
         active.add(player);
         if (player.dataset) player.dataset.grailHandCountMirror = String(
           Boolean(handCount) && candidate.badges.includes(handCount));
-        const finalPainted=visibleIndicatorObstacle(strip) || final;
         occupied.push({
           left:finalPainted.left,top:finalPainted.top,
           width:finalPainted.width,height:finalPainted.height,
