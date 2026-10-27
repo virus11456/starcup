@@ -150,9 +150,11 @@ test('dedicated action status chooses lower-middle safe space away from score, p
   assert.ok(landscape >= 132 && landscape + 52 <= 318);
 });
 
-test('character draft hides floating roundmenu and shows unwrapped horizontally scrollable category filters', async () => {
+test('permanent top options replace floating hamburger while draft filters remain scrollable', async () => {
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
-  assert.match(css, /#arena\.choose-character > #roundmenu,[\s\S]*?display:\s*none !important/);
+  assert.match(css, /#window #arena > #roundmenu\s*\{\s*display:\s*none !important/);
+  const phoneCss = await readFile(new URL('../vendor/noname/overrides/grail-phone-controls.css', import.meta.url), 'utf8');
+  assert.match(phoneCss, /#window #system > div > div:not\(\.hidden\)/, 'native settings button is in the top toolbar');
   assert.match(css, /\.dialog \.caption\.pointerspan > div[\s\S]*?flex-wrap:\s*nowrap !important/);
   assert.match(css, /\.dialog \.caption\.pointerspan > div[\s\S]*?overflow-x:\s*auto !important/);
   assert.match(css, /\.dialog \.caption\.pointerspan > div > \.tdnode[\s\S]*?white-space:\s*nowrap !important/);
@@ -160,6 +162,12 @@ test('character draft hides floating roundmenu and shows unwrapped horizontally 
   const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
   assert.match(bridge, /hud\.append\(phaseHint\)/);
   assert.doesNotMatch(bridge, /insertBefore\(\s*phaseHint,/);
+});
+
+test('native tutorial and settings menu must stack over the battle HUD while open', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  assert.match(css, /#window > \.menu-container:not\(\.hidden\)\s*\{\s*z-index:\s*70 !important/);
+  assert.match(css, /#grail-hud\s*\{\s*z-index:\s*20;/);
 });
 
 test('native hidden secondary draft filter remains hidden until user taps 篩選', async () => {
