@@ -1,5 +1,6 @@
 /* GPL-3.0: informational readiness only. Trigger timing, cost, skill/cancel
  * buttons, card filters, target legality and game effects remain native. */
+const originalTitles = new WeakMap();
 const followUps = Object.freeze({
   fengNuZhuiJi: { name: '風怒追擊', type: 'element', value: 'feng', label: '風系攻擊牌', short: '缺風攻' },
   xiuLuoLianZhan: { name: '修羅連斬', type: 'element', value: 'huo', label: '火系攻擊牌', short: '缺火攻' },
@@ -45,11 +46,19 @@ export function getOptionalSkillReadiness(id, player, get, { triggerCard, player
       if (isKnown(element)) present = hasCard(cards, get, 'gongJi', card => get.xiBie(card) === element);
     }
   }
-  if (present === null) return null; // Never infer missing cards from unknown data.
+  if (present === null) {
+    // Same-element bonus uses the previous attack's element. If the exact
+    // source card isn't available in this UI event, explain the requirement
+    // instead of falsely claiming the hand has no matching card.
+    return spec.type === 'same' ? {
+      id, short: '需同系',
+      message: spec.name + '：額外攻擊須使用與本次攻擊同系的攻擊牌；依原規則仍可選擇發動。',
+    } : null;
+  }
   let reason = present ? '' : '目前手上沒有' + spec.label;
   let short = present ? '' : spec.short;
   if (spec.type === 'attackTarget' && present && Array.isArray(players) &&
-      typeof player.countCards === 'function') {
+      typeof player.side === 'boolean' && typeof player.countCards === 'function') {
     const myCount = player.countCards('h');
     const legalOpponent = players.some(target => target && target !== player &&
       typeof player.side === 'boolean' && typeof target.side === 'boolean' &&
@@ -116,11 +125,19 @@ export function updateOptionalSkillChoiceHints(ui, lib, player, get, context) {
     const next = note?.short || '';
     if ((button.dataset.grailReadiness || '') === next) continue;
     if (next) {
+      if (!originalTitles.has(button)) {
+        originalTitles.set(button, button.getAttribute?.('title') ?? button.title ?? null);
+      }
       button.dataset.grailReadiness = next;
       button.title = note.message;
     } else {
       delete button.dataset.grailReadiness;
-      button.removeAttribute?.('title');
+      if (originalTitles.has(button)) {
+        const original = originalTitles.get(button);
+        if (original == null) button.removeAttribute?.('title');
+        else button.title = original;
+        originalTitles.delete(button);
+      }
     }
     updated = true;
     if (control?.classList?.contains?.('control')) controls.add(control);
