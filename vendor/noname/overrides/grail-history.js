@@ -87,6 +87,9 @@ export function createBattleHistory(parent, getTurn, { journal } = {}) {
         : '顯示原引擎已公開的紀錄，最多保留本頁最近 1,000 筆；重新整理後重新累積。';
     const unread = Math.max(0, (buffer.latest?.id || 0) - seenId);
     toggle.textContent = unread ? `本場紀錄 ${unread > 99 ? '99+' : unread}` : '本場紀錄';
+    // Short label only affects phone visuals. The original text, unread
+    // count, accessible name and click/keyboard handlers remain intact.
+    if (toggle.dataset) toggle.dataset.mobileLabel = unread ? `紀錄 ${unread > 99 ? '99+' : unread}` : '紀錄';
     toggle.setAttribute('aria-label', `對戰紀錄${unread ? `，${unread} 筆新紀錄` : ''}`);
     toggle.title = buffer.latest?.text || '查看本場玩家動作與結算';
     fresh.hidden = !unread;
