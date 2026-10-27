@@ -23,8 +23,8 @@ hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
-// The passive instruction belongs BELOW the battle, not over the scoreboard
-// or its morale counters. Reuse the already inverse-scaled, pointer-free HUD.
+// Keep all passive instructions in the compact scoreboard heading so
+// native cards, portraits and controls stay unobstructed.
 const scoreboardNode = hud.querySelector('#grail-scoreboard');
 const phaseHint = document.createElement('span');
 phaseHint.id = 'grail-phase-hint';
