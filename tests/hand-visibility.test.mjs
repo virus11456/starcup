@@ -96,3 +96,24 @@ test('do not interfere with the renderer until both native containers exist', ()
   assert.equal(f.recovery.update(), false);
   assert.equal(f.calls(), 0);
 });
+
+test('recovery checks the engine second-hand container without moving cards', () => {
+  const hidden = card(['drawinghidden']);
+  const f = fixture([], [hidden]);
+  f.ui.handcards2.children = [hidden];
+  f.recovery.update();
+  f.advance(1300);
+  assert.equal(f.recovery.update(), true);
+  assert.equal(f.calls(), 1);
+  assert.equal(f.ui.handcards2.children[0], hidden, 'native node and zone remain unchanged');
+});
+test('character draft and intentionally hidden hands are excluded', () => {
+  for (const blockedClass of ['choose-character', 'hidden_handcard']) {
+    const f = fixture([card(['drawinghidden'])]);
+    f.ui.arena.classList.contains = x => x === blockedClass;
+    f.recovery.update();
+    f.advance(1500);
+    assert.equal(f.recovery.update(), false);
+    assert.equal(f.calls(), 0);
+  }
+});
