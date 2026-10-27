@@ -15,6 +15,8 @@ const followUps = Object.freeze({
   yiJiWuNian: { name: '一擊無念', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
   faLiChaoXi: { name: '法力潮汐', type: 'spell', label: '法術牌', short: '暫無法術' },
   fuMoDaJi: { name: '附魔打擊', type: 'spell', label: '法術牌', short: '暫無法術' },
+  yaoJingMiShu: { name: '妖精秘術', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
+  jianCanYing: { name: '劍殘影', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
 });
 
 function isKnown(value) {
@@ -39,7 +41,17 @@ export function getOptionalSkillReadiness(id, player, get, { triggerCard, player
   } else if (spec.type === 'fate') {
     if (typeof get?.mingGe === 'function') present = hasCard(cards, get, 'gongJi', card => get.mingGe(card) === spec.value);
   } else if (spec.type === 'cardName') {
-    if (typeof get?.name === 'function') present = cards.some(card => get.name(card) === spec.value);
+    if (typeof get?.name === 'function') {
+      present = cards.some(card => get.name(card) === spec.value);
+      // 虛榮掌握 can use the existing 相思病 virtual magic missile
+      // converted from earth/wind cards. Do not warn as "missing" when
+      // this printed skill can supply the relevant virtual card.
+      if (!present && id === 'xuRongZhangWo' &&
+          typeof get?.xiBie === 'function' &&
+          player.getSkills?.()?.includes('xiangSiBing')) {
+        present = cards.some(card => ['di', 'feng'].includes(get.xiBie(card)));
+      }
+    }
   } else if (spec.type === 'same') {
     if (triggerCard && typeof get?.xiBie === 'function') {
       const element = get.xiBie(triggerCard);
