@@ -941,3 +941,32 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* Native buy/refine/compose resource choices previously inherited the wide
+   generic dialog strip and covered players on both sides. Keep the ORIGINAL
+   choice nodes/click listeners; only constrain the visible dialog rectangle. */
+#window #arena:not(.choose-character) > .dialog.grail-resource-dialog:not(.popped) {
+  box-sizing: border-box !important;
+  width: min(490px, calc(100% - 36px)) !important;
+  max-width: calc(100% - 36px) !important;
+  left: 50% !important;
+  right: auto !important;
+  top: 48% !important;
+  height: clamp(138px, 22%, 190px) !important;
+  transform: translateX(-50%) !important;
+  overflow: hidden;
+}
+#window #arena:not(.choose-character) > .dialog.grail-resource-dialog .content-container {
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 600px) {
+  #window #arena:not(.choose-character) > .dialog.grail-resource-dialog:not(.popped) {
+    width: calc(100% - 20px) !important;
+    max-width: calc(100% - 20px) !important;
+    height: clamp(150px, 33%, 220px) !important;
+    top: 42% !important;
+  }
+}
