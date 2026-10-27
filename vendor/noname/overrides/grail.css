@@ -972,3 +972,116 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
     top: 42% !important;
   }
 }
+
+/* Mobile battle HUD: retain essential combat context and a 44px disclosure
+   button; secondary team statistics stay in the SAME live scoreboard and are
+   revealed on demand. No engine node, card or choice handler is altered. */
+#grail-scoreboard .grail-score-toggle { display: none; }
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-scoreboard {
+    box-sizing: border-box;
+    width: calc(100% - 12px);
+    max-width: 480px;
+    padding: 3px 8px 5px;
+    border-radius: 9px;
+  }
+  #grail-scoreboard .grail-score-heading {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 44px;
+    margin: 0;
+  }
+  #grail-scoreboard .grail-score-heading > span:first-child {
+    display: none;
+  }
+  #grail-scoreboard .grail-score-heading > #grail-phase-hint {
+    order: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: block;
+    max-height: 1.5em;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+    font-size: 11px;
+    -webkit-line-clamp: unset;
+  }
+  #grail-scoreboard .grail-score-round {
+    order: 1;
+    flex: 0 0 auto;
+    font-size: 10px;
+  }
+  #grail-scoreboard .grail-score-toggle {
+    order: 2;
+    display: inline-flex;
+    flex: 0 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border-radius: 7px;
+    border: 1px solid #bd9e627e;
+    background: #29434a;
+    color: #f5dcac;
+    font: 650 12px/1.2 system-ui, sans-serif;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  #grail-scoreboard .grail-score-toggle:focus-visible {
+    outline: 2px solid #f5dca6;
+    outline-offset: 2px;
+  }
+  #grail-scoreboard .grail-score-teams {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 5px;
+    padding-top: 2px;
+  }
+  #grail-scoreboard .grail-score-team {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  #grail-scoreboard .grail-score-team-heading {
+    flex: 0 0 auto;
+    gap: 2px;
+    min-height: 17px;
+  }
+  #grail-scoreboard h3 { font-size: 10px; }
+  #grail-scoreboard .grail-score-mine { display: none; }
+  #grail-scoreboard .grail-score-stats {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+  }
+  #grail-scoreboard .grail-score-metric { gap: 2px; }
+  #grail-scoreboard .grail-score-metric b { font-size: 12px; line-height: 18px; }
+  #grail-scoreboard svg { width: 11px; height: 12px; flex-basis: 11px; }
+  #grail-scoreboard:not([data-expanded="true"]) .grail-score-metric:is([data-kind="gems"],[data-kind="crystals"]) {
+    display: none;
+  }
+  #grail-scoreboard[data-expanded="true"] .grail-score-team {
+    display: block;
+  }
+  #grail-scoreboard[data-expanded="true"] .grail-score-mine {
+    display: inline-flex;
+  }
+  #grail-scoreboard[data-expanded="true"] .grail-score-stats {
+    flex-wrap: wrap;
+    gap: 5px 8px;
+  }
+  /* Full names and counts remain in the team's existing accessible labels.
+     The on-card faction color and short label are easier to scan at phone size. */
+  #window #arena:not(.choose-character) > .player[data-grail-team] > .identity > div::after {
+    content: "" !important;
+  }
+}
