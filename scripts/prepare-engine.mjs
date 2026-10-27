@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCatalog } from "./engine-catalog.mjs";
 import { localizeEngine } from "./localize-engine.mjs";
+import { canOfferExtraAttackForCrystal } from "./optional-action-guards.mjs";
 import ts from "typescript";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -282,6 +283,9 @@ async function requireOptionalSkillCards(file, skill, predicate) {
   await writeFile(location, source.slice(0, position) + `\n            if (!(${predicate})) return false;` + source.slice(position));
 }
 for (const [file, skill, predicate] of [
+  // `gongJiAfter` fires before xingDong decrements the action in progress.
+  // Only offer crystal-for-attack after normal attacks are truly exhausted.
+  ['shiZhouNian.js', 'jianYing', `(${canOfferExtraAttackForCrystal.toString()})(event, player, get, lib)`],
   ['shiZhouNian.js', 'fengNuZhuiJi', `player.countCards('h', card => get.xiBie(card) === 'feng' && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
   ['shiZhouNian.js', 'xiuLuoLianZhan', `player.countCards('h', card => get.xiBie(card) === 'huo' && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
   ['teDian.js', 'jiZhiJianYi', `player.countCards('h', card => get.mingGe(card) === 'ji' && get.type(card) === 'gongJi' && lib.filter.cardEnabled(card, player, 'forceEnable')) > 0`],
