@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import SiteBrand from '../site-brand';
+import SiteHeader from '../site-header';
 import { ACTIVE_ROOM_KEY, normalizeRoomCode, savedRoom, seatKey, shouldResumeRoom, roomInvite, resumeGuestRoom, resumeWaitingHost, enterOnlineRoom, roomRequestMessage, trustedHostPresence, replacementRoomSettings, type OnlineRoom as Room } from '@/lib/online-session';
 import { createRoomRequests } from '@/lib/room-request';
 import '../full/full.css';
@@ -145,10 +146,11 @@ export default function OnlineGame() {
     catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) setShareMessage('無法開啟分享選單，請使用「複製連結」或長按連結複製。'); }
   }
   return <main className={'full-shell online-shell' + (room ? ' full-running' : '')}>
-    <header className="full-header"><Link href="/" onClick={event => { if (room) { event.preventDefault(); void leave(); } }}>星杯傳說</Link>
-      <span>{room ? (room.isHost ? '房主請保持頁面開啟' : '多人角色對戰') : '與單機共用完整角色引擎'}</span>
-      <nav>{room ? <><button onClick={() => inviteDialog.current?.showModal()}>邀請朋友</button><button onClick={() => void leave()}>離開</button></> : <Link href="/">返回大廳</Link>}</nav>
-    </header>
+    {room ? <header className="full-header">
+      <SiteBrand onClick={event => { event.preventDefault(); void leave(); }} />
+      <span>{room.isHost ? '房主請保持頁面開啟' : '多人角色對戰'}</span>
+      <nav><button onClick={() => inviteDialog.current?.showModal()}>邀請朋友</button><button onClick={() => void leave()}>離開</button></nav>
+    </header> : <SiteHeader />}
     {error && <p role="alert" className="full-notice online-error">{error}</p>}
     {room ? <>
       {hostAbsent && !room.isHost && <section className="online-host-absent" aria-live="polite" aria-label="房主離線後的安全選項">
