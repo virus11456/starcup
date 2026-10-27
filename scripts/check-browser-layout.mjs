@@ -234,6 +234,97 @@ try {
   checks.push('natural six-player iPhone match: five opponent portraits separated with adaptive zoom');
   await phone.screenshot({path:path.join(out,'game-6-players-iphone-390x844.png'),fullPage:false});
   await phone.close();
+
+  // Regression for real-phone CSS viewport behavior, not just a desktop
+  // Chromium window narrowed to 390px. Match mobile UA/deviceScaleFactor,
+  // touch, and vary usable browser heights. This is NOT full iOS WebKit,
+  // but captures an important class of device-specific layout differences.
+  const mobile = await browser.newContext({
+    viewport:{width:375,height:667}, deviceScaleFactor:3,
+    isMobile:true, hasTouch:true, reducedMotion:'reduce', locale:'zh-TW',
+  });
+  const mobileLogin = await mobile.newPage();
+  await mobileLogin.goto(base+'/access?next=%2F',{waitUntil:'domcontentloaded'});
+  await mobileLogin.locator('#site-password').fill(password);
+  await mobileLogin.locator('button[type="submit"]').click();
+  await mobileLogin.waitForURL(url=>url.pathname==='/',{timeout:30000});
+  await mobileLogin.close();
+  const scenarios=[{count:4,w:375,h:667},{count:6,w:430,h:932}];
+  for(const scenario of scenarios) {
+    const mobilePage=await mobile.newPage();
+    await mobilePage.setViewportSize({width:scenario.w,height:scenario.h});
+    await mobilePage.goto(base+'/full',{waitUntil:'domcontentloaded'});
+    await mobilePage.waitForFunction(() => {
+      const start=document.querySelector('.full-primary');
+      return start && !start.disabled;
+    },null,{timeout:60000});
+    await mobilePage.locator('input[name="players"][value="'+scenario.count+'"]').check({force:true});
+    await mobilePage.locator('.full-primary').first().click();
+    const gameFrame=mobilePage.frameLocator('iframe.full-frame');
+    const drafts=gameFrame.locator('#arena.choose-character .dialog .button.character');
+    await drafts.first().waitFor({state:'visible',timeout:90000});
+    await drafts.first().click();
+    const confirm=gameFrame.locator('#control .control > div').filter({hasText:/確定|确定/}).first();
+    if(await confirm.isVisible({timeout:8000}).catch(()=>false)) await confirm.click();
+    await gameFrame.locator('#arena:not(.choose-character) > .player:not([data-position="0"])')
+      .first().waitFor({state:'visible',timeout:50000});
+    await mobilePage.waitForTimeout(1800);
+    const measurements=await gameFrame.locator('#arena').evaluate(arena=>{
+      const pickRect=node=>{
+        const r=node.getBoundingClientRect();
+        return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};
+      };
+      const roles=[...arena.querySelectorAll(':scope > .player:not([data-position="0"])')]
+        .filter(el=>getComputedStyle(el).display!=='none')
+        .map(el=>({id:el.dataset.position,rect:pickRect(el),
+          identity:el.querySelector('.identity')?pickRect(el.querySelector('.identity')):null,
+          cap:el.style.getPropertyValue('--grail-portrait-seat-scale')}));
+      const badgeStrips=[...document.querySelectorAll('.grail-player-indicator-strip')]
+        .filter(el=>el.getClientRects().length>0)
+        .map(el=>({label:el.getAttribute('aria-label'),rect:pickRect(el)}));
+      const conflict=(a,b)=>{
+        const dx=Math.min(a.right,b.right)-Math.max(a.left,b.left);
+        const dy=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
+        return dx>5&&dy>5?{width:Math.round(dx),height:Math.round(dy)}:null;
+      };
+      const overlaps=[];
+      for(let i=0;i<roles.length;i++) for(let j=i+1;j<roles.length;j++){
+        const a=roles[i],b=roles[j];
+        for(const [kind,r1,r2] of [
+          ['portrait',a.rect,b.rect],
+          ['badge-on-neighbor',a.identity,b.rect],
+          ['neighbor-badge',a.rect,b.identity],
+        ]){
+          if(!r1||!r2)continue;
+          const crash=conflict(r1,r2);
+          if(crash) overlaps.push({kind,a:a.id,b:b.id,...crash});
+        }
+      }
+      for(const badge of badgeStrips) for(const role of roles){
+        const conflictRect=conflict(badge.rect,role.rect);
+        // Own scoreboard-style readouts can touch their own role; only
+        // look for large visual occlusions, not narrow border crossings.
+        if(conflictRect && conflictRect.width>20 && conflictRect.height>20)
+          overlaps.push({kind:'status-over-portrait',a:badge.label,b:role.id,...conflictRect});
+      }
+      return {viewport:{
+        innerWidth,innerHeight,devicePixelRatio,
+        visual:window.visualViewport&&{
+          width:visualViewport.width,height:visualViewport.height,
+          scale:visualViewport.scale,offsetLeft:visualViewport.offsetLeft,
+          offsetTop:visualViewport.offsetTop
+        },
+        body:pickRect(document.body),
+      },roles,badgeStrips,overlaps};
+    });
+    await mobilePage.screenshot({path:path.join(out,'phone-mobile-'+scenario.count+'p-'+scenario.w+'x'+scenario.h+'.png'),fullPage:false});
+    if(measurements.roles.length!==scenario.count-1 || measurements.overlaps.length)
+      throw new Error('Real mobile viewport '+scenario.count+'p '+scenario.w+'x'+scenario.h+
+        ' wrong seat/status geometry: '+JSON.stringify(measurements));
+    checks.push('mobile emulation '+scenario.count+' players at '+scenario.w+'x'+scenario.h+': role/status geometry clear');
+    await mobilePage.close();
+  }
+  await mobile.close();
   await context.close();
   console.log('Browser visual QA PASS: ' + checks.length + ' checks');
   for (const check of checks) console.log('PASS ' + check);
