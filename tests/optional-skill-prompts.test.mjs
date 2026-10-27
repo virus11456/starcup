@@ -31,7 +31,28 @@ const player = (cards, extra = {}) => ({
   },
   hasSkill: () => false,
   canBiShaShuiJing: () => true,
+  storage: { gongJiOrFaShu: 1, gongJi: 0 },
+  hasUseTarget: card => !card.noTarget,
   ...extra,
+});
+
+test('wind sword saint crystal bonus waits until normal actions end and another attack is legal', async () => {
+  const s = await skills('shiZhouNian.js', { hasPlayer: () => false });
+  const trigger = { yingZhan: false, getParent: () => ({ xingDong: 'gongJiOrFaShu' }) };
+  const candidate = player([attack('feng')]);
+  assert.equal(s.jianYing.filter(trigger, candidate), true);
+  candidate.storage.gongJiOrFaShu = 2;
+  assert.equal(s.jianYing.filter(trigger, candidate), false);
+  candidate.storage.gongJiOrFaShu = 1;
+  candidate.cards = [spell('feng')];
+  assert.equal(s.jianYing.filter(trigger, candidate), false);
+  candidate.cards = [attack('feng', 'ji')];
+  candidate.cards[0].noTarget = true;
+  assert.equal(s.jianYing.filter(trigger, candidate), false);
+  candidate.cards[0].noTarget = false;
+  assert.equal(s.jianYing.filter({ ...trigger, yingZhan: true }, candidate), false);
+  candidate.canBiShaShuiJing = () => false;
+  assert.equal(s.jianYing.filter(trigger, candidate), false);
 });
 
 test('wind and fire follow-up prompts appear only if a playable matching attack exists', async () => {
