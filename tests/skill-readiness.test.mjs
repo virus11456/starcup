@@ -71,6 +71,22 @@ test('magic missile note never falsely treats all spells as a usable missile', (
   assert.match(check('xuRongZhangWo', [card('faShu','lei','yong','qita')]).message, /魔彈牌/);
   assert.equal(check('xuRongZhangWo', [card('faShu','lei','yong','moDan')]), null);
 });
+test('virtual magic missile from 相思病 avoids a false缺牌 warning', () => {
+  const converter = {
+    getCards: () => [card('gongJi','feng')],
+    getSkills: () => ['xiangSiBing'],
+  };
+  assert.equal(getOptionalSkillReadiness('xuRongZhangWo',converter,get),null);
+  assert.match(getOptionalSkillReadiness('xuRongZhangWo',{
+    getCards: () => [card('gongJi','huo')], getSkills: () => ['xiangSiBing'],
+  },get).message,/魔彈/);
+});
+test('target-only and other special extra attack responses retain options and only show informational lack-of-card text', () => {
+  for (const id of ['jianCanYing','yaoJingMiShu']) {
+    assert.match(check(id,[]).message,/依原規則仍可發動/);
+    assert.equal(check(id,[card('gongJi')]),null);
+  }
+});
 test('pursuit with a more-cards enemy checks public target count without changing legality', () => {
   cards=[card('gongJi')];
   const opponent = { side: false, countCards: () => 1 };
