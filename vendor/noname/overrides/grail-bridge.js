@@ -79,7 +79,6 @@ function update() {
   // Keep Native Noname portraits large only where neighboring seats allow it.
   // This changes CSS scale, never the engine's positions or target hit nodes.
   updatePortraitSeatFit(game.players, {width: window.innerWidth, height: window.innerHeight});
-  indicators.update();
   handSkin.update(game.me);
   // Noname occasionally leaves a hand node transparent after a draw/choice.
   // Re-run its own layout only after the transient draw window has passed.
@@ -113,7 +112,7 @@ function update() {
     }
   }
   const me = game.me;
-  if (!me?.name) return;
+  if (!me?.name) { indicators.update(); return; }
   const stage = describeStage(_status.event, { started: game.phaseNumber > 0, over: _status.over });
   const teams = teamSummary(game);
   updateScoreboard(teams, { side: me.side, turn: game.phaseNumber, over: Boolean(_status.over) });
@@ -124,6 +123,9 @@ function update() {
       enabled: Boolean(scoreboardNode && !scoreboardNode.hidden && !_status.over),
       isChoosing: Boolean(ui.arena?.classList?.contains('choose-character')),
     });
+  // Scoreboard clearance can translate opponent seats. Place status chips
+  // AFTER that last native-seat adjustment to avoid a stale position on Safari.
+  indicators.update();
   const prompt = [
     ...(ui.arena?.querySelectorAll(".dialog .prompt, .dialog .caption") || []),
   ]
