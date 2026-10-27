@@ -256,4 +256,12 @@ test('gold unique attacks have a gentle always-visible animation and a reduced-m
   assert.match(css, /grail-special-gold-breathe 2\.6s ease-in-out infinite !important/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?grail-special-gold-breathe[\s\S]*?animation: none !important/);
   assert.match(css, /#window #arena #handcards1 \.handcards > \.card\[data-grail-own-special="true"\]::after/);
+  const overlay = css.match(/#window #arena #handcards1 \.handcards > \.card\[data-grail-own-special="true"\]::after\s*\{([^}]*)\}/)?.[1];
+  assert.ok(overlay);
+  assert.doesNotMatch(overlay, /opacity:\s*[^;!]+!important/, 'important opacity silently overrides CSS animations');
+  const keyframes = css.match(/@keyframes grail-special-gold-breathe\s*\{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(keyframes);
+  assert.match(keyframes, /0%, 100%\s*\{\s*opacity:\s*\.58/);
+  assert.match(keyframes, /50%\s*\{\s*opacity:\s*1/);
+  assert.doesNotMatch(keyframes, /box-shadow|transform/, 'compositor-friendly glow does not repaint shadows or move hit targets each frame');
 });
