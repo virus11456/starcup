@@ -409,6 +409,7 @@ test('real HUD places indicator chips after scoreboard-clearance rather than bef
   const clear = source.indexOf('updateScoreboardSeatClearance(game.players, scoreboardNode,');
   const indicators = source.indexOf('indicators.update();',clear);
   assert.ok(clear >= 0 && indicators > clear);
-  const earlier = source.slice(0,clear);
-  assert.doesNotMatch(earlier,/updatePortraitSeatFit[\s\S]*?indicators\.update\(\);/);
+  const beforeClear = source.slice(source.indexOf('updatePortraitSeatFit(game.players'),clear);
+  assert.doesNotMatch(beforeClear,/^  indicators\.update\(\);/m,
+    'normal active-game strip layout must wait until seat clearance finishes');
 });
