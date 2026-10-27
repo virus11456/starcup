@@ -188,6 +188,52 @@ try {
   checks.push('native Options and tutorial menu overlays scoreboard HUD');
   await page.screenshot({path:path.join(out,'game-options-1440x900.png'),fullPage:false});
   await page.close();
+
+  // Reproduce the reported iPhone six-player crowding with ordinary UI
+  // clicks only. No synthetic hand/cards, no phase mutation, no production IO.
+  const phone = await context.newPage();
+  await phone.setViewportSize({width:390,height:844});
+  await phone.goto(base + '/full', { waitUntil: 'domcontentloaded' });
+  await phone.waitForFunction(() => {
+    const start = document.querySelector('.full-primary');
+    return start && !start.disabled;
+  }, null, {timeout:60000});
+  await phone.locator('input[name="players"][value="6"]').check({force:true});
+  await phone.locator('.full-primary').first().click();
+  const f = phone.frameLocator('iframe.full-frame');
+  await f.locator('#arena.choose-character .dialog .button.character').first()
+    .waitFor({state:'visible',timeout:90000});
+  await f.locator('#arena.choose-character .dialog .button.character').first().click();
+  const confirmation = f.locator('#control .control > div').filter({hasText:/確定|确定/}).first();
+  if (await confirmation.isVisible({timeout:8000}).catch(() => false))
+    await confirmation.click();
+  await f.locator('#arena:not(.choose-character) > .player:not([data-position="0"])')
+    .first().waitFor({state:'visible',timeout:50000});
+  await phone.waitForTimeout(1300); // Allow 400ms HUD seat-fit update.
+  const layout = await f.locator('#arena').evaluate(arena => {
+    const roles = [...arena.querySelectorAll(':scope > .player:not([data-position="0"])')]
+      .filter(el => getComputedStyle(el).display !== 'none')
+      .map(el => {
+        const r = el.getBoundingClientRect();
+        return {id:el.dataset.position,rect:{left:r.left,right:r.right,top:r.top,bottom:r.bottom,
+          width:r.width,height:r.height},scale:getComputedStyle(el).scale,cap:el.style.getPropertyValue('--grail-portrait-seat-scale')};
+      });
+    const intersects = [];
+    for (let i=0;i<roles.length;i++) for(let j=i+1;j<roles.length;j++) {
+      const a=roles[i].rect,b=roles[j].rect;
+      const w = Math.min(a.right,b.right)-Math.max(a.left,b.left);
+      const h = Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
+      if (w>5 && h>5) intersects.push({pair:[roles[i].id,roles[j].id],w,h});
+    }
+    return {roles,intersects};
+  });
+  if (layout.roles.length !== 5 || layout.roles.some(role => !role.cap))
+    throw new Error('Six-player iPhone layout not reconciled: '+JSON.stringify(layout));
+  if (layout.intersects.length)
+    throw new Error('Six-player iPhone roles overlap: '+JSON.stringify(layout));
+  checks.push('natural six-player iPhone match: five opponent portraits separated with adaptive zoom');
+  await phone.screenshot({path:path.join(out,'game-6-players-iphone-390x844.png'),fullPage:false});
+  await phone.close();
   await context.close();
   console.log('Browser visual QA PASS: ' + checks.length + ' checks');
   for (const check of checks) console.log('PASS ' + check);
