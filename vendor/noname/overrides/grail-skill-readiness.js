@@ -1,19 +1,19 @@
 /* GPL-3.0: informational readiness only. Trigger timing, cost, skill/cancel
  * buttons, card filters, target legality and game effects remain native. */
 const followUps = Object.freeze({
-  fengNuZhuiJi: { type: 'element', value: 'feng', label: '風系攻擊牌', short: '缺風攻' },
-  xiuLuoLianZhan: { type: 'element', value: 'huo', label: '火系攻擊牌', short: '缺火攻' },
-  jiZhiJianYi: { type: 'fate', value: 'ji', label: '技類攻擊牌', short: '缺技攻' },
-  erChongJianYing: { type: 'same', label: '同系攻擊牌', short: '缺同系' },
-  xuRongZhangWo: { type: 'cardName', value: 'moDan', label: '魔彈牌', short: '缺魔彈' },
-  jiDuZhuiFang: { type: 'attackTarget', label: '符合目標條件的攻擊', short: '缺目標' },
-  jianYing: { type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
-  shenShengZhuiJi: { type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
-  shun: { type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
-  liRuQuanYong: { type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
-  yiJiWuNian: { type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
-  faLiChaoXi: { type: 'spell', label: '法術牌', short: '暫無法術' },
-  fuMoDaJi: { type: 'spell', label: '法術牌', short: '暫無法術' },
+  fengNuZhuiJi: { name: '風怒追擊', type: 'element', value: 'feng', label: '風系攻擊牌', short: '缺風攻' },
+  xiuLuoLianZhan: { name: '修羅連斬', type: 'element', value: 'huo', label: '火系攻擊牌', short: '缺火攻' },
+  jiZhiJianYi: { name: '技之劍意', type: 'fate', value: 'ji', label: '技類攻擊牌', short: '缺技攻' },
+  erChongJianYing: { name: '二重劍影', type: 'same', label: '同系攻擊牌', short: '缺同系' },
+  xuRongZhangWo: { name: '虛榮掌握', type: 'cardName', value: 'moDan', label: '魔彈牌', short: '缺魔彈' },
+  jiDuZhuiFang: { name: '嫉妒追放', type: 'attackTarget', label: '符合目標條件的攻擊', short: '缺目標' },
+  jianYing: { name: '劍影', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
+  shenShengZhuiJi: { name: '神聖追擊', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
+  shun: { name: '瞬・影・殺', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
+  liRuQuanYong: { name: '戾如泉湧', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
+  yiJiWuNian: { name: '一擊無念', type: 'attack', label: '攻擊牌', short: '暫無攻牌' },
+  faLiChaoXi: { name: '法力潮汐', type: 'spell', label: '法術牌', short: '暫無法術' },
+  fuMoDaJi: { name: '附魔打擊', type: 'spell', label: '法術牌', short: '暫無法術' },
 });
 
 function isKnown(value) {
@@ -52,6 +52,7 @@ export function getOptionalSkillReadiness(id, player, get, { triggerCard, player
       typeof player.countCards === 'function') {
     const myCount = player.countCards('h');
     const legalOpponent = players.some(target => target && target !== player &&
+      typeof player.side === 'boolean' && typeof target.side === 'boolean' &&
       target.side !== player.side && typeof target.countCards === 'function' &&
       target.countCards('h') > myCount);
     if (!legalOpponent) {
@@ -62,7 +63,7 @@ export function getOptionalSkillReadiness(id, player, get, { triggerCard, player
   if (!reason) return null;
   // The original trigger may legally grant the action even if the follow-up
   // cannot use a card right now; transformations or later state may change.
-  return { id, short, message: `${id}：${reason}；依原規則仍可發動，後續能否出牌由引擎判定。` };
+  return { id, short, message: `${spec.name}：${reason}；依原規則仍可發動，後續能否出牌由引擎判定。` };
 }
 export function optionalSkillReadinessNotes(ids, player, get, context) {
   return [...new Set(ids || [])].map(id => getOptionalSkillReadiness(id, player, get, context))
