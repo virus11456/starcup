@@ -3,6 +3,10 @@
 }
 #grail-hud { z-index: 20; }
 #grail-hud #grail-help { pointer-events: auto; }
+/* The native settings/tutorial dialog (including 新手嚮導) must be above
+   the fixed score and help HUD while it is open. Its closed .hidden state
+   stays at the engine's original stacking order. */
+#window > .menu-container:not(.hidden) { z-index: 70 !important; }
 #grail-backdrop { z-index: 0; }
 .card-motion-layer { position: fixed !important; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
 .card-motion-layer canvas { position: absolute; inset: 0; }
@@ -707,10 +711,10 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   }
 }
 
-/* 2026-10-27: prevent the native floating round menu from covering character
-   selection/search. Preserve every original filter and role click handler. */
-#window #arena.choose-character > #roundmenu,
-body:has(#arena.choose-character) #roundmenu {
+/* The original floating hamburger duplicates the permanently visible top
+   「選項」 toolbar button, which opens the same native menu. Remove only its
+   visual/hit surface; keep the real settings/tutorial menu and handlers. */
+#window #arena > #roundmenu {
   display: none !important;
 }
 /* The native character filter category controls are DIVs with absolute
