@@ -32,3 +32,14 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify rules, engine, Cloudflare runtime, build and HTTP tests
         run: npm run verify:local
+      - name: Install temporary browser controller
+        run: npm install --prefix /tmp/starcup-visual-qa --no-audit --no-fund --ignore-scripts playwright-core@1.56.1
+      - name: Verify real Chromium viewport render and game frame
+        run: node scripts/check-browser-layout.mjs
+      - name: Upload browser QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starcup-visual-qa
+          path: outputs/visual-qa/*.png
+          if-no-files-found: ignore
