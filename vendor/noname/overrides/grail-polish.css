@@ -193,7 +193,9 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
   border-radius: inherit !important;
   background: transparent !important;
   box-shadow: inset 0 0 0 1px #6c3e0d, inset 0 0 12px #ffc65778 !important;
-  opacity: 1 !important;
+  /* This must stay non-important: important opacity prevented the keyframes
+     from actually breathing, even though the animation was running. */
+  opacity: .58;
   visibility: visible !important;
   transform: none !important;
   z-index: 9 !important;
@@ -208,17 +210,11 @@ body { background: radial-gradient(ellipse at 50% 35%, #233d42, #101f2a 65%, #08
   #window #arena #handcards1 .handcards > .card[data-grail-own-special="true"] { transition: none !important; }
 }
 
-/* Always recognizable even before a card is selected: the existing topmost
-   pointer-transparent gold ring breathes softly without moving the card. */
+/* Animate only compositable opacity, not box-shadow paint on every frame.
+   The permanent base border remains gold even at the dimmest moment. */
 @keyframes grail-special-gold-breathe {
-  0%, 100% {
-    opacity: .88;
-    box-shadow: inset 0 0 0 1px #6c3e0d, inset 0 0 8px #ffc65788, 0 0 4px 1px #dca73485;
-  }
-  50% {
-    opacity: 1;
-    box-shadow: inset 0 0 0 2px #fff1bd, inset 0 0 15px #ffd660bb, 0 0 15px 4px #ffd85ebf;
-  }
+  0%, 100% { opacity: .58; }
+  50% { opacity: 1; }
 }
 #window #arena #handcards1 .handcards > .card[data-grail-own-special="true"]::after {
   animation: grail-special-gold-breathe 2.6s ease-in-out infinite !important;
