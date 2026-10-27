@@ -53,10 +53,17 @@ async function verifyRoute(context, base, route, viewport) {
     if (state.headerRight > width + 3 || state.headerLeft < -3)
       throw new Error(route + ' header outside viewport: ' + JSON.stringify(state));
   }
-  if (state.htmlScrollWidth > width + 3 || state.bodyScrollWidth > width + 3)
-    throw new Error(route + ' horizontal overflow at ' + width + ': ' + JSON.stringify(state));
   const slug = route === '/' ? 'home' : route.slice(1);
   await page.screenshot({ path: path.join(out, slug + '-' + width + 'x' + height + '.png'), fullPage: false });
+  if (state.htmlScrollWidth > width + 3 || state.bodyScrollWidth > width + 3) {
+    const offenders = await page.evaluate(() => [...document.querySelectorAll('body *')]
+      .map(node => ({node, rect: node.getBoundingClientRect()}))
+      .filter(entry => entry.rect.right > innerWidth + 3 && entry.rect.width > 0)
+      .sort((a,b) => b.rect.right - a.rect.right)
+      .slice(0, 12)
+      .map(({node,rect}) => ({tag:node.tagName,cls:typeof node.className === 'string' ? node.className.slice(0,90) : '',text:node.textContent?.trim().slice(0,38),left:Math.round(rect.left),right:Math.round(rect.right),width:Math.round(rect.width)})));
+    throw new Error(route + ' horizontal overflow at ' + width + ': ' + JSON.stringify({state,offenders}));
+  }
   checks.push(route + ' ' + width + 'x' + height + ': shared dark viewport / no overflow');
   await page.close();
 }
