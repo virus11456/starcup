@@ -11,7 +11,7 @@ import { createBattleInspection } from "./grail-inspection.js";
 import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
-import { optionalSkillReadinessNotes } from "./grail-skill-readiness.js";
+import { updateOptionalSkillChoiceHints } from "./grail-skill-readiness.js";
 import { createHandVisibilityRecovery } from "./grail-hand-visibility.js";
 import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints } from './grail-action-hints.js';
@@ -145,9 +145,10 @@ function update() {
     ...(ui.skills3?.childNodes || []),
   ].filter(x => x.nodeType === 1 && !x.classList.contains("disabled"));
   const available = availableNodes.map(x => x.textContent).filter(Boolean);
-  const readinessNotes = optionalSkillReadinessNotes(
-    availableNodes.map(x => x.link).filter(id => typeof id === 'string'),
-    me, get);
+  const readinessNotes = updateOptionalSkillChoiceHints(ui, lib, me, get, {
+    players: game.players || [],
+    triggerCard: _status.event?.getTrigger?.()?.card,
+  });
   const current =
     game.phaseNumber +
     "|" +
