@@ -114,9 +114,15 @@ export function placeIndicatorStrip(rect, viewport, size, occupied = [], blocker
 // the ACTUAL painted rectangle. Only move the read-only status strip, never a
 // native player, skill target, hand card or click region.
 export function correctPaintedIndicatorRect(rect, viewport, blockers = [], gap = 7) {
-  const finite = r => r && [r.left,r.right,r.top,r.bottom,r.width,r.height].every(Number.isFinite);
-  if(!finite(rect) || !viewport?.width || !viewport?.height) return null;
-  const others = blockers.filter(finite);
+  const normalize = r => {
+    if(!r || ![r.left,r.top,r.width,r.height].every(Number.isFinite)) return null;
+    return {left:r.left,top:r.top,width:r.width,height:r.height,
+      right:Number.isFinite(r.right)?r.right:r.left+r.width,
+      bottom:Number.isFinite(r.bottom)?r.bottom:r.top+r.height};
+  };
+  rect = normalize(rect);
+  if(!rect || !viewport?.width || !viewport?.height) return null;
+  const others = blockers.map(normalize).filter(Boolean);
   const collides = (r,b) =>
     r.left < b.right + 2 && r.right > b.left - 2 &&
     r.top < b.bottom + 2 && r.bottom > b.top - 2;
