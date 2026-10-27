@@ -285,7 +285,7 @@ try {
         body:new URLSearchParams({password,next:'/'}),
       });
       const raw=response.headers.get('set-cookie')||'';
-      const token=raw.match(/(?:^|,\\s*)grail_access=([^;]+)/)?.[1];
+      const token=raw.match(/grail_access=([^;]+)/)?.[1];
       if(response.status!==303||!token)
         throw new Error('Local WebKit QA could not obtain signed session: '+response.status);
       await mobileContext.addCookies([{
