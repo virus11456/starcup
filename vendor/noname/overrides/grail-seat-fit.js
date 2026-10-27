@@ -31,16 +31,17 @@ export function fitPortraitSeatScale(seats, {
     for (let j = i + 1; j < valid.length; j++) {
       const a = valid[i], b = valid[j];
       const dx = Math.abs(a.x - b.x);
-      // Seats in separate upper/lower bands must not shrink one another.
-      // Potential y-overlap at the requested zoom is the only reason to
-      // consider their horizontal spacing.
       const dy = Math.abs(a.y - b.y);
-      const halfHeights = (a.height + b.height) * desired / 2;
-      if (dy >= halfHeights * 0.78) continue;
       const halfWidths = (a.width + b.width) / 2;
-      if (dx > 0 && halfWidths > 0) {
-        fitted = Math.min(fitted, (dx - gap) / halfWidths);
-      }
+      const halfHeights = (a.height + b.height) / 2;
+      // The two original seat rectangles may be separated by EITHER axis.
+      // Prefer shrinking just enough to provide a gap on the less cramped
+      // axis, not arbitrarily shrinking different upper/lower seat bands.
+      if (dx >= halfWidths * desired + gap ||
+          dy >= halfHeights * desired + gap) continue;
+      const gapX = (dx - gap) / halfWidths;
+      const gapY = (dy - gap) / halfHeights;
+      fitted = Math.min(fitted, Math.max(gapX, gapY));
     }
   }
   return Math.round(clamp(fitted, minimum, desired) * 1000) / 1000;
@@ -55,7 +56,6 @@ export function updatePortraitSeatFit(players, viewport, {
   const visible = (players || []).filter(player =>
     player?.style && player?.dataset &&
     String(player.dataset.position) !== '0' &&
-    !player.classList?.contains?.('dead') &&
     !player.classList?.contains?.('hidden'));
   if (!portrait) {
     for (const player of visible) player.style.removeProperty('--grail-portrait-seat-scale');
