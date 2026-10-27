@@ -11,6 +11,7 @@ import { createBattleInspection } from "./grail-inspection.js";
 import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
+import { createHandVisibilityRecovery } from "./grail-hand-visibility.js";
 import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints, positionActionHint } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
@@ -47,6 +48,7 @@ const quickDetail = createQuickDetailView({
 });
 const indicators = createPlayerIndicators(hud, { lib, game, get, ui });
 const handSkin = createHandSkin({ lib, get });
+const handVisibility = createHandVisibilityRecovery({ game, ui });
 const targetPreview = createTargetPreview({
   hud, ui, game, get, lib, event: () => _status.event,
   isOver: () => _status.over,
@@ -83,6 +85,9 @@ function update() {
   updatePlayerZoomOrigins(game.players, window.innerWidth);
   indicators.update();
   handSkin.update(game.me);
+  // Noname occasionally leaves a hand node transparent after a draw/choice.
+  // Re-run its own layout only after the transient draw window has passed.
+  handVisibility.update();
   targetPreview.update();
   // Preserve the native deck button and click handler; CSS-only finish.
   ui.cardPileButton?.classList?.add('grail-top-pile-tool');
