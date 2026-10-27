@@ -232,6 +232,35 @@ try {
   if (layout.intersects.length)
     throw new Error('Six-player iPhone roles overlap: '+JSON.stringify(layout));
   checks.push('natural six-player iPhone match: five opponent portraits separated with adaptive zoom');
+  const mobileStats = f.locator('#grail-scoreboard');
+  const detailToggle = f.locator('#grail-scoreboard .grail-score-toggle');
+  const before = await detailToggle.evaluate(button => {
+    const rect=button.getBoundingClientRect();
+    const board=button.closest('#grail-scoreboard');
+    const visible=(kind)=>getComputedStyle(board.querySelector('[data-kind="'+kind+'"]')).display!=='none';
+    return {display:getComputedStyle(button).display,w:rect.width,h:rect.height,
+      expanded:button.getAttribute('aria-expanded'),
+      gems:visible('gems'),morale:visible('morale')};
+  });
+  if(before.display==='none'||before.w<43||before.h<43||before.expanded!=='false'||
+     before.gems||!before.morale)
+    throw new Error('Phone quick stats must be compact, readable and 44px touchable: '+JSON.stringify(before));
+  await detailToggle.click();
+  const opened=await mobileStats.evaluate(board=>({
+    expanded:board.dataset.expanded,
+    gems:getComputedStyle(board.querySelector('[data-kind="gems"]')).display,
+    crystals:getComputedStyle(board.querySelector('[data-kind="crystals"]')).display,
+  }));
+  if(opened.expanded!=='true'||opened.gems==='none'||opened.crystals==='none')
+    throw new Error('Full team statistics did not open: '+JSON.stringify(opened));
+  await phone.screenshot({path:path.join(out,'game-6-players-full-score-390x844.png'),fullPage:false});
+  await detailToggle.click();
+  if(await detailToggle.getAttribute('aria-expanded')!=='false')
+    throw new Error('Compact team statistics could not be restored');
+  const shortHistory=f.locator('#grail-history-toggle');
+  if(!(await shortHistory.getAttribute('data-mobile-label'))?.startsWith('紀錄'))
+    throw new Error('Battle history lacks compact mobile label');
+  checks.push('390px phone scoreboard: 44px expand button, full live details, compact log, collapsed return');
   await phone.screenshot({path:path.join(out,'game-6-players-iphone-390x844.png'),fullPage:false});
   await phone.close();
   await context.close();
