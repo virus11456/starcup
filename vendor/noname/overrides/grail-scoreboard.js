@@ -29,7 +29,25 @@ export function createScoreboard(parent) {
   const header = node('header', 'grail-score-heading');
   const round = node('span', 'grail-score-round');
   header.append(node('span', '', '雙方戰況'), round);
+  // Mobile progressive disclosure: keep morale/star cups visible, let players
+  // open the same live score nodes for gems/crystals. No game data is hidden
+  // from the engine and no match actions are replaced.
+  const toggle = node('button', 'grail-score-toggle', '展開');
+  toggle.type = 'button';
+  toggle.setAttribute('aria-label', '展開完整雙方戰況');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', 'grail-score-teams');
+  board.dataset.expanded = 'false';
+  header.append(toggle);
+  toggle.addEventListener('click', () => {
+    const expanded = board.dataset.expanded !== 'true';
+    board.dataset.expanded = String(expanded);
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.setAttribute('aria-label', expanded ? '收合雙方戰況' : '展開完整雙方戰況');
+    toggle.textContent = expanded ? '收合' : '展開';
+  });
   const grid = node('div', 'grail-score-teams');
+  grid.id = 'grail-score-teams';
   const labels = { morale: '士氣', grails: '星杯', gems: '寶石', crystals: '水晶' };
   const panels = ['red', 'blue'].map(id => {
     const panel = node('article', 'grail-score-team');
