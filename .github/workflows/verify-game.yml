@@ -36,7 +36,9 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
       - name: Install temporary browser controller
         run: npm install --prefix /tmp/starcup-visual-qa --no-audit --no-fund --ignore-scripts playwright-core@1.56.1
-      - name: Verify real Chromium viewport render and game frame
+      - name: Install real WebKit engine for Safari-compatible mobile acceptance
+        run: node /tmp/starcup-visual-qa/node_modules/playwright-core/cli.js install --with-deps webkit
+      - name: Verify real Chromium and WebKit viewport render and game frame
         run: node scripts/check-browser-layout.mjs
       - name: Upload browser QA evidence
         if: always()

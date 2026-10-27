@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators, visibleIndicatorObstacle, publicIndicatorUiObstacles } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
@@ -365,4 +366,50 @@ test('readable hand counts do not cover action hint when other positions are ava
     a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4 &&
     a.top + a.height + 4 > b.top;
   assert.equal(overlaps(candidate, hint), false);
+});
+
+test('WebKit-painted status chip is moved below the native role without altering the role', async () => {
+  const {correctPaintedIndicatorRect} = await import('../vendor/noname/overrides/grail-player-indicators.js');
+  const player = {left:152,top:159,width:84,height:109};
+  const chip = {left:157,top:243,width:73,height:28};
+  const result = correctPaintedIndicatorRect(chip,{width:375,height:610},[player],7);
+  assert.ok(result,'a safe status lane must exist below the center role');
+  assert.ok(result.top >= 159 + 109 + 7, 'status chip stays below character artwork');
+  assert.equal(result.left,157,'avoid unnecessary horizontal drifting');
+  assert.deepEqual(player,{left:152,top:159,width:84,height:109},
+    'presentation-only placement must not move native game player');
+});
+test('painted status chip keeps its place when already outside every player', async () => {
+  const {correctPaintedIndicatorRect} = await import('../vendor/noname/overrides/grail-player-indicators.js');
+  const chip = {left:200,top:300,width:70,height:27};
+  const result = correctPaintedIndicatorRect(chip,{width:375,height:610},[
+    {left:152,top:159,width:84,height:109},
+  ]);
+  assert.equal(result.left,chip.left);
+  assert.equal(result.top,chip.top);
+});
+test('WebKit compact chips cannot float outside the screen or cover a second seat', async () => {
+  const {correctPaintedIndicatorRect} = await import('../vendor/noname/overrides/grail-player-indicators.js');
+  const blocker = [{left:145,top:240,width:90,height:108},
+    {left:245,top:280,width:100,height:108},
+    {left:0,top:54,width:375,height:74}];
+  const moved=correctPaintedIndicatorRect({left:150,top:268,width:74,height:28},
+    {width:375,height:610},blocker);
+  assert.ok(moved);
+  assert.ok(moved.left >= 4 && moved.right <= 371);
+  assert.ok(moved.top >= 4 && moved.bottom <= 606);
+  for(const b of blocker) {
+    const w=Math.min(moved.right,b.left+b.width)-Math.max(moved.left,b.left);
+    const h=Math.min(moved.bottom,b.top+b.height)-Math.max(moved.top,b.top);
+    assert.ok(w<=2 || h<=2,'must not obscure scoreboard or either native player');
+  }
+});
+test('real HUD places indicator chips after scoreboard-clearance rather than before', async () => {
+  const source = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
+  const clear = source.indexOf('updateScoreboardSeatClearance(game.players, scoreboardNode,');
+  const indicators = source.indexOf('indicators.update();',clear);
+  assert.ok(clear >= 0 && indicators > clear);
+  const beforeClear = source.slice(source.indexOf('updatePortraitSeatFit(game.players'),clear);
+  assert.doesNotMatch(beforeClear,/^  indicators\.update\(\);/m,
+    'normal active-game strip layout must wait until seat clearance finishes');
 });
