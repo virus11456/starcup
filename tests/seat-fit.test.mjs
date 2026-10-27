@@ -39,6 +39,14 @@ test('different upper/lower seat bands do not trigger horizontal shrink', () => 
   assert.equal(fitPortraitSeatScale(group), 1.38);
 });
 
+test('staggered seats use a vertical gap rather than shrinking unnecessarily on x-axis', () => {
+  const seatA = { x:60, y:150, width:64, height:106 };
+  const seatB = { x:100, y:255, width:64, height:106 };
+  const fitted = fitPortraitSeatScale([seatA,seatB]);
+  assert.ok(fitted > 0.9 && fitted < 1.1, String(fitted));
+  assert.ok(255-150 - 106*fitted >= 7.95);
+});
+
 test('original left/right zoom origins recover the unscaled seat center', () => {
   assert.deepEqual(physicalSeatGeometry({
     left: 8, right: 96, top: 10, bottom: 164,
