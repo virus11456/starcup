@@ -272,12 +272,40 @@ try {
       viewport:{width:375,height:667},deviceScaleFactor:3,
       isMobile:true,hasTouch:true,locale:'zh-TW',reducedMotion:'reduce',
     });
-    const authPage=await mobileContext.newPage();
-    await authPage.goto(base+'/access?next=%2F',{waitUntil:'domcontentloaded'});
-    await authPage.locator('#site-password').fill(password);
-    await authPage.locator('button[type="submit"]').tap({force:true});
-    await authPage.waitForURL(u=>u.pathname==='/',{timeout:30000});
-    await authPage.close();
+    if(engineLabel==='webkit') {
+      // The local workerd preview runs NODE_ENV=production and issues a
+      // Secure auth cookie over HTTP. Chromium allows Secure on loopback;
+      // WebKit correctly rejects that test-only transport. Obtain a real
+      // signed access cookie from the LOCAL app, then install it as
+      // non-Secure solely in the isolated browser test context. Never alter
+      // production cookie flags or generate authentication tokens ourselves.
+      const response=await fetch(base+'/api/access',{
+        method:'POST',redirect:'manual',
+        headers:{'Content-Type':'application/x-www-form-urlencoded','Origin':base},
+        body:new URLSearchParams({password,next:'/'}),
+      });
+      const raw=response.headers.get('set-cookie')||'';
+      const token=raw.match(/(?:^|,\\s*)grail_access=([^;]+)/)?.[1];
+      if(response.status!==303||!token)
+        throw new Error('Local WebKit QA could not obtain signed session: '+response.status);
+      await mobileContext.addCookies([{
+        name:'grail_access',value:decodeURIComponent(token),
+        domain:new URL(base).hostname,path:'/',httpOnly:true,
+        secure:false,sameSite:'Lax',
+      }]);
+      const check=await mobileContext.newPage();
+      await check.goto(base+'/',{waitUntil:'domcontentloaded'});
+      if(!await check.locator('.site-header').isVisible())
+        throw new Error('WebKit preview signed session cookie not accepted');
+      await check.close();
+    } else {
+      const authPage=await mobileContext.newPage();
+      await authPage.goto(base+'/access?next=%2F',{waitUntil:'domcontentloaded'});
+      await authPage.locator('#site-password').fill(password);
+      await authPage.locator('button[type="submit"]').tap({force:true});
+      await authPage.waitForURL(u=>u.pathname==='/',{timeout:30000});
+      await authPage.close();
+    }
   
     for(const scenario of scenarios) {
       const p=await mobileContext.newPage();
