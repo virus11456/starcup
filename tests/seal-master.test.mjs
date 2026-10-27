@@ -48,9 +48,14 @@ test('all five seal variants use native card/target restrictions and place physi
     assert.equal(skill.filterCard(card),true,id+' native unique card');
     assert.equal(skill.filterCard({hasDuYou:()=>false}),false,id+' nonexclusive cards not accepted');
     assert.equal(skill.filterTarget({}, player, enemy),true,id+' valid enemy');
-    assert.equal(skill.filterTarget({}, player, {side:true}),false,id+' never target ally');
-    assert.equal(skill.useCard,true,id+' retained native seal-card metadata');
-    assert.equal(skill.prepare,undefined,id+' cannot pass unsupported string to useSkill');
+    assert.equal(skill.filterTarget({}, player, {side:true,hasJiChuXiaoGuo:()=>false}),false,id+' never target ally');
+    if(id==='leiZhiFengYin') {
+      assert.equal(skill.prepare,'useCard',id+' pinned skill metadata unchanged');
+      assert.equal(skill.discard,false,id+' pinned card-movement setting unchanged');
+    } else {
+      assert.equal(skill.useCard,true,id+' pinned skill metadata unchanged');
+      assert.equal(skill.prepare,undefined,id+' has no prepare hook');
+    }
     skill.content();
     assert.equal(sent.length,1,id+' should place exactly one seal');
     assert.equal(sent[0][0],id+'_xiaoGuo',id+' must preserve exact persistent seal effect');
@@ -64,18 +69,21 @@ test('lightning seal preserves the original special-card ownership flow', () => 
 });
 test('invalid upstream prepare useCard would throw, but generated lightning seal cannot throw', async () => {
   const pinnedNativeContent = await readFile(new URL('../public/engine/noname/library/element/content.js',import.meta.url),'utf8');
-  assert.match(pinnedNativeContent,/default:\s*info\.prepare\(cards,\s*player,\s*targets\)/);
-  const emulate = info => {
+  assert.match(pinnedNativeContent,/case "useCard":\s*break;\s*default:\s*info\.prepare\(cards,\s*player,\s*targets\)/);
+  const emulate = (info, recognized = false) => {
     if (info.prepare) {
       switch(info.prepare) {
         case 'give': case 'give2': case 'throw': case 'throw2': break;
+        case 'useCard': if(recognized) break;
         default: info.prepare([],{},[]);
       }
     }
   };
-  assert.throws(() => emulate({prepare:'useCard'}),TypeError,
-    'the pinned engine must reject an unrecognized string prepare');
-  for(const id of ids) assert.doesNotThrow(()=>emulate(loadSkill(id,{})),id+' must not crash on cast');
+  assert.throws(() => emulate({prepare:'useCard'},false),TypeError,
+    'original native dispatcher throws on the sealed card marker');
+  for(const id of ids)
+    assert.doesNotThrow(()=>emulate(loadSkill(id,{}),true),
+      id+' accepted by the patched dispatcher without changing its metadata');
 });
 test('all seal names and damage triggers stay in the pinned native character pack', () => {
   for(const id of ids) {
