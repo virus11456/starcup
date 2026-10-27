@@ -32,7 +32,7 @@ test('all five seal variants use native card/target restrictions and place physi
     const card = { hasDuYou: name => name === id };
     const cards = [card];
     const player = { side:true };
-    const enemy = { side:false };
+    const enemy = { side:false, hasJiChuXiaoGuo: () => false };
     const target = {
       side:false,
       hasJiChuXiaoGuo:() => false,
