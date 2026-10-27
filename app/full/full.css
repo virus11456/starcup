@@ -505,6 +505,9 @@ html:has(.full-running), body:has(.full-running) {
    screens; only content is centered, the background fills the viewport. */
 .full-shell:not(.full-running) {
   box-sizing: border-box;
+  /* Noninteractive decorative overflow must not create a horizontal page
+     scroll lane; individual tabs and card galleries scroll in their own row. */
+  overflow-x: clip;
   max-width: none;
   width: 100%;
   margin: 0;
