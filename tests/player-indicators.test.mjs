@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant } from '../vendor/noname/overrides/grail-player-indicators.js';
+import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
 const mark = (skill, name, count, options = {}) => ({
@@ -226,4 +226,70 @@ test('when no safe strip exists the native hand count is never hidden', () => {
   assert.equal(noHand, null);
   assert.deepEqual(chooseIndicatorVariant([hand], hand, () => ({left:8,top:8})).badges,
     [hand], 'a lone hand badge needs no duplicate compact variant');
+});
+
+
+test('first battle update after draft measures public badges with an unhidden HUD layer', () => {
+  const seenHiddenDuringMeasurement = [];
+  let choosing = true;
+  const mk = tag => {
+    const node = {
+      tag, dataset: {}, style: {}, children: [], hidden: false, className: '',
+      setAttribute() {},
+      append(...items) { for (const item of items) { item.parent = this; this.children.push(item); } },
+      replaceChildren() { for (const item of this.children) item.parent = null; this.children = []; },
+      remove() {
+        if (this.parent) this.parent.children = this.parent.children.filter(item => item !== this);
+        this.parent = null;
+      },
+    };
+    Object.defineProperty(node, 'offsetWidth', { get() {
+      if (node.className === 'grail-player-indicator-strip') {
+        seenHiddenDuringMeasurement.push(node.parent?.hidden);
+        return node.parent?.hidden ? 0 : 98;
+      }
+      return 40;
+    } });
+    Object.defineProperty(node, 'offsetHeight', { get() {
+      if (node.className === 'grail-player-indicator-strip') {
+        seenHiddenDuringMeasurement.push(node.parent?.hidden);
+        return node.parent?.hidden ? 0 : 35;
+      }
+      return 25;
+    } });
+    return node;
+  };
+  const doc = {
+    defaultView: { innerWidth: 390, innerHeight: 844 },
+    createElement: mk,
+    getElementById: () => null,
+  };
+  const player = {
+    name: 'shengNv', side: false, zhiLiao: 0, dataset: {},
+    node: { count: { textContent: '4/6', classList: classes() },
+      marks: { children: [] }, marks2: { children: [] } },
+    getBoundingClientRect: () => ({
+      left: 155, right: 235, top: 305, bottom: 420, width: 80, height: 115,
+    }),
+  };
+  const context = {
+    game: { me: player, players: [player] },
+    ui: { arena: { classList: { contains: () => choosing } } },
+    get: { translation: x => x },
+    lib: { translate: {}, skill: {} },
+  };
+  const parent = mk('div');
+  const controller = createPlayerIndicators(parent, context, doc);
+  const layer = parent.children[0];
+  controller.update();
+  assert.equal(layer.hidden, true, 'draft has no in-battle public badges');
+  choosing = false;
+  controller.update();
+  assert.ok(seenHiddenDuringMeasurement.length >= 2);
+  assert.ok(seenHiddenDuringMeasurement.every(hidden => hidden === false),
+    'no badge may be measured under display:none after a draft transition');
+  assert.equal(layer.hidden, false);
+  assert.equal(player.dataset.grailHandCountMirror, 'true');
+  controller.stop();
+  assert.equal(player.dataset.grailHandCountMirror, 'false');
 });

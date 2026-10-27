@@ -144,6 +144,12 @@ export function createPlayerIndicators(parent, context, doc = document) {
     update() {
       const visible = !context.ui?.arena?.classList.contains('choose-character');
       const players = visible ? inspectionPlayers(context).map(entry => entry.player) : [];
+      // The preceding draft/empty update may have hidden this entire layer.
+      // Measuring a child of display:none returns zero on Safari, which
+      // made the first battle HUD placement rely on guessed widths/heights.
+      // Re-enable it synchronously for measurement, then restore the final
+      // visibility after all safe placements have been resolved below.
+      if (players.length) layer.hidden = false;
       const active = new Set();
       const occupied = [];
       for (const player of players) {
