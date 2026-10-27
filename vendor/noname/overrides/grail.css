@@ -152,6 +152,11 @@ html, html > body { overflow: clip !important; overscroll-behavior: none; }
   padding-left: 8px;
   color: #f3d18d;
 }
+#grail-help-content .grail-skill-readiness {
+  color: #f6d4ac;
+  border-color: #da9c7a;
+  overflow-wrap: anywhere;
+}
 .grail-turn-progress {
   color: #b4c8d5;
   font-size: 12px;
