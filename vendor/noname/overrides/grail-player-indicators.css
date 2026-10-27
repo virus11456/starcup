@@ -123,3 +123,48 @@
   }
   #grail-player-indicators .grail-indicator-hand b { font-size: 17px; }
 }
+
+/* Phone scan mode: small public state tokens rather than one long stack of
+   repeated words. Counts stay visible; the full condition remains on each
+   chip's native title and in the character/indicator details. */
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-player-indicators .grail-player-indicator-strip {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 3px;
+    max-width: min(132px, 36vw);
+  }
+  #grail-player-indicators .grail-indicator {
+    min-height: 25px;
+    padding: 2px 4px;
+    gap: 2px;
+    font-size: 11px;
+    line-height: 1.15;
+  }
+  #grail-player-indicators .grail-indicator :is(.grail-indicator-icon, b) {
+    font-size: 12px;
+  }
+  #grail-player-indicators .grail-indicator:is(
+    .grail-indicator-shield, .grail-indicator-heal,
+    .grail-indicator-crystal, .grail-indicator-gem
+  ) .grail-indicator-name {
+    display: none;
+  }
+  #grail-player-indicators .grail-indicator-hand {
+    width: max-content;
+    max-width: 100px;
+    min-height: 28px;
+    padding: 3px 5px;
+    font-size: 11px;
+  }
+  #grail-player-indicators .grail-indicator-hand .grail-indicator-name {
+    display: inline;
+    font-size: 11px;
+  }
+  #grail-player-indicators .grail-indicator-hand b {
+    min-width: 35px;
+    font-size: 15px;
+  }
+}
