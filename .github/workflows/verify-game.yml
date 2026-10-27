@@ -32,6 +32,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify rules, engine, Cloudflare runtime, build and HTTP tests
         run: npm run verify:local
+      - name: Install CJK glyphs for realistic Chinese-language browser QA
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
       - name: Install temporary browser controller
         run: npm install --prefix /tmp/starcup-visual-qa --no-audit --no-fund --ignore-scripts playwright-core@1.56.1
       - name: Verify real Chromium viewport render and game frame
