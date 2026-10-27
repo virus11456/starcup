@@ -72,6 +72,17 @@ async function patch(file, before, after) {
     throw new Error(`Pinned engine patch no longer matches: ${file}`);
   await writeFile(location, text.replace(before, after));
 }
+// 雷之封印 uses an upstream `prepare: 'useCard'` string, but the pinned
+// `useSkill` switch does not recognize 'useCard' and its default branch calls
+// `info.prepare(cards, player, targets)` as a function. This throws during
+// the cast and can permanently stop the action loop. Preserve the skill's
+// printed cost/target/effect and discard:false; use the same `useCard:true`
+// metadata as the other four elemental seals instead of an invalid callback.
+await patch(
+  'character/shiZhouNian.js',
+  "        prepare: 'useCard',\\n        discard: false,\\n        content: function () {\\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
+  "        useCard: true,\\n        discard: false,\\n        content: function () {\\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
+);
 // Decorate the native character button, including native form changes. This
 // single path is shared by solo choices and multiplayer free drafting.
 const buttonFile = 'noname/ui/create/index.js';
