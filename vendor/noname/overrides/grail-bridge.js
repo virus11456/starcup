@@ -11,6 +11,7 @@ import { createBattleInspection } from "./grail-inspection.js";
 import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
+import { optionalSkillReadinessNotes } from "./grail-skill-readiness.js";
 import { createHandVisibilityRecovery } from "./grail-hand-visibility.js";
 import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints } from './grail-action-hints.js';
@@ -138,14 +139,15 @@ function update() {
   const skills = (me.getSkills?.() || []).filter(
     (id) => lib.translate[id + "_info"],
   );
-  const available = [
+  const availableNodes = [
     ...(ui.skills?.childNodes || []),
     ...(ui.skills2?.childNodes || []),
     ...(ui.skills3?.childNodes || []),
-  ]
-    .filter((x) => x.nodeType === 1 && !x.classList.contains("disabled"))
-    .map((x) => x.textContent)
-    .filter(Boolean);
+  ].filter(x => x.nodeType === 1 && !x.classList.contains("disabled"));
+  const available = availableNodes.map(x => x.textContent).filter(Boolean);
+  const readinessNotes = optionalSkillReadinessNotes(
+    availableNodes.map(x => x.link).filter(id => typeof id === 'string'),
+    me, get);
   const current =
     game.phaseNumber +
     "|" +
@@ -154,6 +156,8 @@ function update() {
     prompt +
     "|" +
     available.join() +
+    "|" +
+    readinessNotes.join() +
     "|" +
     skills.join() +
     "|" +
@@ -202,8 +206,14 @@ function update() {
   if (available.length) {
     const alert = document.createElement("p");
     alert.className = "grail-skill-alert";
-    alert.textContent = "可選技能：" + available.join("、");
+    alert.textContent = "符合發動時機的技能：" + available.join("、");
     help.append(alert);
+  }
+  if (readinessNotes.length) {
+    const note = document.createElement("p");
+    note.className = "grail-skill-alert grail-skill-readiness";
+    note.textContent = readinessNotes.join(" ");
+    help.append(note);
   }
   const details = document.createElement("details");
   details.open = skillsExpanded;
