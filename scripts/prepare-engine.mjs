@@ -72,16 +72,15 @@ async function patch(file, before, after) {
     throw new Error(`Pinned engine patch no longer matches: ${file}`);
   await writeFile(location, text.replace(before, after));
 }
-// 雷之封印 uses an upstream `prepare: 'useCard'` string, but the pinned
-// `useSkill` switch does not recognize 'useCard' and its default branch calls
-// `info.prepare(cards, player, targets)` as a function. This throws during
-// the cast and can permanently stop the action loop. Preserve the skill's
-// printed cost/target/effect and discard:false; use the same `useCard:true`
-// metadata as the other four elemental seals instead of an invalid callback.
+// The pinned Thunder Seal declares prepare:'useCard'. Upstream useSkill
+// recognizes give/give2/throw/throw2 but treats any other value as a
+// callable function; this string reaches info.prepare(...) and throws.
+// Handle the existing presentation marker as a no-op rather than changing
+// ANY original skill trigger, target, source, cost, seal storage or card data.
 await patch(
-  'character/shiZhouNian.js',
-  "        prepare: 'useCard',\n        discard: false,\n        content: function () {\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
-  "        useCard: true,\n        discard: false,\n        content: function () {\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
+  'noname/library/element/content.js',
+  'case "throw2":\n\t\t\t\t\tplayer.$throw(cards.length);\n\t\t\t\t\tbreak;\n\t\t\t\tdefault:\n\t\t\t\t\tinfo.prepare(cards, player, targets);',
+  'case "throw2":\n\t\t\t\t\tplayer.$throw(cards.length);\n\t\t\t\t\tbreak;\n\t\t\t\tcase "useCard":\n\t\t\t\t\tbreak;\n\t\t\t\tdefault:\n\t\t\t\t\tinfo.prepare(cards, player, targets);',
 );
 // Decorate the native character button, including native form changes. This
 // single path is shared by solo choices and multiplayer free drafting.
