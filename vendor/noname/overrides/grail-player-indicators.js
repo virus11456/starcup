@@ -320,10 +320,12 @@ export function createPlayerIndicators(parent, context, doc = document) {
         strip.style.top = `${candidate.position.top}px`;
         strip.dataset.placement = candidate.position.placement;
         const painted = visibleIndicatorObstacle(strip);
-        const final = correctPaintedIndicatorRect(
-          painted && {left:painted.left,right:painted.right,top:painted.top,
+        // Test/legacy DOM shells may provide offset sizes but not a painted
+        // rectangle yet. Native placement is already collision-checked there.
+        const final = painted ? correctPaintedIndicatorRect(
+          {left:painted.left,right:painted.right,top:painted.top,
             bottom:painted.bottom,width:painted.width,height:painted.height},
-          {width,height}, [rect,...blockers,...occupied]);
+          {width,height}, [rect,...blockers,...occupied]) : candidate.position;
         if(!final) {
           if(player.dataset) player.dataset.grailHandCountMirror = 'false';
           continue;
