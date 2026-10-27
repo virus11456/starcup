@@ -15,7 +15,7 @@ function isFinalOptionalTurnAction(event) {
   return pending <= 1 && extras === 0;
 }
 
-export function updateResponseCancelLabel(control, event, fallback) {
+export function updateResponseCancelLabel(control, event, fallback, recenter) {
   if (!control) return;
   // Cancelling a selected skill restores the response picker; it does not
   // accept the attack. Magic Burst's optional discard is also an explicit
@@ -27,6 +27,10 @@ export function updateResponseCancelLabel(control, event, fallback) {
     && (!event.skill || event.norestore)
     && !event.custom?.replace?.confirm;
   const endsTurn = !acceptsDamage && isFinalOptionalTurnAction(event);
+  const skipsAction = !acceptsDamage && !endsTurn && event?.action &&
+    ['gongJiOrFaShu', 'gongJi', 'faShu'].includes(event.name) &&
+    !event.forced && !event.skill && !event._backup;
+  let changed = false;
   for (const button of control.childNodes) {
     if (button.dataset) {
       const action = button.link === 'ok' ? 'confirm' : button.link === 'cancel'
@@ -35,6 +39,20 @@ export function updateResponseCancelLabel(control, event, fallback) {
       else delete button.dataset.grailAction;
     }
     if (button.link !== 'cancel') continue;
-    button.textContent = acceptsDamage ? '承受傷害' : endsTurn ? '回合結束' : fallback;
+    const label = acceptsDamage ? '承受傷害' : endsTurn ? '結束回合'
+      : skipsAction ? '略過本次行動' : fallback;
+    if (button.textContent !== label) {
+      button.textContent = label;
+      changed = true;
+    }
   }
+  if (!changed) return;
+  // Native Control.replace() measures its old 「取消」 text and fixes the
+  // parent's inline width before our label changes. Without recalculation,
+  // the longer damage label is physically clipped by overflow:hidden.
+  // Read only the existing button sizes; never rebuild nodes or handlers.
+  const width = Array.from(control.childNodes).reduce((total, button) =>
+    total + (Number(button.offsetWidth) || 0), 0);
+  if (width > 0 && control.style) control.style.width = width + 'px';
+  if (typeof recenter === 'function') recenter();
 }
