@@ -149,7 +149,7 @@ test('phone role art is larger than before, while public hand digits stay high c
   const fs = await import('node:fs/promises');
   const cards = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const badges = await fs.readFile(new URL('../vendor/noname/overrides/grail-player-indicators.css', import.meta.url), 'utf8');
-  assert.match(cards, /@media \(max-width: 600px\) and \(orientation: portrait\)[\s\S]*?scale:\s*1\.38/);
+  assert.match(cards, /@media \(max-width: 600px\) and \(orientation: portrait\)[\s\S]*?scale:\s*var\(--grail-portrait-seat-scale,\s*1\)/);
   assert.match(badges, /\.grail-indicator-hand \.grail-indicator-icon\s*\{\s*display:\s*none !important/);
   assert.match(badges, /\.grail-indicator-hand \{\s*max-width:\s*108px/);
   assert.match(badges, /\.grail-indicator-hand b\s*\{\s*font-size:\s*17px/);

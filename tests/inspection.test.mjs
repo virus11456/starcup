@@ -392,7 +392,7 @@ test('mobile public hand-count chip, gentle portrait enlargement and stable safe
   const css = await fs.readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
   assert.match(css, /\.player:not\(\[data-position="0"\]\)\s*\{\s*scale:\s*1\.22/);
-  assert.match(css, /scale:\s*1\.38/);
+  assert.match(css, /scale:\s*var\(--grail-portrait-seat-scale,\s*1\)/);
   assert.match(css, /translate:\s*0 calc\(var\(--grail-score-shift, 0px\)/);
   assert.match(css, /> \.player > \.count:not\(\.hidden\)[\s\S]*?font:\s*750 calc\(15px/);
   assert.match(css, /\.count:not\(\.hidden\)::before\s*\{\s*content:\s*'牌'/);
@@ -415,11 +415,12 @@ test('inward native portrait scale and modal toolbars remain separate in portrai
   const reader = await fs.readFile(new URL('../vendor/noname/overrides/grail-inspection.css',import.meta.url),'utf8');
   const bridge = await fs.readFile(new URL('../vendor/noname/overrides/grail-bridge.js',import.meta.url),'utf8');
   assert.match(global,/scale:\s*1\.22/);
-  assert.match(global,/scale:\s*1\.38/);
+  assert.match(global,/scale:\s*var\(--grail-portrait-seat-scale,\s*1\)/);
   assert.match(global,/transform-origin:\s*var\(--grail-role-origin, center center\)/);
   assert.match(reader,/html:has\(#grail-detail-overlay:not\(\[hidden\]\)\) #window #system/);
   assert.match(reader,/padding:\s*max\(90px, env\(safe-area-inset-top, 0px\)\)/);
   assert.match(bridge,/updatePlayerZoomOrigins\(game\.players, window\.innerWidth\)/);
+  assert.match(bridge,/updatePortraitSeatFit\(game\.players/);
 });
 
 

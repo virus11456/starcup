@@ -927,11 +927,13 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
   }
 }
 
-/* iPhone portrait: enlarged native role art balanced with a compact public badge. Do not
-   enlarge ultra-short landscape seats or duplicate game target elements. */
+/* iPhone portrait: the engine's 4/6/8-player native seat centers do not
+   spread when the artwork is enlarged. Cap zoom by actual neighboring seats,
+   otherwise six/eight characters and their public badges physically overlap.
+   Fall back to native size until the viewport measurement has completed. */
 @media (max-width: 600px) and (orientation: portrait) {
   .grail-scoreboard-ready #window #arena:not(.chess):not(.choose-character) > .player:not([data-position="0"]) {
-    scale: 1.38;
+    scale: var(--grail-portrait-seat-scale, 1);
   }
 }
 /* Rotated noname seats inherit rotation on .count. Once its public

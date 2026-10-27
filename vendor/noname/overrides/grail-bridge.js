@@ -18,6 +18,7 @@ import { updateActionHints } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
 import { updateScoreboardSeatClearance } from './grail-seat-clearance.js';
 import { updatePlayerZoomOrigins } from './grail-player-zoom.js';
+import { updatePortraitSeatFit } from './grail-seat-fit.js';
 const hud = document.createElement("div");
 hud.id = "grail-hud";
 document.body.append(hud);
@@ -75,6 +76,9 @@ function update() {
   history.attach(ui.sidebar);
   inspection.update();
   updatePlayerZoomOrigins(game.players, window.innerWidth);
+  // Keep Native Noname portraits large only where neighboring seats allow it.
+  // This changes CSS scale, never the engine's positions or target hit nodes.
+  updatePortraitSeatFit(game.players, {width: window.innerWidth, height: window.innerHeight});
   indicators.update();
   handSkin.update(game.me);
   // Noname occasionally leaves a hand node transparent after a draw/choice.
