@@ -13,3 +13,25 @@
 .note { color: #7c8995; text-align: center; font-size: 12px; letter-spacing: .1em; border-top: 1px solid #ffffff0c; margin-top: 32px; padding-top: 24px; }
 .lock { display: block; padding: 12px; margin: 12px auto 0; color: #aab5bf; min-height: 44px; }
 @media (max-width: 420px) { .card { padding: 30px 24px 24px; } }
+
+/* Website access uses the same palette as the public portal, including
+   browser gutters and password form. Security and form semantics unchanged. */
+.page {
+  background: var(--site-backdrop);
+  color: var(--site-foreground);
+}
+.card {
+  border-color: var(--site-border);
+  background: linear-gradient(140deg, var(--site-panel), var(--site-panel-deep));
+}
+.card h1 { color: var(--site-foreground); }
+.intro, .note { color: var(--site-muted); }
+.primary {
+  color: #192626;
+  background: linear-gradient(120deg, #ead6a4, #b99b63);
+  border-radius: 7px;
+}
+.form input[type="password"] {
+  color: var(--site-foreground);
+  background: var(--site-panel-deep);
+}

@@ -11,9 +11,10 @@ import { createBattleInspection } from "./grail-inspection.js";
 import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
+import { updateOptionalSkillChoiceHints } from "./grail-skill-readiness.js";
 import { createHandVisibilityRecovery } from "./grail-hand-visibility.js";
 import { addRoleLegend } from './grail-role-tags.js';
-import { updateActionHints, positionActionHint } from './grail-action-hints.js';
+import { updateActionHints } from './grail-action-hints.js';
 import { createTargetPreview } from './grail-target-preview.js';
 import { updateScoreboardSeatClearance } from './grail-seat-clearance.js';
 import { updatePlayerZoomOrigins } from './grail-player-zoom.js';
@@ -22,14 +23,18 @@ hud.id = "grail-hud";
 document.body.append(hud);
 hud.append(document.getElementById("grail-help"));
 const updateScoreboard = createScoreboard(hud);
-// The passive instruction belongs BELOW the battle, not over the scoreboard
-// or its morale counters. Reuse the already inverse-scaled, pointer-free HUD.
+// Keep all passive instructions in the compact scoreboard heading so
+// native cards, portraits and controls stay unobstructed.
 const scoreboardNode = hud.querySelector('#grail-scoreboard');
 const phaseHint = document.createElement('span');
 phaseHint.id = 'grail-phase-hint';
 phaseHint.setAttribute('role', 'status');
 phaseHint.hidden = true;
-hud.append(phaseHint);
+const scoreboardHeading = scoreboardNode?.querySelector('.grail-score-heading');
+// Keep passive instructions inside the public score header instead of laying
+// a wide banner across cards, characters and the native choice controls.
+if (scoreboardHeading) scoreboardHeading.insertBefore(phaseHint, scoreboardHeading.lastElementChild);
+else hud.append(phaseHint);
 const history = createBattleHistory(hud, () => game.phaseNumber || 0, {
   journal: createHistorySession(new URLSearchParams(location.search).get('online')),
 });
@@ -64,22 +69,9 @@ function update() {
   document.documentElement.classList.toggle('grail-match-ended', Boolean(_status.over));
   addRoleLegend(ui.arena);
   updateActionHints(ui.arena, phaseHint, !!scoreboardNode && !scoreboardNode.hidden && !_status.over);
-  const hintHasSafeSlot = positionActionHint(phaseHint, {
-    width: window.innerWidth, height: window.innerHeight,
-    scoreboard: scoreboardNode?.getBoundingClientRect?.(),
-    players: (game.players || []).map(p => p.getBoundingClientRect?.()).filter(Boolean),
-    controls: ui.control?.getBoundingClientRect?.() || ui.arena?.querySelector?.('#control')?.getBoundingClientRect?.(),
-    hand: ui.me?.getBoundingClientRect?.(),
-    extras: [ui.roundmenu?.getBoundingClientRect?.(),
-      document.querySelector('.grail-motion-piles')?.getBoundingClientRect?.()].filter(Boolean),
-  });
-  if (!hintHasSafeSlot && !phaseHint.hidden) {
-    // Never cover a legal target or confirm button. On pathological screens
-    // fall back to the engine's native prompt instead of silently losing it.
-    phaseHint.hidden = true;
-    ui.arena?.querySelectorAll('.dialog.grail-inline-action-hint')?.forEach(
-      dialog => dialog.classList.remove('grail-inline-action-hint'));
-  }
+  // The native active choice UI remains authoritative. Only mirror passive
+  // status in the compact scoreboard; no free-floating text may cover a seat.
+  if (!phaseHint.hidden) phaseHint.title = phaseHint.textContent || '';
   history.attach(ui.sidebar);
   inspection.update();
   updatePlayerZoomOrigins(game.players, window.innerWidth);
@@ -147,14 +139,16 @@ function update() {
   const skills = (me.getSkills?.() || []).filter(
     (id) => lib.translate[id + "_info"],
   );
-  const available = [
+  const availableNodes = [
     ...(ui.skills?.childNodes || []),
     ...(ui.skills2?.childNodes || []),
     ...(ui.skills3?.childNodes || []),
-  ]
-    .filter((x) => x.nodeType === 1 && !x.classList.contains("disabled"))
-    .map((x) => x.textContent)
-    .filter(Boolean);
+  ].filter(x => x.nodeType === 1 && !x.classList.contains("disabled"));
+  const available = availableNodes.map(x => x.textContent).filter(Boolean);
+  const readinessNotes = updateOptionalSkillChoiceHints(ui, lib, me, get, {
+    players: game.players || [],
+    triggerCard: _status.event?.getTrigger?.()?.card,
+  });
   const current =
     game.phaseNumber +
     "|" +
@@ -163,6 +157,8 @@ function update() {
     prompt +
     "|" +
     available.join() +
+    "|" +
+    readinessNotes.join() +
     "|" +
     skills.join() +
     "|" +
@@ -211,8 +207,14 @@ function update() {
   if (available.length) {
     const alert = document.createElement("p");
     alert.className = "grail-skill-alert";
-    alert.textContent = "可選技能：" + available.join("、");
+    alert.textContent = "符合發動時機的技能：" + available.join("、");
     help.append(alert);
+  }
+  if (readinessNotes.length) {
+    const note = document.createElement("p");
+    note.className = "grail-skill-alert grail-skill-readiness";
+    note.textContent = readinessNotes.join(" ");
+    help.append(note);
   }
   const details = document.createElement("details");
   details.open = skillsExpanded;

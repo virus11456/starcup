@@ -152,3 +152,15 @@
 }
 .portal-home .portal-install-link:focus-visible { outline: 3px solid #f0dbaf; outline-offset: 2px; }
 @media (display-mode: standalone) { .portal-home .portal-install-link { display: none; } }
+
+/* Shared page backdrop; content stays deliberately centered while the color
+   extends through both outer gutters at any browser zoom level. */
+.portal-mode,
+.knowledge-shell {
+  background: var(--site-backdrop);
+  color: var(--site-foreground);
+}
+.portal-mode .site-header,
+.knowledge-shell .site-header {
+  border-color: var(--site-border);
+}

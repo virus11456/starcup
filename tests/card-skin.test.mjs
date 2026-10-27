@@ -177,26 +177,26 @@ test('Magic Burst only marks the optional damage-or-discard choice as taking dam
   assert.equal(cancel.dataset.grailAction, 'cancel'); assert.equal(cancel.textContent, '取消');
 });
 
-test('the last optional character action offers 回合結束 without changing the engine cancel link', () => {
+test('the last optional character action offers 結束回合 without changing the engine cancel link', () => {
   const control = controls(), cancel = control.childNodes[1];
   const player = { storage: { gongJiOrFaShu: 1, faShu: 0, gongJi: 0, extraXingDong: [] } };
   const event = { name: 'gongJiOrFaShu', action: true, player };
   updateResponseCancelLabel(control, event, '取消');
-  assert.equal(cancel.textContent, '回合結束');
+  assert.equal(cancel.textContent, '結束回合');
   assert.equal(cancel.dataset.grailAction, 'end-turn');
   assert.equal(cancel.link, 'cancel', 'only the label changes; the native action is untouched');
   assert.ok(control.childNodes.every(button => button.onclick === control.callback));
   for (const name of ['gongJi', 'faShu']) {
     player.storage = { gongJiOrFaShu: 0, faShu: 0, gongJi: 0, extraXingDong: [], [name]: 1 };
     updateResponseCancelLabel(control, { ...event, name }, '取消');
-    assert.equal(cancel.textContent, '回合結束');
+    assert.equal(cancel.textContent, '結束回合');
   }
   player.storage = { gongJiOrFaShu: 0, faShu: 0, gongJi: 0, extraXingDong: [] };
   updateResponseCancelLabel(control, { ...event, name: 'faShu' }, '取消');
-  assert.equal(cancel.textContent, '回合結束', 'the last already-dequeued extra action can also finish the turn');
+  assert.equal(cancel.textContent, '結束回合', 'the last already-dequeued extra action can also finish the turn');
 });
 
-test('remaining actions and nested skill selection retain their original cancel or back meaning', () => {
+test('remaining actions show skip while nested skill selection retains cancel or back meaning', () => {
   const control = controls(), cancel = control.childNodes[1];
   const player = { storage: { gongJiOrFaShu: 1, faShu: 1, gongJi: 0, extraXingDong: [] } };
   const event = { name: 'gongJiOrFaShu', action: true, player };
@@ -206,7 +206,7 @@ test('remaining actions and nested skill selection retain their original cancel 
   ]) {
     player.storage = storage;
     updateResponseCancelLabel(control, event, '取消');
-    assert.equal(cancel.textContent, '取消');
+    assert.equal(cancel.textContent, '略過本次行動');
     assert.equal(cancel.dataset.grailAction, 'cancel');
   }
   player.storage = { gongJiOrFaShu: 1, faShu: 0, gongJi: 0, extraXingDong: [] };

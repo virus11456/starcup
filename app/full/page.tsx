@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Compendium from "../compendium";
 import SiteBrand from '../site-brand';
+import SiteHeader from '../site-header';
 import { matchesCatalog } from "@/lib/catalog-search";
 import "./full.css";
 type Skill = {
@@ -77,20 +77,15 @@ export default function FullGame() {
   }
   return (
     <main className={"full-shell" + (running ? " full-running" : "")}>
-      <header className="full-header">
-        <SiteBrand onClick={(event) => {
-          if (running && !confirm("離開會結束目前的本機對局，確定返回大廳？")) event.preventDefault();
-        }} />
-        <span>角色與擴充對戰 · 本機對電腦</span>
-        <nav>
-          {running && (
-            <button onClick={leave}>
-              結束並返回
-            </button>
-          )}
-          {!running && <><Link href="/online">多人對戰</Link><Link href="/">返回大廳</Link></>}
-        </nav>
-      </header>
+      {running ? (
+        <header className="full-header">
+          <SiteBrand onClick={(event) => {
+            if (!confirm("離開會結束目前的本機對局，確定返回大廳？")) event.preventDefault();
+          }} />
+          <span>角色與擴充對戰 · 本機對電腦</span>
+          <nav><button onClick={leave}>結束並返回</button></nav>
+        </header>
+      ) : <SiteHeader />}
       {running ? (
         <iframe
           key={launch}
