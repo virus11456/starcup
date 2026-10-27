@@ -117,6 +117,54 @@ try {
   const frame = page.frameLocator('iframe.full-frame');
   await frame.locator('#window').waitFor({timeout:90000});
   await frame.locator('#system').waitFor({timeout:45000});
+  await frame.locator('#grail-phase-hint').waitFor({state:'attached',timeout:45000});
+  const hintIsInline = await frame.locator('#grail-phase-hint').evaluate(node =>
+    node.parentElement?.classList?.contains('grail-score-heading'));
+  if (!hintIsInline) throw new Error('Passive game phase hint is still a floating overlay');
+  checks.push('native battle passive text attached to scoreboard, not floating above targets');
+
+  // Exercise the shipped JS and CSS together without issuing synthetic
+  // gameplay events. The diagnostic node is removed immediately.
+  const damageProbe = await frame.locator('#window').evaluate(async () => {
+    const { updateResponseCancelLabel } = await import('/engine/grail-response-labels.js');
+    const parent = document.querySelector('#control');
+    if (!parent) throw new Error('No native control container');
+    const sample = document.createElement('div');
+    sample.className = 'control';
+    sample.style.opacity = '1';
+    const button = document.createElement('div');
+    button.link = 'cancel';
+    button.textContent = '取消';
+    sample.append(button);
+    parent.append(sample);
+    try {
+      const before = button.offsetWidth;
+      updateResponseCancelLabel(sample, { name:'yingZhan' }, '取消');
+      const after = button.offsetWidth;
+      const damage = {
+        text: button.textContent,
+        action: button.dataset.grailAction,
+        link: button.link,
+        before, after,
+        width: Number.parseFloat(sample.style.width),
+        scrollWidth: sample.scrollWidth,
+        clientWidth: sample.clientWidth,
+      };
+      updateResponseCancelLabel(sample, {
+        name:'gongJiOrFaShu', action:true,
+        player:{storage:{gongJiOrFaShu:1,faShu:0,gongJi:0,extraXingDong:[]}},
+      }, '取消');
+      return {damage, turnText:button.textContent, turnLink:button.link};
+    } finally { sample.remove(); }
+  });
+  const d = damageProbe.damage;
+  if (d.text !== '承受傷害' || d.action !== 'damage' || d.link !== 'cancel' ||
+      d.width < d.after - 1 || d.scrollWidth > d.clientWidth + 2 ||
+      damageProbe.turnText !== '結束回合' || damageProbe.turnLink !== 'cancel') {
+    throw new Error('Native response button labels clip/change semantics: '+JSON.stringify(damageProbe));
+  }
+  checks.push('shipped native damage / end-turn labels fit control width and keep click links');
+
   const running = await page.evaluate(() => ({
     wrapper: document.querySelector('main.full-running')?.getBoundingClientRect().toJSON(),
     width: innerWidth,
@@ -126,6 +174,19 @@ try {
     throw new Error('Actual match iframe is letterboxed: '+ JSON.stringify(running));
   checks.push('native game iframe: full-width wrapper and system controls');
   await page.screenshot({path:path.join(out,'game-draft-1440x900.png'),fullPage:false});
+  // Native Options must open on top of the HUD, including 新手嚮導.
+  const nativeOptions = frame.locator('#system').getByText('選項', {exact:true}).first();
+  await nativeOptions.click({timeout:15000});
+  await frame.locator('#window > .menu-container:not(.hidden)').waitFor({timeout:15000});
+  const menuState = await frame.locator('#window > .menu-container:not(.hidden)').evaluate(node => ({
+    z: Number(getComputedStyle(node).zIndex),
+    hudZ: Number(getComputedStyle(document.querySelector('#grail-hud')).zIndex),
+    text: node.textContent?.slice(0,400) || '',
+  }));
+  if (menuState.z <= menuState.hudZ)
+    throw new Error('Native settings/tutorial menu is behind HUD: '+JSON.stringify(menuState));
+  checks.push('native Options and tutorial menu overlays scoreboard HUD');
+  await page.screenshot({path:path.join(out,'game-options-1440x900.png'),fullPage:false});
   await page.close();
   await context.close();
   console.log('Browser visual QA PASS: ' + checks.length + ' checks');
