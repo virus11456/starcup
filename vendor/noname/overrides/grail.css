@@ -1085,3 +1085,21 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
     content: "" !important;
   }
 }
+
+/* Keep the history button's actual text and accessible label, but display a
+   short visual label on small phones. It still opens the original log. */
+@media (max-width: 600px) and (orientation: portrait) {
+  #grail-history-toggle[data-mobile-label] {
+    font-size: 0 !important;
+    letter-spacing: 0 !important;
+    width: 66px !important;
+    min-width: 66px !important;
+    text-align: center !important;
+  }
+  #grail-history-toggle[data-mobile-label]::after {
+    content: attr(data-mobile-label);
+    display: inline-block;
+    font: 650 12px/1.15 system-ui, sans-serif;
+    white-space: nowrap;
+  }
+}
