@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators, visibleIndicatorObstacle, publicIndicatorUiObstacles } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
