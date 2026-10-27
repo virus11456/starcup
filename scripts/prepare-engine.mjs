@@ -72,6 +72,16 @@ async function patch(file, before, after) {
     throw new Error(`Pinned engine patch no longer matches: ${file}`);
   await writeFile(location, text.replace(before, after));
 }
+// The pinned Thunder Seal declares prepare:'useCard'. Upstream useSkill
+// recognizes give/give2/throw/throw2 but treats any other value as a
+// callable function; this string reaches info.prepare(...) and throws.
+// Handle the existing presentation marker as a no-op rather than changing
+// ANY original skill trigger, target, source, cost, seal storage or card data.
+await patch(
+  'noname/library/element/content.js',
+  'case "throw2":\n\t\t\t\t\tplayer.$throw(cards.length);\n\t\t\t\t\tbreak;\n\t\t\t\tdefault:\n\t\t\t\t\tinfo.prepare(cards, player, targets);',
+  'case "throw2":\n\t\t\t\t\tplayer.$throw(cards.length);\n\t\t\t\t\tbreak;\n\t\t\t\tcase "useCard":\n\t\t\t\t\tbreak;\n\t\t\t\tdefault:\n\t\t\t\t\tinfo.prepare(cards, player, targets);',
+);
 // Decorate the native character button, including native form changes. This
 // single path is shared by solo choices and multiplayer free drafting.
 const buttonFile = 'noname/ui/create/index.js';
