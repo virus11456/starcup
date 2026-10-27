@@ -80,8 +80,8 @@ async function patch(file, before, after) {
 // metadata as the other four elemental seals instead of an invalid callback.
 await patch(
   'character/shiZhouNian.js',
-  "        prepare: 'useCard',\\n        discard: false,\\n        content: function () {\\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
-  "        useCard: true,\\n        discard: false,\\n        content: function () {\\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
+  "        prepare: 'useCard',\n        discard: false,\n        content: function () {\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
+  "        useCard: true,\n        discard: false,\n        content: function () {\n            target.addFengYin('leiZhiFengYin_xiaoGuo', cards, player);",
 );
 // Decorate the native character button, including native form changes. This
 // single path is shared by solo choices and multiplayer free drafting.
