@@ -8,6 +8,18 @@
   --gold: #d4b77c;
   --red: #ca8181;
   --blue: #7cabc7;
+  /* Shared public-site palette: homepage is the design reference. */
+  --site-background: #0b1518;
+  --site-backdrop: radial-gradient(ellipse at 85% 4%, #193a3b55, transparent 40%), #0b1518;
+  --site-panel: #1c3234;
+  --site-panel-deep: #101d21;
+  --site-foreground: #f1eee2;
+  --site-muted: #a7b6b3;
+  --site-gold: #dec494;
+  --site-gold-muted: #b8a377;
+  --site-border: #c2b18c30;
+  --site-content-width: 1440px;
+  --site-gutter: clamp(16px, 5%, 72px);
   color-scheme: dark;
 }
 * {
@@ -15,7 +27,7 @@
 }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--site-background);
   color: var(--text);
   font:
     14px "Noto Sans TC",
