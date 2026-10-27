@@ -109,6 +109,50 @@ export function placeIndicatorStrip(rect, viewport, size, occupied = [], blocker
   return null;
 }
 
+// Safari/WebKit can resolve the final HUD transform and intrinsic chip size
+// differently from the layout dimensions used by placeIndicatorStrip(). Recheck
+// the ACTUAL painted rectangle. Only move the read-only status strip, never a
+// native player, skill target, hand card or click region.
+export function correctPaintedIndicatorRect(rect, viewport, blockers = [], gap = 7) {
+  const finite = r => r && [r.left,r.right,r.top,r.bottom,r.width,r.height].every(Number.isFinite);
+  if(!finite(rect) || !viewport?.width || !viewport?.height) return null;
+  const others = blockers.filter(finite);
+  const collides = (r,b) =>
+    r.left < b.right + 2 && r.right > b.left - 2 &&
+    r.top < b.bottom + 2 && r.bottom > b.top - 2;
+  const fits = r => r.left >= 4 && r.top >= 4 &&
+    r.right <= viewport.width - 4 && r.bottom <= viewport.height - 4 &&
+    !others.some(b => collides(r,b));
+  const propose = (left,top) => {
+    if(!Number.isFinite(left)||!Number.isFinite(top)) return null;
+    const x=Math.min(viewport.width - rect.width - 4,Math.max(4,left));
+    const y=Math.min(viewport.height - rect.height - 4,Math.max(4,top));
+    if(x < 4 || y < 4) return null;
+    const trial={left:x,top:y,width:rect.width,height:rect.height,
+      right:x+rect.width,bottom:y+rect.height};
+    return fits(trial)?trial:null;
+  };
+  const original=propose(rect.left,rect.top);
+  if(original && Math.abs(original.left-rect.left)<1 && Math.abs(original.top-rect.top)<1)
+    return original;
+  const options=[];
+  if(original) options.push(original);
+  for(const b of others) {
+    for(const xy of [
+      [rect.left,b.bottom+gap], [rect.left,b.top-rect.height-gap],
+      [b.right+gap,rect.top], [b.left-rect.width-gap,rect.top],
+    ]) {
+      const next=propose(...xy);
+      if(next) options.push(next);
+    }
+  }
+  // Keep the strip as close as possible to its own seat.
+  options.sort((a,b) =>
+    (a.left-rect.left)**2+(a.top-rect.top)**2-
+    ((b.left-rect.left)**2+(b.top-rect.top)**2));
+  return options[0] || null;
+}
+
 // Try the complete PUBLIC indicator set first. A single crowded status
 // should not erase the important readable hand count if only that smaller
 // badge fits. The callback measures the actual DOM variant before placing.
@@ -264,15 +308,35 @@ export function createPlayerIndicators(parent, context, doc = document) {
           if (player.dataset) player.dataset.grailHandCountMirror = 'false';
           continue;
         }
-        active.add(player);
         strip.dataset.compact = String(candidate.compact);
-        if (player.dataset) player.dataset.grailHandCountMirror = String(
-          Boolean(handCount) && candidate.badges.includes(handCount));
         strip.style.transform = 'none';
         strip.style.left = `${candidate.position.left}px`;
         strip.style.top = `${candidate.position.top}px`;
         strip.dataset.placement = candidate.position.placement;
-        occupied.push(candidate.position);
+        const painted = visibleIndicatorObstacle(strip);
+        const final = correctPaintedIndicatorRect(
+          painted && {left:painted.left,right:painted.right,top:painted.top,
+            bottom:painted.bottom,width:painted.width,height:painted.height},
+          {width,height}, [rect,...blockers,...occupied]);
+        if(!final) {
+          if(player.dataset) player.dataset.grailHandCountMirror = 'false';
+          continue;
+        }
+        if(painted && (Math.abs(final.left-painted.left)>1 || Math.abs(final.top-painted.top)>1)) {
+          // Native body zoom affects the HUD's rendered coordinate scale.
+          const factor=strip.offsetWidth>0 ? painted.width/strip.offsetWidth : 1;
+          const scale=Number.isFinite(factor)&&factor>0 ? factor : 1;
+          strip.style.left = `${candidate.position.left+(final.left-painted.left)/scale}px`;
+          strip.style.top = `${candidate.position.top+(final.top-painted.top)/scale}px`;
+        }
+        active.add(player);
+        if (player.dataset) player.dataset.grailHandCountMirror = String(
+          Boolean(handCount) && candidate.badges.includes(handCount));
+        const finalPainted=visibleIndicatorObstacle(strip) || final;
+        occupied.push({
+          left:finalPainted.left,top:finalPainted.top,
+          width:finalPainted.width,height:finalPainted.height,
+        });
       }
       for (const [player, strip] of strips) {
         if (active.has(player)) continue;
