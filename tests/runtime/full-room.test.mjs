@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { ACCESS_COOKIE, createAccessToken } from '../../lib/site-access.ts';
 import { enterOnlineRoom, seatKey, PENDING_CREATION_KEY } from '../../lib/online-session.ts';
 
@@ -11,7 +12,7 @@ const require = createRequire(import.meta.url);
 const wranglerRequire = createRequire(require.resolve('wrangler'));
 const { Miniflare, convertV4MiniflareOptions } = wranglerRequire('miniflare');
 const { build } = wranglerRequire('esbuild');
-const root = new URL('../../', import.meta.url).pathname;
+const root = fileURLToPath(new URL('../../', import.meta.url));
 
 test('local Cloudflare runtime: real HTTP, WebSockets, SQLite and hibernation', { timeout: 120_000 }, async t => {
   const bundle = await build({

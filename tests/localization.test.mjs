@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import ts from "typescript";
 import { traditionalText, localizeJavaScript } from "../scripts/localize-engine.mjs";
@@ -34,7 +35,7 @@ test("morale is converted as a game term without turning 的士氣 into taxi wor
     '<a href="/的士气" data-name="的士气">造成的士氣下降</a>');
 });
 
-const root = new URL("../public/engine/", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../public/engine/", import.meta.url));
 const pin = JSON.parse(await fs.readFile(new URL("../vendor/noname/pin.json", import.meta.url)));
 const { lib } = await loadPacks(root, pin);
 test("shipped morale skills retain their game meaning after localization", () => {

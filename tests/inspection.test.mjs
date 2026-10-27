@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { loadPacks } from '../scripts/engine-catalog.mjs';
 import { createBattleInspection, readInspection, inspectionPlayers, inspectionText } from '../vendor/noname/overrides/grail-inspection.js';
 import { readQuickDetail, createQuickDetailView } from '../vendor/noname/overrides/grail-detail-view.js';
 import { historyHarness } from './helpers/history-harness.mjs';
 
-const root = new URL('../public/engine/', import.meta.url).pathname;
+const root = fileURLToPath(new URL('../public/engine/', import.meta.url));
 const pin = JSON.parse(await fs.readFile(new URL('../vendor/noname/pin.json', import.meta.url)));
 const { packs, lib } = await loadPacks(root, pin);
 Object.assign(lib.translate, packs.card.translate);

@@ -7,6 +7,46 @@
    the fixed score and help HUD while it is open. Its closed .hidden state
    stays at the engine's original stacking order. */
 #window > .menu-container:not(.hidden) { z-index: 70 !important; }
+/* Native body scaling also shrinks the settings/tutorial to 160px on a
+   390px phone. Restore readable menu pixels while retaining native events
+   and the full-screen outside-click dismissal surface. */
+@media (max-width: 1049px) {
+  #window > .menu-container:not(.hidden) > .menu.main {
+    transform: scale(var(--grail-touch-scale, 1)) !important;
+    transform-origin: top left !important;
+    left: calc(8px * var(--grail-touch-scale, 1)) !important;
+    top: calc(60px * var(--grail-touch-scale, 1)) !important;
+    width: min(400px, calc(100vw - 18px));
+    height: min(360px, calc(100vh - 76px));
+    transition: none;
+  }
+  #window > .menu-container > .menu.main > .menu-tab {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 4px;
+    height: 44px;
+  }
+  #window > .menu-container > .menu.main > .menu-tab > div {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding-top: 0;
+    height: 44px;
+    line-height: 44px;
+    font-size: 14px;
+  }
+  #window > .menu-container > .menu.main > .menu-content {
+    height: calc(100% - 44px);
+  }
+  #window > .menu-container > .menu.main > .menu-content > div > .menubutton.round {
+    top: auto !important;
+    left: auto !important;
+    right: 12px !important;
+    bottom: 12px !important;
+  }
+}
 #grail-backdrop { z-index: 0; }
 .card-motion-layer { position: fixed !important; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
 .card-motion-layer canvas { position: absolute; inset: 0; }
