@@ -497,3 +497,87 @@ html:has(.full-running), body:has(.full-running) {
   .full-shell .full-grid { grid-template-columns: 1fr; }
   .full-shell .full-player-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* The homepage is the visual reference for solo and multiplayer setup.
+   The global main width used to leave a different-colored letterbox on wide
+   screens; only content is centered, the background fills the viewport. */
+.full-shell:not(.full-running) {
+  box-sizing: border-box;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  min-height: 100vh;
+  padding: 0 0 40px;
+  background: var(--site-backdrop);
+  color: var(--site-foreground);
+}
+.full-shell:not(.full-running) > :not(.site-header):not(.full-modal) {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--site-content-width);
+  margin-inline: auto;
+  padding-inline: var(--site-gutter);
+}
+/* Same navigation proportions and rhythm as the home/learning/catalog pages.
+   Active games retain their smaller native toolbar and full-height iframe. */
+.full-shell:not(.full-running) > .site-header {
+  width: 100%;
+  max-width: var(--site-content-width);
+  margin: 0 auto;
+  padding-left: var(--site-gutter);
+  padding-right: var(--site-gutter);
+}
+.full-shell:not(.full-running) .full-intro {
+  gap: clamp(24px, 5vw, 72px);
+  padding-block: 55px 55px;
+}
+.full-shell:not(.full-running) .full-intro h1 {
+  color: var(--site-foreground);
+}
+.full-shell:not(.full-running) .full-intro em {
+  color: var(--site-gold);
+}
+.full-shell:not(.full-running) .full-intro p:not(.full-kicker),
+.full-shell:not(.full-running) .full-muted,
+.full-shell:not(.full-running) .full-panel li {
+  color: var(--site-muted);
+}
+.full-shell:not(.full-running) .full-kicker {
+  color: var(--site-gold-muted);
+}
+.full-shell:not(.full-running) .full-portrait-fan figure {
+  border-color: #d9b871a8;
+  border-radius: 80px 80px 9px 9px;
+}
+.full-shell:not(.full-running) .full-panel,
+.full-shell:not(.full-running) .full-character {
+  border-color: var(--site-border);
+  background: linear-gradient(140deg, var(--site-panel), var(--site-panel-deep));
+}
+.full-shell:not(.full-running) .full-primary {
+  color: #192626;
+  background: linear-gradient(120deg, #ead6a4, #b99b63);
+  border: 1px solid #e7c887;
+  border-radius: 5px;
+}
+.full-shell:not(.full-running) .full-tabs {
+  border-color: var(--site-border);
+}
+.full-shell:not(.full-running) .full-tabs button[aria-selected="true"] {
+  color: var(--site-gold);
+  border-color: #b99b63;
+}
+@media (max-width: 820px) {
+  .full-shell:not(.full-running) .full-intro {
+    padding-block: 35px 24px;
+  }
+}
+@media (max-width: 600px) {
+  .full-shell:not(.full-running) {
+    padding: 0 0 30px;
+  }
+  .full-shell:not(.full-running) > :not(.site-header):not(.full-modal) {
+    padding-inline: 16px;
+  }
+}
