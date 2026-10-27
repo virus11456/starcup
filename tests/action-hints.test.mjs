@@ -158,10 +158,10 @@ test('permanent top options replace floating hamburger while draft filters remai
   assert.match(css, /\.dialog \.caption\.pointerspan > div[\s\S]*?flex-wrap:\s*nowrap !important/);
   assert.match(css, /\.dialog \.caption\.pointerspan > div[\s\S]*?overflow-x:\s*auto !important/);
   assert.match(css, /\.dialog \.caption\.pointerspan > div > \.tdnode[\s\S]*?white-space:\s*nowrap !important/);
-  assert.match(css, /#grail-hud > #grail-phase-hint[\s\S]*?pointer-events:\s*none !important/);
+  assert.match(css, /#grail-scoreboard \.grail-score-heading > #grail-phase-hint[\s\S]*?pointer-events:\s*none/);
   const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
-  assert.match(bridge, /hud\.append\(phaseHint\)/);
-  assert.doesNotMatch(bridge, /insertBefore\(\s*phaseHint,/);
+  assert.match(bridge, /scoreboardHeading\.insertBefore\(phaseHint,/);
+  assert.doesNotMatch(bridge, /positionActionHint\(phaseHint,/);
 });
 
 test('native tutorial and settings menu must stack over the battle HUD while open', async () => {
@@ -173,9 +173,8 @@ test('native tutorial and settings menu must stack over the battle HUD while ope
 test('native hidden secondary draft filter remains hidden until user taps 篩選', async () => {
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
   assert.match(css, /caption\.pointerspan > div\[style\*="display: none"\][\s\S]*?display:\s*none !important/);
-  const positionCSS = css.slice(css.indexOf('#grail-hud > #grail-phase-hint {'), css.indexOf('#grail-hud > #grail-phase-hint[hidden]'));
-  assert.doesNotMatch(positionCSS, /top:\s*auto\s*!important/, 'runtime geometry must be able to set the top position');
-  assert.match(positionCSS, /position:\s*absolute !important/);
+  assert.match(css, /body:has\(#window > \.menu-container:not\(\.hidden\)\) #grail-hud/);
+  assert.doesNotMatch(css, /#grail-hud > #grail-phase-hint\s*\{/, 'no free-floating prompt above battle');
 });
 
 test('responsive hint uses a clear LEFT/RIGHT lane when centre is occupied', async () => {
@@ -218,9 +217,10 @@ test('portrait HUD placement avoids the selected portrait and native hand while 
   const placed = chooseActionHintPlacement(area, box);
   assert.ok(placed && placed.top >= 388 && placed.top + box.height <= 610);
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
-  assert.match(css, /left:\s*var\(--grail-hint-center-x, 50%\) !important/);
+  assert.match(css, /#grail-scoreboard \.grail-score-heading > #grail-phase-hint/);
   const bridge = await readFile(new URL('../vendor/noname/overrides/grail-bridge.js', import.meta.url), 'utf8');
-  assert.match(bridge, /if \(!hintHasSafeSlot && !phaseHint.hidden\)[\s\S]*?grail-inline-action-hint/);
+  assert.match(bridge, /scoreboardHeading\.insertBefore\(phaseHint,/);
+  assert.doesNotMatch(bridge, /hintHasSafeSlot/);
 });
 
 test('hidden or unfocused old noname dialogs never replace the active HUD text', async () => {
