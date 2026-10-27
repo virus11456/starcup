@@ -27,9 +27,14 @@ export function updateResponseCancelLabel(control, event, fallback, recenter) {
     && (!event.skill || event.norestore)
     && !event.custom?.replace?.confirm;
   const endsTurn = !acceptsDamage && isFinalOptionalTurnAction(event);
-  const skipsAction = !acceptsDamage && !endsTurn && event?.action &&
+  const pending = event?.player?.storage;
+  const knownActions = pending && Array.isArray(pending.extraXingDong) &&
+    ['gongJiOrFaShu', 'gongJi', 'faShu'].every(key =>
+      Number.isFinite(Number(pending[key])));
+  const skipsAction = !acceptsDamage && !endsTurn && event?.action && knownActions &&
     ['gongJiOrFaShu', 'gongJi', 'faShu'].includes(event.name) &&
-    !event.forced && !event.skill && !event._backup;
+    !event.forced && !event.skill && !event._backup &&
+    !event.custom?.replace?.confirm;
   let changed = false;
   for (const button of control.childNodes) {
     if (button.dataset) {
