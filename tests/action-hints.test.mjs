@@ -267,3 +267,13 @@ test('native gem/crystal dialog is compact, scrollable, and never replaces choic
   const engine = await readFile(new URL('../scripts/prepare-engine.mjs', import.meta.url), 'utf8');
   assert.match(engine, /grail-resource-dialog/);
 });
+
+test('iPhone draft gallery reserves a scrollable seat panel above original action buttons', async () => {
+  const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
+  const draft = css.slice(css.indexOf('/* iPhone portrait draft: the candidate gallery'));
+  assert.match(draft, /@media \(max-width: 600px\) and \(orientation: portrait\)/);
+  assert.match(draft, /#window #arena\.choose-character > \.dialog:not\(\.popped\)[\s\S]*?height:\s*calc\(100% - 94px \* var\(--grail-touch-scale, 1\)\) !important/);
+  assert.match(draft, /> \.content-container[\s\S]*?flex:\s*1 1 auto !important[\s\S]*?overflow-y:\s*auto !important/);
+  assert.match(draft, /#window #arena\.choose-character > #control[\s\S]*?bottom:\s*calc\(6px \* var\(--grail-touch-scale, 1\)\) !important/);
+  assert.doesNotMatch(draft, /pointer-events:\s*none\s*!important/, 'all native draft and confirmation controls keep click handlers');
+});
