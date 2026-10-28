@@ -1128,3 +1128,57 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
     white-space: nowrap;
   }
 }
+
+/* iPhone portrait draft: the candidate gallery, seat selector and native
+   更換／自由選角 controls must occupy SEPARATE zones. Upstream uses a dialog
+   centered at 46% with auto height and no max height; native control remains
+   anchored to the arena bottom. On tall/zoomed Safari its seat row extends
+   under the clipped edge while native controls overlap it.
+   Fit the panel to the usable arena and scroll its ORIGINAL contents; do not
+   move the engine controls or mutate any of their click/seat handlers. */
+@media (max-width: 600px) and (orientation: portrait) {
+  #window #arena.choose-character > .dialog:not(.popped) {
+    box-sizing: border-box !important;
+    top: calc(8px * var(--grail-touch-scale, 1)) !important;
+    bottom: auto !important;
+    left: 2% !important;
+    right: auto !important;
+    width: 96% !important;
+    height: calc(100% - 94px * var(--grail-touch-scale, 1)) !important;
+    max-height: calc(100% - 94px * var(--grail-touch-scale, 1)) !important;
+    min-height: 0 !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  #window #arena.choose-character > .dialog:not(.popped) > .content-container {
+    box-sizing: border-box !important;
+    position: relative !important;
+    display: block !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+  #window #arena.choose-character > .dialog:not(.popped) > .content-container > .content {
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: min-content;
+    padding-bottom: calc(18px * var(--grail-touch-scale, 1));
+  }
+  #window #arena.choose-character > #control {
+    top: auto !important;
+    bottom: calc(6px * var(--grail-touch-scale, 1)) !important;
+    height: calc(54px * var(--grail-touch-scale, 1)) !important;
+    z-index: 8 !important;
+  }
+  #window #arena.choose-character > #control > .control {
+    max-width: calc(100% - 12px);
+  }
+}
