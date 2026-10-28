@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators, visibleIndicatorObstacle, publicIndicatorUiObstacles } from '../vendor/noname/overrides/grail-player-indicators.js';
+import { publicPlayerIndicators, publicHandCountBadge, placeIndicatorStrip, chooseIndicatorVariant, createPlayerIndicators, visibleIndicatorObstacle, publicIndicatorUiObstacles, shouldPinOwnHandCount } from '../vendor/noname/overrides/grail-player-indicators.js';
 
 const classes = (...names) => ({ contains: name => names.includes(name) });
 const mark = (skill, name, count, options = {}) => ({
@@ -365,4 +365,30 @@ test('readable hand counts do not cover action hint when other positions are ava
     a.left + a.width + 4 > b.left && a.top < b.top + b.height + 4 &&
     a.top + a.height + 4 > b.top;
   assert.equal(overlaps(candidate, hint), false);
+});
+
+test('only the local player pins the native hand badge on a portrait phone', () => {
+  const own = { dataset: { position: '0' } };
+  const opponent = { dataset: { position: '2' } };
+  const context = { game: { me: own } };
+  assert.equal(shouldPinOwnHandCount(own,context,{width:390,height:844}),true);
+  assert.equal(shouldPinOwnHandCount(opponent,context,{width:390,height:844}),false);
+  assert.equal(shouldPinOwnHandCount(own,context,{width:844,height:390}),false);
+  assert.equal(shouldPinOwnHandCount(own,context,{width:768,height:1024}),false);
+  assert.equal(shouldPinOwnHandCount(own,{game:{me:opponent}},{width:390,height:844}),false);
+  assert.equal(shouldPinOwnHandCount({dataset:{}},{game:{me:own}},{width:390,height:844}),false);
+});
+
+test('own hand remains native and visually attached; other players keep external public counts', async () => {
+  const fs = await import('node:fs/promises');
+  const source = await fs.readFile(new URL('../vendor/noname/overrides/grail-player-indicators.js',import.meta.url),'utf8');
+  const css = await fs.readFile(new URL('../vendor/noname/overrides/grail.css',import.meta.url),'utf8');
+  assert.match(source,/const handCount = pinOwnHand \? null : count;/);
+  assert.match(source,/player\.dataset\.grailOwnHandCountPinned = String\(pinOwnHand\)/);
+  assert.match(source,/const ownerText = '我的手牌 ' \+ count\.count/);
+  assert.match(css, /\.player\[data-position="0"\]\[data-grail-own-hand-count-pinned="true"\] > \.count:not\(\.hidden\)/);
+  assert.match(css, /content: "我的手牌"/);
+  assert.match(css,/top: calc\(-35px \* var\(--grail-touch-scale, 1\)\) !important/);
+  assert.doesNotMatch(source, /player\.getCards\('h'\)/,
+    'public hand count is read from native counter, not from opponents private cards');
 });
