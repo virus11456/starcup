@@ -1103,3 +1103,28 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
     white-space: nowrap;
   }
 }
+
+/* Owner attribution on narrow portrait phones: show the LOCAL native hand
+   count immediately above that character card. Do not put the same number
+   in an unrelated free-floating public HUD lane near the middle of the table.
+   Opponents retain their seat-specific public hand-count strips. */
+@media (max-width: 600px) and (orientation: portrait) {
+  #window #arena:not(.choose-character) > .player[data-position="0"][data-grail-own-hand-count-pinned="true"] > .count:not(.hidden) {
+    top: calc(-35px * var(--grail-touch-scale, 1)) !important;
+    bottom: auto !important;
+    left: calc(2px * var(--grail-touch-scale, 1)) !important;
+    right: auto !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: calc(88px * var(--grail-touch-scale, 1)) !important;
+    padding: calc(4px * var(--grail-touch-scale, 1)) calc(6px * var(--grail-touch-scale, 1)) !important;
+    z-index: 7 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+  }
+  #window #arena:not(.choose-character) > .player[data-position="0"][data-grail-own-hand-count-pinned="true"] > .count:not(.hidden)::before {
+    content: "我的手牌";
+    font-size: calc(11px * var(--grail-touch-scale, 1));
+    white-space: nowrap;
+  }
+}
