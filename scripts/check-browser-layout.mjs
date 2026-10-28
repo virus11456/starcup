@@ -9,7 +9,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const require = createRequire('/tmp/starcup-visual-qa/package.json');
-const { chromium } = require('playwright-core');
+const { chromium, webkit } = require('playwright-core');
 const browserBinary = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
   .map(name => { try { return execFileSync('which', [name], { encoding: 'utf8' }).trim(); } catch { return ''; } })
   .find(Boolean);
@@ -17,7 +17,7 @@ if (!browserBinary) throw new Error('No Chromium/Google Chrome available for rea
 const password = 'starcup-qa-' + randomBytes(12).toString('hex');
 const out = path.resolve('outputs/visual-qa');
 await mkdir(out, { recursive: true });
-let worker, browser, failed = false;
+let worker, browser, webkitBrowser, failed = false;
 const checks = [];
 
 async function verifyRoute(context, base, route, viewport) {
@@ -319,6 +319,94 @@ try {
   checks.push('390px phone scoreboard: 44px expand button, full live details, compact log, collapsed return');
   await phone.screenshot({path:path.join(out,'game-6-players-iphone-390x844.png'),fullPage:false});
   await phone.close();
+
+  // In iOS Safari the 375px/667px device gives only about 610px to the
+  // embedded arena after the web header. Check the real WebKit engine, not
+  // only desktop Chromium scaled down to 390px.
+  const signed=await fetch(base+'/api/access',{
+    method:'POST',redirect:'manual',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','Origin':base},
+    body:new URLSearchParams({password,next:'/'}),
+  });
+  const signedCookie=(signed.headers.get('set-cookie')||'').match(/grail_access=([^;]+)/)?.[1];
+  if(signed.status!==303||!signedCookie) throw new Error('Local isolated QA could not acquire signed preview cookie');
+  async function checkPhoneDraft(engine,label,players,width,height) {
+    const device=await engine.newContext({
+      viewport:{width,height},deviceScaleFactor:3,isMobile:true,hasTouch:true,
+      locale:'zh-TW',reducedMotion:'reduce',
+    });
+    // Preview runs NODE_ENV=production over HTTP loopback. WebKit refuses a
+    // Secure cookie for this test-only transport; retain production policy.
+    await device.addCookies([{
+      name:'grail_access',value:decodeURIComponent(signedCookie),
+      domain:new URL(base).hostname,path:'/',httpOnly:true,secure:false,sameSite:'Lax',
+    }]);
+    const page=await device.newPage();
+    const slug=label+'-'+players+'p-'+width+'x'+height;
+    try{
+      await page.goto(base+'/full',{waitUntil:'domcontentloaded'});
+      await page.waitForFunction(()=>{
+        const btn=document.querySelector('.full-primary');
+        return btn&&!btn.disabled;
+      },null,{timeout:60000});
+      await page.locator('input[name="players"][value="'+players+'"]').check({force:true});
+      await page.locator('.full-primary').first().tap({force:true});
+      const frame=page.frameLocator('iframe.full-frame');
+      await frame.locator('#arena.choose-character > .dialog .button.character').first()
+        .waitFor({state:'visible',timeout:90000});
+      const a=frame.locator('#arena.choose-character');
+      const state=await a.evaluate(arena=>{
+        const getRect=el=>{
+          const r=el.getBoundingClientRect();
+          return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};
+        };
+        const dialog=arena.querySelector(':scope > .dialog:not(.popped):has(.button.character)');
+        const content=dialog?.querySelector(':scope > .content-container > .content');
+        const cards=content?.querySelector(':scope > .buttons');
+        const seat=content?.querySelector('table.add-setting');
+        const buttons=[...arena.querySelectorAll(':scope > #control > .control')]
+          .filter(el=>getComputedStyle(el).display!=='none' && getComputedStyle(el).visibility!=='hidden')
+          .map(getRect);
+        return {arena:getRect(arena),
+          dialog:dialog&&getRect(dialog), content:content&&getRect(content),
+          cards:cards&&getRect(cards), cardScroll:cards&&{
+            scrollHeight:cards.scrollHeight,clientHeight:cards.clientHeight,
+            overflowY:getComputedStyle(cards).overflowY},
+          seat:seat&&getRect(seat),
+          controls:buttons, viewport:{width:innerWidth,height:innerHeight,
+            visualHeight:visualViewport?.height,dpr:devicePixelRatio}};
+      });
+      await page.screenshot({path:path.join(out,'draft-'+slug+'.png'),fullPage:false});
+      if(!state.dialog||!state.content||!state.cards||!state.seat||
+         !state.controls.length||
+         state.dialog.top<state.arena.top-4||
+         state.dialog.bottom>Math.min(...state.controls.map(b=>b.top))-5||
+         state.seat.bottom>state.dialog.bottom-4||
+         state.seat.top<state.cards.bottom-4||
+         state.cardScroll?.overflowY!=='auto') {
+        throw new Error('Mobile '+slug+' draft clips seat/action: '+JSON.stringify(state));
+      }
+      // Even with larger text and short browser chrome, all native seats
+      // remain visible without scrolling the controls over the dialog.
+      const seats=frame.locator('#arena.choose-character > .dialog table.add-setting .tdnode');
+      if(await seats.count()!==players)
+        throw new Error('Unexpected mobile seat choice count '+slug+': '+await seats.count());
+      const last=seats.last();
+      await last.scrollIntoViewIfNeeded();
+      const lastRect=await last.evaluate(el=>{
+        const r=el.getBoundingClientRect();
+        const a=el.closest('.dialog').getBoundingClientRect();
+        return {top:r.top,bottom:r.bottom,min:a.top,max:a.bottom};
+      });
+      if(lastRect.top<lastRect.min-2 || lastRect.bottom>lastRect.max+2)
+        throw new Error('Last '+slug+' seat cut off: '+JSON.stringify(lastRect));
+      checks.push('mobile '+slug+': gallery scroll, seats and native controls remain distinct');
+    } finally {await page.close();await device.close();}
+  }
+  await checkPhoneDraft(browser,'chromium-touch',4,375,667);
+  webkitBrowser=await webkit.launch({headless:true});
+  await checkPhoneDraft(webkitBrowser,'webkit',4,375,667);
+  await checkPhoneDraft(webkitBrowser,'webkit',6,390,844);
   await context.close();
   console.log('Browser visual QA PASS: ' + checks.length + ' checks');
   for (const check of checks) console.log('PASS ' + check);
@@ -326,6 +414,7 @@ try {
   failed = true;
   console.error('Browser visual QA failed:', error);
 } finally {
+  await webkitBrowser?.close();
   await browser?.close();
   await worker?.stop();
   // Wrangler's optional background services otherwise prevent CI exit.
