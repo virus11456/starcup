@@ -1182,3 +1182,61 @@ body:has(#window > .menu-container:not(.hidden)) #grail-hud :is(
     max-width: calc(100% - 12px);
   }
 }
+
+/* Mobile draft final layout: fixed seat selector in the DIALOG, separate from
+   the scrolling character gallery and the NATIVE control row. Avoid one long
+   combined scroller where seats disappear beneath 「更換／自由選角」.
+   No character candidate or seat selection events are changed. */
+@media (max-width: 600px) and (orientation: portrait) {
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) {
+    height: calc(100% - 104px * var(--grail-touch-scale, 1)) !important;
+    max-height: calc(100% - 104px * var(--grail-touch-scale, 1)) !important;
+  }
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+  }
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container > .content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: calc(8px * var(--grail-touch-scale, 1)) !important;
+  }
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container > .content > .buttons {
+    flex: 1 1 auto !important;
+    min-height: 72px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    align-content: flex-start;
+  }
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container > .content > .caption,
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container > .content > .text {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    max-height: 24vh;
+    overflow-y: auto;
+  }
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container > .content > .add-setting {
+    flex: 0 0 auto !important;
+    margin-block: calc(3px * var(--grail-touch-scale, 1)) !important;
+  }
+  #window #arena.choose-character > .dialog:not(.popped):has(.button.character) > .content-container > .content > table.add-setting {
+    min-height: calc(46px * var(--grail-touch-scale, 1)) !important;
+    max-height: calc(100px * var(--grail-touch-scale, 1)) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    scrollbar-width: thin;
+  }
+  #window #arena.choose-character > #control {
+    bottom: max(calc(8px * var(--grail-touch-scale, 1)), env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
