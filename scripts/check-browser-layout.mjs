@@ -203,6 +203,36 @@ try {
   const f = phone.frameLocator('iframe.full-frame');
   await f.locator('#arena.choose-character .dialog .button.character').first()
     .waitFor({state:'visible',timeout:90000});
+  // A visible seat-chooser on iPhone was cropped by the dialog and
+  // the separate native 更換／自由選角 buttons. Verify they occupy
+  // distinct regions and that offscreen seat buttons can be scrolled into view.
+  const draftBefore=await f.locator('#arena.choose-character > .dialog:not(.popped)').evaluate(dialog => {
+    const rect=el=>{ const r=el.getBoundingClientRect(); return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,height:r.height}; };
+    const arena=dialog.parentElement, controls=arena.querySelector(':scope > #control');
+    const scroll=dialog.querySelector(':scope > .content-container');
+    const seats=dialog.querySelector('table.add-setting');
+    return {panel:rect(dialog),arena:rect(arena),controls:controls&&rect(controls),
+      scroll:scroll&&{...rect(scroll),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight},
+      seats:seats&&rect(seats)};
+  });
+  if(!draftBefore.controls || !draftBefore.scroll ||
+     draftBefore.panel.top < draftBefore.arena.top-3 ||
+     draftBefore.panel.bottom > draftBefore.controls.top-4 ||
+     draftBefore.scroll.bottom > draftBefore.panel.bottom+2)
+    throw new Error('Phone draft gallery, seat row and action buttons overlap: '+JSON.stringify(draftBefore));
+  const seats=f.locator('#arena.choose-character > .dialog table.add-setting .tdnode');
+  if(await seats.count()>0) {
+    await seats.last().evaluate(el=>el.scrollIntoView({block:'end',inline:'nearest'}));
+    const visibleSeat=await seats.last().evaluate(el=>{
+      const r=el.getBoundingClientRect();
+      const d=el.closest('.dialog').getBoundingClientRect();
+      return {top:r.top,bottom:r.bottom,panelTop:d.top,panelBottom:d.bottom};
+    });
+    if(visibleSeat.top < visibleSeat.panelTop-3 || visibleSeat.bottom > visibleSeat.panelBottom+3)
+      throw new Error('Final selectable seat remains cut off on phone: '+JSON.stringify(visibleSeat));
+  }
+  checks.push('390px phone draft: seat choices scroll fully inside panel; native change/free buttons stay below');
+  await phone.screenshot({path:path.join(out,'phone-draft-seats-390x844.png'),fullPage:false});
   await f.locator('#arena.choose-character .dialog .button.character').first().click();
   const confirmation = f.locator('#control .control > div').filter({hasText:/確定|确定/}).first();
   if (await confirmation.isVisible({timeout:8000}).catch(() => false))
