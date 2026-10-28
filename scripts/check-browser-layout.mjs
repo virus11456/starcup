@@ -365,8 +365,11 @@ try {
         const cards=content?.querySelector(':scope > .buttons');
         const seat=content?.querySelector('table.add-setting');
         const buttons=[...arena.querySelectorAll(':scope > #control > .control')]
-          .filter(el=>getComputedStyle(el).display!=='none' && getComputedStyle(el).visibility!=='hidden')
-          .map(getRect);
+          .filter(el=>getComputedStyle(el).display!=='none' &&
+            getComputedStyle(el).visibility!=='hidden' &&
+            getComputedStyle(el).opacity!=='0')
+          .map(el=>({label:el.textContent?.trim(),...getRect(el)}))
+          .filter(el=>el.width>5&&el.height>5);
         return {arena:getRect(arena),
           dialog:dialog&&getRect(dialog), content:content&&getRect(content),
           cards:cards&&getRect(cards), cardScroll:cards&&{
@@ -377,6 +380,18 @@ try {
             visualHeight:visualViewport?.height,dpr:devicePixelRatio}};
       });
       await page.screenshot({path:path.join(out,'draft-'+slug+'.png'),fullPage:false});
+      await frame.locator('#arena.choose-character > .dialog:not(.popped)').first()
+        .screenshot({path:path.join(out,'draft-panel-'+slug+'.png')});
+      const collidingControls=state.controls.flatMap((a,i)=>state.controls.slice(i+1)
+        .filter(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>2 &&
+          Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2)
+        .map(b=>[a.label,b.label]));
+      if(collidingControls.length)
+        throw new Error('Mobile native draft controls overlap each other '+slug+': '+
+          JSON.stringify({collidingControls,controls:state.controls}));
+      if(state.controls.some(ctrl=>ctrl.left<state.arena.left-2 || ctrl.right>state.arena.right+2))
+        throw new Error('Mobile native draft controls clipped by arena '+slug+': '+
+          JSON.stringify(state.controls));
       if(!state.dialog||!state.content||!state.cards||!state.seat||
          !state.controls.length||
          state.dialog.top<state.arena.top-4||
