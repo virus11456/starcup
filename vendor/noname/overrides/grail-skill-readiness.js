@@ -1,6 +1,13 @@
 /* GPL-3.0: informational readiness only. Trigger timing, cost, skill/cancel
  * buttons, card filters, target legality and game effects remain native. */
 const originalTitles = new WeakMap();
+const originalAriaLabels = new WeakMap();
+// Only the skill grants BELOW are a direct extra action; other characters
+// may heal, draw, discard, change markers or attack a target as well.
+const pureExtraActions = new Set([
+  'fengNuZhuiJi', 'xiuLuoLianZhan', 'jiZhiJianYi',
+  'erChongJianYing', 'xuRongZhangWo', 'jianYing',
+]);
 const followUps = Object.freeze({
   fengNuZhuiJi: { name: '風怒追擊', type: 'element', value: 'feng', label: '風系攻擊牌', short: '缺風攻' },
   xiuLuoLianZhan: { name: '修羅連斬', type: 'element', value: 'huo', label: '火系攻擊牌', short: '缺火攻' },
@@ -84,7 +91,9 @@ export function getOptionalSkillReadiness(id, player, get, { triggerCard, player
   if (!reason) return null;
   // The original trigger may legally grant the action even if the follow-up
   // cannot use a card right now; transformations or later state may change.
-  return { id, short, message: `${spec.name}：${reason}；依原規則仍可發動，後續能否出牌由引擎判定。` };
+  const advice = pureExtraActions.has(id) && reason.startsWith('目前手上沒有')
+    ? '若沒有其他轉換或即時獲牌效果，可按「取消」略過；' : '';
+  return { id, short, message: `${spec.name}：${reason}；${advice}依原規則仍可發動，後續能否出牌由引擎判定。` };
 }
 export function optionalSkillReadinessNotes(ids, player, get, context) {
   return [...new Set(ids || [])].map(id => getOptionalSkillReadiness(id, player, get, context))
@@ -139,9 +148,13 @@ export function updateOptionalSkillChoiceHints(ui, lib, player, get, context) {
     if (next) {
       if (!originalTitles.has(button)) {
         originalTitles.set(button, button.getAttribute?.('title') ?? button.title ?? null);
+        originalAriaLabels.set(button, button.getAttribute?.('aria-label') ?? null);
       }
       button.dataset.grailReadiness = next;
       button.title = note.message;
+      // Read the warning aloud on mobile without inserting a new modal or
+      // removing the player's perfectly legal original skill choice.
+      button.setAttribute?.('aria-label', String(button.textContent || id) + '，' + note.message);
     } else {
       delete button.dataset.grailReadiness;
       if (originalTitles.has(button)) {
@@ -149,6 +162,10 @@ export function updateOptionalSkillChoiceHints(ui, lib, player, get, context) {
         if (original == null) button.removeAttribute?.('title');
         else button.title = original;
         originalTitles.delete(button);
+        const aria = originalAriaLabels.get(button);
+        if (aria == null) button.removeAttribute?.('aria-label');
+        else button.setAttribute?.('aria-label', aria);
+        originalAriaLabels.delete(button);
       }
     }
     updated = true;
