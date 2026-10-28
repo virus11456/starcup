@@ -8,9 +8,9 @@ import { randomBytes } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-const require = createRequire('/tmp/starcup-visual-qa/package.json');
+const require = createRequire(process.env.GRAIL_PLAYWRIGHT_PACKAGE_JSON || '/tmp/starcup-visual-qa/package.json');
 const { chromium, webkit } = require('playwright-core');
-const browserBinary = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
+const browserBinary = process.env.GRAIL_BROWSER_BINARY || ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
   .map(name => { try { return execFileSync('which', [name], { encoding: 'utf8' }).trim(); } catch { return ''; } })
   .find(Boolean);
 if (!browserBinary) throw new Error('No Chromium/Google Chrome available for real viewport verification');
@@ -19,6 +19,32 @@ const out = path.resolve('outputs/visual-qa');
 await mkdir(out, { recursive: true });
 let worker, browser, webkitBrowser, failed = false;
 const checks = [];
+
+async function verifyPursuitPreference(frame, page, label) {
+  const panel = frame.locator('#grail-pursuit-preference');
+  const toggle = frame.locator('#grail-help-toggle');
+  const input = panel.locator('input[type="checkbox"]');
+  if (await input.isChecked()) throw new Error('Pursuit shortcut must default off: ' + label);
+  await toggle.click();
+  await panel.locator('summary').click();
+  await input.check();
+  await panel.getByRole('button', {name:'下一次保留詢問'}).click();
+  if (!(await panel.locator('[role="status"]').innerText()).includes('仍由你決定'))
+    throw new Error('Pursuit manual override is not accessible: ' + label);
+  const geometry = await panel.evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    return {left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
+      width:innerWidth,height:innerHeight,buttonHeight:node.querySelector('button').getBoundingClientRect().height};
+  });
+  if (geometry.left < -2 || geometry.right > geometry.width+2 ||
+      geometry.top < -2 || geometry.bottom > geometry.height+2 || geometry.buttonHeight < 43)
+    throw new Error('Pursuit preference is clipped or too small: '+label+' '+JSON.stringify(geometry));
+  await page.screenshot({path:path.join(out,'pursuit-'+label+'.png'),fullPage:false});
+  await input.uncheck();
+  await panel.locator('summary').click();
+  await toggle.click();
+  checks.push(label + ': opt-in pursuit preference, manual override and 44px control fit');
+}
 
 async function verifyRoute(context, base, route, viewport) {
   const page = await context.newPage();
@@ -122,6 +148,7 @@ try {
     node.parentElement?.classList?.contains('grail-score-heading'));
   if (!hintIsInline) throw new Error('Passive game phase hint is still a floating overlay');
   checks.push('native battle passive text attached to scoreboard, not floating above targets');
+  await verifyPursuitPreference(frame, page, 'desktop');
 
   // Exercise the shipped JS and CSS together without issuing synthetic
   // gameplay events. The diagnostic node is removed immediately.
@@ -178,6 +205,13 @@ try {
   const nativeOptions = frame.locator('#system').getByText('選項', {exact:true}).first();
   await nativeOptions.click({timeout:15000});
   await frame.locator('#window > .menu-container:not(.hidden)').waitFor({timeout:15000});
+  // Native menus animate their numeric stacking order from the closed state.
+  // Check the settled menu rather than the first visible animation frame.
+  await frame.locator('#window > .menu-container:not(.hidden)').evaluate(async node => {
+    const started = performance.now(), hud = document.querySelector('#grail-hud');
+    while (Number(getComputedStyle(node).zIndex) <= Number(getComputedStyle(hud).zIndex) &&
+           performance.now()-started < 2000) await new Promise(requestAnimationFrame);
+  });
   const menuState = await frame.locator('#window > .menu-container:not(.hidden)').evaluate(node => ({
     z: Number(getComputedStyle(node).zIndex),
     hudZ: Number(getComputedStyle(document.querySelector('#grail-hud')).zIndex),
@@ -416,6 +450,7 @@ try {
       if(lastRect.top<lastRect.min-2 || lastRect.bottom>lastRect.max+2)
         throw new Error('Last '+slug+' seat cut off: '+JSON.stringify(lastRect));
       checks.push('mobile '+slug+': gallery scroll, seats and native controls remain distinct');
+      await verifyPursuitPreference(frame, page, slug);
     } finally {await page.close();await device.close();}
   }
   await checkPhoneDraft(browser,'chromium-touch',4,375,667);
@@ -427,6 +462,8 @@ try {
   for (const check of checks) console.log('PASS ' + check);
 } catch (error) {
   failed = true;
+  console.log('Completed browser checks before failure: '+checks.length);
+  for (const check of checks) console.log('PASS '+check);
   console.error('Browser visual QA failed:', error);
 } finally {
   await webkitBrowser?.close();
