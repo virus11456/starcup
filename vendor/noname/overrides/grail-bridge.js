@@ -12,6 +12,7 @@ import { createQuickDetailView } from './grail-detail-view.js';
 import { createPlayerIndicators } from "./grail-player-indicators.js";
 import { createHandSkin } from "./grail-card-skin.js";
 import { updateOptionalSkillChoiceHints } from "./grail-skill-readiness.js";
+import { createPursuitPreference } from './grail-prompt-shortcut.js';
 import { createHandVisibilityRecovery } from "./grail-hand-visibility.js";
 import { addRoleLegend } from './grail-role-tags.js';
 import { updateActionHints } from './grail-action-hints.js';
@@ -48,6 +49,8 @@ const stopMotion = startCardMotion();
 const help = document.getElementById("grail-help-content");
 const toggle = document.getElementById("grail-help-toggle");
 const inspection = createBattleInspection({ panel: document.getElementById('grail-help'), toggle, help, context: { lib, game, get } });
+const pursuitPreference = createPursuitPreference({ panel: document.getElementById('grail-help'),
+  game, ui, lib, get, status: _status, document });
 const quickDetail = createQuickDetailView({
   hud, context: { lib, game, get },
   cancelNativeLongPress(card) { ui.click?.longpresscancel?.call(card); },
@@ -85,6 +88,7 @@ function update() {
   // Re-run its own layout only after the transient draw window has passed.
   handVisibility.update();
   targetPreview.update();
+  pursuitPreference.update();
   // Preserve the native deck button and click handler; CSS-only finish.
   ui.cardPileButton?.classList?.add('grail-top-pile-tool');
   if (ui.arena) document.getElementById("grail-loading")?.remove();
@@ -265,6 +269,7 @@ window.addEventListener(
     history.stop();
     document.removeEventListener('visibilitychange', flushHistory);
     inspection.stop();
+    pursuitPreference.stop();
     quickDetail.stop();
     handSkin.stop();
     hud.remove();
