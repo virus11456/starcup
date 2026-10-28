@@ -255,7 +255,10 @@ test('hidden or unfocused old noname dialogs never replace the active HUD text',
 
 test('native gem/crystal dialog is compact, scrollable, and never replaces choice nodes', async () => {
   const css = await readFile(new URL('../vendor/noname/overrides/grail.css', import.meta.url), 'utf8');
-  const body = css.slice(css.indexOf('/* Native buy/refine/compose resource choices'));
+  // Only inspect the original resource-dialog section, not later unrelated
+  // mobile UI rules (e.g. pointer-free hand count labels).
+  const body = css.slice(css.indexOf('/* Native buy/refine/compose resource choices'))
+    .split(/\n\/\* /, 1)[0];
   assert.match(body, /#window #arena:not\(\.choose-character\) > \.dialog\.grail-resource-dialog:not\(\.popped\)/);
   assert.match(body, /width:\s*min\(490px, calc\(100% - 36px\)\) !important/);
   assert.match(body, /height:\s*clamp\(138px, 22%, 190px\) !important/);

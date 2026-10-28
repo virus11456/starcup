@@ -232,6 +232,32 @@ try {
   if (layout.intersects.length)
     throw new Error('Six-player iPhone roles overlap: '+JSON.stringify(layout));
   checks.push('natural six-player iPhone match: five opponent portraits separated with adaptive zoom');
+  // A previous iPhone screenshot placed an anonymous "手牌 4/6" in the
+  // middle of the battlefield, far from the owning bottom-left character.
+  // Verify the LOCAL hand counter is instead visibly attached to that
+  // same native portrait without reading or cloning anyone's hidden cards.
+  const ownHand = await f.locator('#arena > .player[data-position="0"]').evaluate(player => {
+    const card = player.getBoundingClientRect();
+    const node = player.querySelector(':scope > .count:not(.hidden)');
+    const rect = node?.getBoundingClientRect();
+    return {
+      pinned: player.dataset.grailOwnHandCountPinned,
+      mirrored: player.dataset.grailHandCountMirror,
+      aria: node?.getAttribute('aria-label'),
+      value: node?.textContent?.trim(),
+      visible: node && getComputedStyle(node).visibility === 'visible',
+      role: { left:card.left, top:card.top, right:card.right },
+      badge: rect && { left:rect.left, top:rect.top, bottom:rect.bottom, right:rect.right },
+    };
+  });
+  if (ownHand.pinned !== 'true' || ownHand.mirrored !== 'false' ||
+      !ownHand.visible || !ownHand.aria?.startsWith('我的手牌 ') ||
+      !ownHand.badge || Math.abs(ownHand.badge.left-ownHand.role.left)>30 ||
+      ownHand.badge.top < ownHand.role.top-85 ||
+      ownHand.badge.bottom > ownHand.role.top+22) {
+    throw new Error('The local hand badge is detached or has no owner: '+JSON.stringify(ownHand));
+  }
+  checks.push('390px phone: 我的手牌 count is pinned above its OWN native character, not floating mid-board');
   const mobileStats = f.locator('#grail-scoreboard');
   const detailToggle = f.locator('#grail-scoreboard .grail-score-toggle');
   const before = await detailToggle.evaluate(button => {

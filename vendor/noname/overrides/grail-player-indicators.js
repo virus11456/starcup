@@ -134,6 +134,17 @@ export function publicHandCountBadge(player) {
     count: match[1] + '/' + match[2], kind: 'hand', icon: '▣' };
 }
 
+// On a phone portrait, the local player's native count already belongs to
+// the character card next to their hand. Mirroring it as a floating HUD strip
+// may put "手牌 4/6" far away from its owner when the hand fan blocks its lane.
+// Keep that ONE native count readable, and continue mirroring other seats.
+export function shouldPinOwnHandCount(player, context, viewport) {
+  const width = Number(viewport?.width), height = Number(viewport?.height);
+  return player === context?.game?.me && String(player?.dataset?.position) === '0'
+    && Number.isFinite(width) && Number.isFinite(height)
+    && width > 0 && width <= 600 && height > width;
+}
+
 // Read layout from *visible* native UI. The player's own portrait is not
 // the handcard fan, and neither pile buttons nor the action hint should be
 // obscured by a read-only mark or hand-count chip.
@@ -185,8 +196,24 @@ export function createPlayerIndicators(parent, context, doc = document) {
       if (players.length) layer.hidden = false;
       const active = new Set();
       const occupied = [];
+      const width = doc.defaultView?.innerWidth ?? innerWidth;
+      const height = doc.defaultView?.innerHeight ?? innerHeight;
+      const portrait = height > width;
       for (const player of players) {
-        const handCount = publicHandCountBadge(player);
+        const count = publicHandCountBadge(player);
+        const pinOwnHand = Boolean(count) && shouldPinOwnHandCount(player, context, { width, height });
+        if (player.dataset) {
+          player.dataset.grailOwnHandCountPinned = String(pinOwnHand);
+          if (pinOwnHand) player.dataset.grailHandCountMirror = 'false';
+        }
+        if (pinOwnHand) {
+          // The original count text (e.g. 4/6) is never changed. Only its
+          // visible label and accessible description identify the owner.
+          const ownerText = '我的手牌 ' + count.count;
+          player.node?.count?.setAttribute?.('aria-label', ownerText);
+          if (player.node?.count) player.node.count.title = ownerText;
+        }
+        const handCount = pinOwnHand ? null : count;
         const badges = [...(handCount ? [handCount] : []), ...publicPlayerIndicators(player, context)];
         const rect = player.getBoundingClientRect?.();
         if (!badges.length || !rect || rect.width <= 0 || rect.height <= 0) {
@@ -203,9 +230,6 @@ export function createPlayerIndicators(parent, context, doc = document) {
         }
         const label = inspectionText(context.get.translation(player.name));
         strip.setAttribute('aria-label', label + '的狀態');
-        const width = doc.defaultView?.innerWidth ?? innerWidth;
-        const height = doc.defaultView?.innerHeight ?? innerHeight;
-        const portrait = height > width;
         const maxWidth = portrait && width <= 600 ? Math.min(158, width * .44)
           : width <= 1049 ? Math.min(210, width * .30) : Math.min(240, width * .22);
         strip.style.maxWidth = `${maxWidth}px`;
