@@ -112,6 +112,37 @@ test('unknown or unoffered skills and missing game information get no speculativ
   assert.deepEqual(optionalSkillReadinessNotes(['fengNuZhuiJi'],player,{}),[]);
   assert.match(optionalSkillReadinessNotes(['fengNuZhuiJi','fengNuZhuiJi'],player,get)[0], /依原規則仍可發動/);
 });
+
+test('pure empty-hand pursuit explains optional cancellation but multi-effect skills remain playable', () => {
+  const wind = check('fengNuZhuiJi', [card('gongJi','lei')]);
+  assert.match(wind.message, /沒有風系攻擊牌/);
+  assert.match(wind.message, /可按「取消」略過/);
+  assert.match(wind.message, /依原規則仍可發動/);
+  const tactical = check('yaoJingMiShu', []);
+  assert.match(tactical.message, /目前手上沒有攻擊牌/);
+  assert.doesNotMatch(tactical.message, /可按「取消」略過/,
+    'some skills also add other effects/conditions; do not recommend auto decline');
+  assert.equal(check('fengNuZhuiJi',[card('gongJi','feng')]),null);
+});
+test('adding readiness information never changes the native skill action or user choice', () => {
+  cards=[card('gongJi','huo')];
+  const set=[];
+  const btn=node('fengNuZhuiJi','風怒追擊');
+  btn.setAttribute=(key,val)=>set.push([key,val]);
+  const shell=node(null,'');
+  shell.classList={contains:x=>x==='control'};
+  shell.children=[btn];
+  btn.parentNode=shell;
+  const ui={control:{children:[shell]},updatec(){}};
+  const notices=updateOptionalSkillChoiceHints(ui,{},player,get);
+  assert.equal(btn.link,'fengNuZhuiJi');
+  assert.equal(btn.textContent,'風怒追擊');
+  assert.ok(notices.some(n=>n.includes('取消')));
+  assert.ok(set.some(([key,val])=>key==='aria-label'&&val.includes('沒有風系攻擊牌')));
+  cards=[card('gongJi','feng')];
+  updateOptionalSkillChoiceHints(ui,{},player,get);
+  assert.equal(btn.dataset.grailReadiness,undefined);
+});
 test('native multi-skill control options are recognized by source links and translated text', () => {
   const input=nativeUi([
     {link:'fengNuZhuiJi',text:'[響應]風怒追擊[回合限定]'},
